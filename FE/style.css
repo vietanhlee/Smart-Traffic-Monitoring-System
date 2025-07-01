@@ -204,3 +204,35 @@ h1 {
 .chat-input button:hover {
   background: linear-gradient(90deg, #00b894 60%, #007acc 100%);
 }
+
+/* Hiệu ứng nổi bật cho React badge cảnh báo */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 #ff767580;
+  }
+  70% {
+    box-shadow: 0 0 0 12px #ff767500;
+  }
+  100% {
+    box-shadow: 0 0 0 0 #ff767500;
+  }
+}
+
+/* Loader animation (đã thêm qua JS, có thể giữ lại ở đây nếu muốn) */
+.loader {
+  border: 6px solid #e3e8ee;
+  border-top: 6px solid #007acc;
+  border-radius: 50%;
+  width: 54px;
+  height: 54px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
