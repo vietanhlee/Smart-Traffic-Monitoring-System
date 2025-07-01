@@ -30,3 +30,7 @@ uvicorn fast_api:app --reload
 - Hiển thị 4 video giám sát (2x2) realtime.
 - Thông tin số lượng và tốc độ xe (ô tô, xe máy) từng video.
 - Khung chat bên phải để trao đổi (hiện chỉ hoạt động phía client).
+
+##
+
+![](https://raw.githubusercontent.com/vietanhlee/SIC-project/refs/heads/main/display%20github/SIC.png)
