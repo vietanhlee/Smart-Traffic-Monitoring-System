@@ -1,5 +1,7 @@
 import cv2
 import threading
+
+from scipy.__config__ import show
 from AnalyzeOnRoad import AnalyzeOnRoad
 from queue import Queue
 import time
@@ -63,9 +65,14 @@ class AnalyzeOnRoadForSingleThreading(AnalyzeOnRoad):
             # Tạo thread hiển thị video
             show_thread = threading.Thread(target=self.show_video, daemon=True)
             show_thread.start()
+            
+            # show_thread.join()  # Chờ thread hiển thị video kết thúc
         
+        # self.thread.join()  # Chờ thread xử lý video kết thúc
         # self.show_video()            
         # self.log()
+        
+        
         
     def start_single_thread(self):
         '''for debug'''
@@ -78,11 +85,11 @@ class AnalyzeOnRoadForSingleThreading(AnalyzeOnRoad):
             show_thread = threading.Thread(target=self.show_video, daemon=True)
             show_thread.start()
         
+        # while self.thread.is_alive():
+        #     print(self.get_info()['count_car'])
+        #     time.sleep(1)  # Chờ 1 giây trước khi lấy thông tin tiếp theo
         
-        while self.thread.is_alive():
-            # self.log()
-            print(self.get_info()['count_car'])
-            time.sleep(1)  # Chờ 1 giây trước khi lấy thông tin tiếp theo
+        self.log()  # Bắt đầu ghi log
         self.thread.join()  # Chờ thread xử lý video kết thúc
 
     def get_info(self):

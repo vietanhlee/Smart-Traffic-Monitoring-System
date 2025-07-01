@@ -11,9 +11,13 @@ Hệ thống giám sát giao thông realtime qua video, nhận diện và đếm
 - Trình duyệt web (Chrome, Edge, Firefox...)
 
 ## Cài đặt
-
+### Chạy trên CPU
 ```bash
-pip install -r requirements.txt
+pip install -r requirements_cpu
+```
+### Chạy trên GPU
+```bash
+pip install -r requirements_gpu
 ```
 
 ## Khởi động hệ thống

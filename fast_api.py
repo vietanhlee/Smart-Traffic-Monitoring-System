@@ -22,7 +22,7 @@ print("Python executable:", sys.executable)
 def startup_event():
     global analyze_multi
     if analyze_multi is None:
-        analyze_multi = AnalyzeOnRoadForMultiThreading(show= False)
+        analyze_multi = AnalyzeOnRoadForMultiThreading(show= False, show_log= False)
         analyze_multi.process()
 
 @app.get("/results")

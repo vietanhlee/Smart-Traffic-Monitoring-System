@@ -10,29 +10,34 @@ class AnalyzeOnRoadForMultiThreading:
                         "./video_test/Ngã Tư Sở.mp4",
                         "./video_test/Đường Láng.mp4",
                     ],
-                 list_ratio_pixel_per_met = None, regions = None, show_log = True, show=False):
+                 list_ratio_pixel_per_met = None, regions = None, show_log = True, show=False, device='cpu'):
         self.path_videos = path_videos
         self.list_ratio_pixel_per_met = list_ratio_pixel_per_met
         self.regions = regions
         self.show_log = show_log
         self.show = show
+        self.device = device
         self.list_threads = []
         self.lock = threading.Lock()
         # self.results_all = {}
 
     def process(self):
         for video in self.path_videos:
-            ob = AnalyzeOnRoadForSingleThreading(path_video= video, show= self.show)
+            ob = AnalyzeOnRoadForSingleThreading(path_video= video, show= self.show, device= self.device)
             # ob_display = threading.Thread(target= ob.show_video, daemon= True)
             self.list_threads.append(ob)
             
             ob.start_thread()
             # ob_display.start()
+        
                 
         if self.show_log:
             thread_log = threading.Thread(target= self.log)
             thread_log.start()
             # self.update_results_for_all_threads()
+        
+        # for ob in self.list_threads:
+        #     ob.thread.join()  # Chờ từng thread xử lý video kết thúc    
             
     def get_results_for_all_threads(self):
         results_all = {}
@@ -75,7 +80,7 @@ class AnalyzeOnRoadForMultiThreading:
 # #***************************************************  Code for testing script  *********************************************************************#
                 
 if __name__ == '__main__':
-    object = AnalyzeOnRoadForMultiThreading(show=True, show_log= False)
+    object = AnalyzeOnRoadForMultiThreading(show=True, show_log= True, device='cpu')
     object.process()
     
     print(object.get_results_for_all_threads())
