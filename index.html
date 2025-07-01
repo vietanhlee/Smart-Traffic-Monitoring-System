@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Giám Sát</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <h1>📹 Dashboard Giám Sát Realtime</h1>
+  <div class="dashboard-container">
+    <div class="video-section">
+      <div id="output">⏳ Đang tải dữ liệu...</div>
+    </div>
+    <div class="chat-section">
+      <div class="chat-header">💬 Chat Giám Sát</div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <form class="chat-input" id="chat-form" autocomplete="off">
+        <input type="text" id="chat-text" placeholder="Nhập tin nhắn..." required />
+        <button type="submit">Gửi</button>
+      </form>
+    </div>
+  </div>
+  <script src="main.js"></script>
+</body>
+
+</html>
