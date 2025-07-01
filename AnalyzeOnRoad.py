@@ -21,7 +21,7 @@ class AnalyzeOnRoad:
             meter_per_pixel = meter_per_pixel,
         )
         # DEBUG: Print available methods of SpeedEstimator
-        print("SpeedEstimator methods:", dir(self.speed_tool))  # <--- Thêm dòng này
+        # print("SpeedEstimator methods:", dir(self.speed_tool))  # <--- Thêm dòng này
         self.show = show
         self.path_video = path_video
         self.count_car_display = 0

@@ -10,10 +10,38 @@ function VideoCard({ videoName, info }) {
   return (
     <div
       className="card"
-      style={{ borderColor: carAlert || motorAlert ? "#ff7675" : "#e3e8ee" }}
+      style={{
+        borderColor: carAlert || motorAlert ? "#ff7675" : "#e3e8ee",
+        maxWidth: "1600px",
+        width: "100%",
+        margin: "0 auto",
+      }}
     >
-      <div style={{ position: "relative" }}>
-        <img src={imgSrc} alt="Khung hình từ video" />
+      <div
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          borderRadius: 8,
+          background: "#222",
+          height: "460px",
+          maxWidth: "1600px",
+          margin: "0 auto",
+        }}
+      >
+        <img
+          src={imgSrc}
+          alt="Khung hình từ video"
+          style={{
+            width: "100%",
+            height: "100%",
+            maxWidth: "100%",
+            maxHeight: "100%",
+            objectFit: "cover",
+            borderRadius: 8,
+            display: "block",
+            background: "#222",
+          }}
+        />
         {(carAlert || motorAlert) && (
           <span
             style={{
@@ -241,4 +269,5 @@ style.innerHTML = `
 `;
 document.head.appendChild(style);
 
+ReactDOM.createRoot(document.getElementById("root")).render(<Dashboard />);
 ReactDOM.createRoot(document.getElementById("root")).render(<Dashboard />);

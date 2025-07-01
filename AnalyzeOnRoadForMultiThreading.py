@@ -32,13 +32,14 @@ class AnalyzeOnRoadForMultiThreading:
         
                 
         if self.show_log:
-            thread_log = threading.Thread(target= self.log)
+            thread_log = threading.Thread(target= self.log, daemon=True)
             thread_log.start()
             # self.update_results_for_all_threads()
-        
-        # for ob in self.list_threads:
-        #     ob.thread.join()  # Chờ từng thread xử lý video kết thúc    
-            
+        # self.join_threads()
+    def join_threads(self):
+        for ob in self.list_threads:
+            ob.thread.join()  # Chờ từng thread xử lý video kết thúc
+
     def get_results_for_all_threads(self):
         results_all = {}
         for ob in self.list_threads:
@@ -83,7 +84,7 @@ if __name__ == '__main__':
     object = AnalyzeOnRoadForMultiThreading(show=True, show_log= True, device='cpu')
     object.process()
     
-    print(object.get_results_for_all_threads())
+    # print(object.get_results_for_all_threads())
 
 #     while True:
 #         res = object.get_results_for_all_threads()
