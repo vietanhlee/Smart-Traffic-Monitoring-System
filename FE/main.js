@@ -154,7 +154,7 @@ function VideoGrid({ focused, setFocused }) {
           setData(null);
           setLoading(false);
         });
-      timer = setTimeout(fetchResults, 637);
+      timer = setTimeout(fetchResults, 150);
     };
     fetchResults();
     return () => clearTimeout(timer);
@@ -256,7 +256,6 @@ function ChatMessage({ text, user, time }) {
     </div>
   );
 }
-
 function ChatBox() {
   const [messages, setMessages] = useState([
     {
@@ -266,31 +265,96 @@ function ChatBox() {
     },
   ]);
   const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const chatRef = useRef();
 
   useEffect(() => {
     chatRef.current.scrollTop = chatRef.current.scrollHeight;
   }, [messages]);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
 
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading) return;
+    
+    const userMessage = input.trim();
     const now = new Date().toLocaleTimeString();
-    setMessages((msgs) => [...msgs, { text: input, user: true, time: now }]);
+    
+    // Thêm tin nhắn của user
+    setMessages((msgs) => [...msgs, { text: userMessage, user: true, time: now }]);
     setInput("");
-    setTimeout(() => {
+    setIsLoading(true);
+
+    try {
+      let fullPrompt = userMessage;
+      
+      // Thử lấy dữ liệu monitoring trước khi gọi chat API
+      try {
+        const resultsResponse = await fetch("http://127.0.0.1:8000/results");
+        
+        if (resultsResponse.ok) {
+          const resultsData = await resultsResponse.json();
+          
+          if (resultsData && Object.keys(resultsData).length > 0) {
+            // Lọc dữ liệu (chỉ lấy thông tin cần thiết)
+            const filteredData = {};
+            Object.entries(resultsData).forEach(([videoName, info]) => {
+              filteredData[videoName] = {
+                count_car: info.count_car,
+                count_motor: info.count_motor,
+                speed_car: info.speed_car,
+                speed_motor: info.speed_motor
+              };
+            });
+            
+            const monitoringInfo = JSON.stringify(filteredData, null, 2);
+            fullPrompt = `Bạn hãy dựa vào các thông tin sau và trả lời câu hỏi:
+
+Dữ liệu giám sát giao thông hiện tại:
+${monitoringInfo}
+
+Câu hỏi: ${userMessage}`;
+          }
+        }
+      } catch (resultsError) {
+        console.log('API results bị lỗi, sử dụng chế độ chatbot thông thường');
+        // Nếu API results lỗi, thêm context cho chatbot thông thường
+        fullPrompt = `Hiện tại các API bị lỗi cho nên không có dữ liệu, bạn hãy là một chatbot đời thường thông minh trả lời câu hỏi: ${userMessage}`;
+      }
+      
+      // Gọi API chat với prompt đã xử lý
+      const response = await fetch(`http://127.0.0.1:8000/chat/${encodeURIComponent(fullPrompt)}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Thêm phản hồi từ hệ thống
       setMessages((msgs) => [
         ...msgs,
         {
-          text: "Đã nhận: " + input,
+          text: data.response || "Không có phản hồi từ hệ thống",
           user: false,
           time: new Date().toLocaleTimeString(),
         },
       ]);
-    }, 700);
+    } catch (error) {
+      console.error('Lỗi khi gọi API chat:', error);
+      // Thêm thông báo lỗi
+      setMessages((msgs) => [
+        ...msgs,
+        {
+          text: "Xin lỗi, tôi không thể kết nối với hệ thống. Vui lòng thử lại sau.",
+          user: false,
+          time: new Date().toLocaleTimeString(),
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
   };
-
   return (
     <div className="chat-section" style={{ padding: 32, background: '#fff', borderRadius: 20, boxShadow: '0 4px 32px #007acc22', minHeight: 700, height: '90vh', display: 'flex', flexDirection: 'column', maxWidth: 900, width: '100%' }}>
       <div className="chat-header" style={{ fontSize: 32, fontWeight: 800, color: '#0a2540', marginBottom: 18, letterSpacing: 1, textShadow: '0 2px 8px #007acc22' }}>💬 Chat Giám Sát</div>

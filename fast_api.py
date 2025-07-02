@@ -1,10 +1,15 @@
-from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from AnalyzeOnRoadForMultiThreading import AnalyzeOnRoadForMultiThreading
 import sys
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, HTTPException
+from CHATBOT import ChatLLM
+
+
 app = FastAPI()
 analyze_multi = None
+
+chat_llm = None
 
 # Cho phép gọi API từ frontend khác port (CORS)
 app.add_middleware(
@@ -25,6 +30,12 @@ def startup_event():
     if analyze_multi is None:
         analyze_multi = AnalyzeOnRoadForMultiThreading(show=False, show_log=False)
         analyze_multi.process()
+    """
+    Sự kiện khởi động ứng dụng.
+    """
+    global chat_llm
+    if chat_llm is None:
+        chat_llm = ChatLLM()
 
 # API endpoint lấy kết quả phân tích cho frontend
 @app.get("/results")
@@ -37,6 +48,22 @@ def get_results():
     results = analyze_multi.get_results_for_all_threads()
     return JSONResponse(content=results)
 
+@app.get("/chat/{message}")
+def chat(message: str):
+    """
+    Nhận một tin nhắn và trả về phản hồi từ mô hình AI.
+    """
+    
+    if not chat_llm:
+        raise HTTPException(status_code=500, detail="ChatLLM chưa được khởi tạo.")
+    
+    try:
+        response = chat_llm.chat(message)
+        return {"response": response}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    
 # Các chú thích dưới đây là giải thích chi tiết cho từng phần code, bạn có thể xóa nếu muốn code gọn hơn.
 
 # 1. @app.on_event("startup")
