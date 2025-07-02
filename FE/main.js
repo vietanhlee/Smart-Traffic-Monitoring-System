@@ -154,7 +154,7 @@ function VideoGrid({ focused, setFocused }) {
           setData(null);
           setLoading(false);
         });
-      timer = setTimeout(fetchResults, 150);
+      timer = setTimeout(fetchResults, 287);
     };
     fetchResults();
     return () => clearTimeout(timer);

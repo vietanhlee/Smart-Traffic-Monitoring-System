@@ -25,7 +25,7 @@ class ChatLLM:
         # --- Bước 2: Khởi tạo mô hình Gemini ---
         # Chúng ta sẽ sử dụng mô hình gemini-1.5-flash-latest, bạn có thể thay đổi
         # 'temperature' để điều chỉnh mức độ sáng tạo của mô hình (0.0 = chặt chẽ, 1.0 = sáng tạo)
-        self.llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-latest", temperature=0.5)
+        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.5)
 
         # --- Bước 3: Tạo Prompt Template với phần hướng dẫn (system prompt) ---
         # Đây là nơi bạn "dạy" cho AI cách hành xử và thêm các hướng dẫn đặc biệt.
