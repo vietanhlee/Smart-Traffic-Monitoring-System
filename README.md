@@ -2,12 +2,12 @@
 
 ## Giới thiệu
 
-Hệ thống giám sát giao thông realtime qua video, nhận diện và đếm số lượng, tốc độ ô tô và xe máy, hiển thị trực quan trên dashboard web. Ngoài ra còn có khung chat để trao đổi nhanh.
+Hệ thống giám sát giao thông realtime qua video, nhận diện và đếm số lượng phương tiện trung bình, tốc độ trung bình ô tô và xe máy, hiển thị trực quan trên dashboard web. Ngoài ra còn có khung chat để trao đổi nhanh.
 
 ## Yêu cầu hệ thống
 
-- Python >= 3.10
-- Các thư viện trong `requirements.txt`
+- Python >= 3.11
+- Các thư viện trong `requirements_cpu` hoặc `requirements_gpu`
 - Trình duyệt web (Chrome, Edge, Firefox...)
 
 ## Cài đặt
@@ -32,9 +32,9 @@ uvicorn fast_api:app --reload
 ## Tính năng chính
 
 - Hiển thị 4 video giám sát (2x2) realtime.
-- Thông tin số lượng và tốc độ xe (ô tô, xe máy) từng video.
+- Thông tin trung bình số lượng và tốc độ xe (ô tô, xe máy) từng video.
 - Khung chat bên phải để trao đổi (hiện chỉ hoạt động phía client).
 
-##
+## DEMO
 
 ![](https://raw.githubusercontent.com/vietanhlee/SIC-project/refs/heads/main/display%20github/SIC.png)
