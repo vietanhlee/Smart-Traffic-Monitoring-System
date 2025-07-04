@@ -17,6 +17,7 @@
 - Support natural language queries about current traffic status through an integrated chatbot interface.
 
 ## 🧠 Technologies Used
+### Backend
 - Python
 - OpenCV, YOLO (custom-trained)
 - Deep Learning & Tracking (Bytetrack)
@@ -24,8 +25,12 @@
 - Multithreading (for handling multiple video streams)
 - Gemini API (for chatbot conversation)
 - Langchain Platform (for building the LLM-driven chatbot)
-- LM Studio (optional for local LLM testing)
 
+### Frontend
+- ReactJS (functional components, hooks)
+- lucide-react (icon library)
+- Fetch API (continuous polling, async handling)
+- Pure CSS (custom UI, dynamic effects)
 ## ⚙️ System Design
 ### A. Video Tracking and Traffic Analysis
 - Each video stream is assigned to a dedicated processing thread (1 video = 1 worker).
@@ -33,29 +38,58 @@
 - Extracted metrics: vehicle count, average speed (for cars & motorbikes).
 - Processed results are stored in a shared variable with proper thread synchronization.
 
+
+
 ### B. API Layer
 - Built with FastAPI.
-- Returns the latest traffic data in JSON format:
+- Provides 3 main endpoints:
+
+#### 1. `/frames` (GET)
+Returns the latest frame image for each road:
 ```json
 {
   "road_name": {
-    "frame": "<base64-encoded image>",
-    "count_car": <avg number of cars>,
-    "count_motor": <avg number of motorbikes>,
-    "speed_car": <avg speed of cars>,
-    "speed_motor": <avg speed of motorbikes>
+    "frame": "<base64-encoded image>"
   }
 }
 ```
 
-### C. Client Visualization
-- Web frontend continuously fetches API data.
-- Displays traffic metrics and video frame in real-time.
+#### 2. `/veheicles` (GET)
+Returns vehicle information for each road:
+```json
+{
+  "road_name": {
+    "count_car": <number of cars>,
+    "count_motor": <number of motorbikes>,
+    "speed_car": <average speed of cars>,
+    "speed_motor": <average speed of motorbikes>
+  }
+}
+```
 
-### D. Chatbot Query Interface (Planned)
+#### 3. `/chat` (POST)
+Receives a prompt from the frontend and returns a chatbot response:
+```json
+{
+  "message": "your prompt here"
+}
+```
+Returns:
+```json
+{
+  "response": "AI response"
+}
+```
+
+### C. Client Visualization
+- The web frontend continuously fetches `/frames` (every 200ms) and `/veheicles` (every 1s).
+- Data is merged and displayed visually: camera images, vehicle counts & speeds for each road.
+- Real-time UI, dynamic effects, fully responsive.
+
+### D. Chatbot Query Interface
 - Uses Gemini API and Langchain Platform.
-- Allows users to ask questions like: "How is traffic on Nguyen Trai street?"
-- Responds based on the latest processed data.
+- Users can ask: "What is the traffic like on Nguyen Trai street?"
+- The chatbot responds based on the latest traffic data.
 
 ## 🧪 How to Run
 ### 🖥️ System Requirements
@@ -70,6 +104,7 @@
 npm install lucide-react
 ```
 
+
 ### 💾 Installation for BACKEND
 #### On CPU:
 ```bash
@@ -78,6 +113,16 @@ pip install -r requirements_cpu.txt
 #### On GPU:
 ```bash
 pip install -r requirements_gpu.txt
+```
+
+#### Create `.env` file (required for Gemini API)
+In the `BACKEND` directory, create a file named `.env` and add your Google API key:
+```bash
+GOOGLE_API_KEY=your_google_api_key_here
+```
+Or create `.env` manually with the following content:
+```bash
+GOOGLE_API_KEY=your_google_api_key_here
 ```
 
 ### 🚀 Launch the System
@@ -97,5 +142,3 @@ cd BACKEND
 uvicorn fast_api:app --reload
 ```
 - API will run at: `http://127.0.0.1:8000`
-
-
