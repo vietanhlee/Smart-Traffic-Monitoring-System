@@ -85,15 +85,11 @@ class AnalyzeOnRoad:
             self.list_speed_motor.clear()
             
     def update_for_frame(self):
-        # Encode frame sang JPEG
-        _, jpeg = cv2.imencode('.jpg', self.frame_output)
-        # chuyển sang base64
-        self.result["frame"] = base64.b64encode(jpeg.tobytes()).decode('utf-8')
+        pass
+        '''for sub class define'''
     def update_for_vehicle(self):
-        self.result["count_car"] = self.count_car_display
-        self.result["count_motor"] = self.count_motor_display
-        self.result["speed_car"] = self.speed_car_display
-        self.result["speed_motor"] = self.speed_motor_display
+        pass
+        '''for sub class define'''
     def process_single_frame(self, frame_input) -> None:   
         frame_in = cv2.resize(frame_input.copy(), (1600, 1200))
         self.frame_output = frame_in.copy()

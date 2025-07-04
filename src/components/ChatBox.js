@@ -34,9 +34,26 @@ export default function ChatBox() {
     setInput("");
     setIsLoading(true);
     try {
+      // Hàm format dữ liệu monitoring rõ ràng hơn
+      function buildMonitoringInfo(data) {
+        return Object.entries(data)
+          .map(([road, info]) => {
+            return `Tuyến đường ${road}: có ${
+              info.count_motor ?? 0
+            } xe máy (tốc độ trung bình là ${info.speed_motor ?? 0} km/h), ${
+              info.count_car ?? 0
+            } ô tô (tốc độ trung bình là ${info.speed_car ?? 0} km/h)`;
+          })
+          .join("\n");
+      }
+
+      function buildPrompt(monitoringInfo, userMessage) {
+        return `Bạn hãy dựa vào các thông tin sau và trả lời câu hỏi:\n\nDữ liệu giám sát giao thông hiện tại:\n${monitoringInfo}\n\nCâu hỏi: ${userMessage}`;
+      }
+
       let fullPrompt = userMessage;
       try {
-        const resultsResponse = await fetch("http://127.0.0.1:8000/results");
+        const resultsResponse = await fetch("http://127.0.0.1:8000/veheicles");
         if (resultsResponse.ok) {
           const resultsData = await resultsResponse.json();
           if (resultsData && Object.keys(resultsData).length > 0) {
@@ -49,15 +66,20 @@ export default function ChatBox() {
                 speed_motor: info.speed_motor,
               };
             });
-            const monitoringInfo = JSON.stringify(filteredData, null, 2);
-            fullPrompt = `Bạn hãy dựa vào các thông tin sau và trả lời câu hỏi:\n\nDữ liệu giám sát giao thông hiện tại:\n${monitoringInfo}\n\nCâu hỏi: ${userMessage}`;
+            const monitoringInfo = buildMonitoringInfo(filteredData);
+            fullPrompt = buildPrompt(monitoringInfo, userMessage);
           }
         }
       } catch (resultsError) {
         fullPrompt = `Hiện tại các API bị lỗi cho nên không có dữ liệu, bạn hãy là một chatbot đời thường thông minh trả lời câu hỏi: ${userMessage}`;
       }
       const response = await fetch(
-        `http://127.0.0.1:8000/chat/${encodeURIComponent(fullPrompt)}`
+        "http://127.0.0.1:8000/chat",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: fullPrompt }),
+        }
       );
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

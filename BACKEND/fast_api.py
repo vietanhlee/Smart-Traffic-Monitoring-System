@@ -2,7 +2,7 @@ from fastapi.responses import JSONResponse
 from tracking_information_veheicle.AnalyzeOnRoadForMultiThreading import AnalyzeOnRoadForMultiThreading
 import sys
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from CHATBOT import ChatLLM
 
 
@@ -26,13 +26,14 @@ print("Python executable:", sys.executable)
 # Khi server FastAPI khởi động, tạo đối tượng phân tích đa luồng và bắt đầu xử lý video
 @app.on_event("startup")
 def startup_event():
+    """
+    Sự kiện khởi động ứng dụng.
+    """
     global analyze_multi
     if analyze_multi is None:
         analyze_multi = AnalyzeOnRoadForMultiThreading(show=False, show_log=False, )
         analyze_multi.process()
-    """
-    Sự kiện khởi động ứng dụng.
-    """
+        
     global chat_llm
     if chat_llm is None:
         chat_llm = ChatLLM()
@@ -48,21 +49,46 @@ def get_results():
     results = analyze_multi.get_results_for_all_threads()
     return JSONResponse(content=results)
 
-@app.get("/chat/{message}")
-def chat(message: str):
+
+@app.get("/veheicles")
+def get_veheicles():
+    global analyze_multi
+    if analyze_multi is None:
+        # Nếu chưa khởi tạo xong thì trả về lỗi
+        return JSONResponse(content={"error": "Analyzer not initialized"}, status_code=500)
+    # Lấy kết quả từ tất cả các luồng phân tích video
+    infor_veheicles_on_roads = analyze_multi.get_info_veheicles_on_roads()
+    return JSONResponse(content=infor_veheicles_on_roads)
+
+@app.get("/frames")
+def get_frames():
+    global analyze_multi
+    if analyze_multi is None:
+        # Nếu chưa khởi tạo xong thì trả về lỗi
+        return JSONResponse(content={"error": "Analyzer not initialized"}, status_code=500)
+    # Lấy kết quả từ tất cả các luồng phân tích video
+    frame_of_roads = analyze_multi.get_frame_of_roads()
+    return JSONResponse(content= frame_of_roads)
+
+
+# Sử dụng POST thay vì GET cho endpoint chat
+from pydantic import BaseModel
+
+class ChatRequest(BaseModel):
+    message: str
+
+@app.post("/chat")
+def chat(request: ChatRequest):
     """
     Nhận một tin nhắn và trả về phản hồi từ mô hình AI.
     """
-    
     if not chat_llm:
         raise HTTPException(status_code=500, detail="ChatLLM chưa được khởi tạo.")
-    
     try:
-        response = chat_llm.chat(message)
+        response = chat_llm.chat(request.message)
         return {"response": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
     
 # Các chú thích dưới đây là giải thích chi tiết cho từng phần code, bạn có thể xóa nếu muốn code gọn hơn.
 

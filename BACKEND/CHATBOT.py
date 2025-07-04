@@ -25,7 +25,7 @@ class ChatLLM:
         # --- Bước 2: Khởi tạo mô hình Gemini ---
         # Chúng ta sẽ sử dụng mô hình gemini-1.5-flash-latest, bạn có thể thay đổi
         # 'temperature' để điều chỉnh mức độ sáng tạo của mô hình (0.0 = chặt chẽ, 1.0 = sáng tạo)
-        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.5)
+        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.9)
 
         # --- Bước 3: Tạo Prompt Template với phần hướng dẫn (system prompt) ---
         # Đây là nơi bạn "dạy" cho AI cách hành xử và thêm các hướng dẫn đặc biệt.
@@ -33,7 +33,18 @@ class ChatLLM:
         self.prompt = ChatPromptTemplate(
                     messages=[
                         SystemMessagePromptTemplate.from_template(
-                            "Bạn là một trợ lý AI hữu ích và thân thiện. Hãy trả lời câu hỏi của người dùng một cách ngắn gọn và chính xác."
+                            "Bạn là một trợ lý AI hữu ích được sữ dụng để\
+                            trả lời chính xác các câu hỏi mà được đưa thêm\
+                            thông tin về tình hình giao thông trên một số làn đường\
+                            (số phương tiện, vận tốc, ...) từ trước đó. \
+                            Hãy trả lời câu hỏi của người dùng một cách ngắn gọn và chính xác.\
+                            Ví dụ: bạn trả lời theo format sau:\
+                            - Tuyến đường 1: có 8 xe oto vận tốc trung bình là 10 km/h\
+                            - Tuyến đường 2: có 9 xe oto vận tốc trung bình là 11 km/h\
+                            ...(xuống dòng và tiếp các tuyến đường khác, trả lời theo kiểu liệt kê)\
+                            Các tuyến đường sau cũng tương tự thế nhá. Phần trả lời về truy vấn là vậy\
+                            có thể thêm một số câu phiếm kiểu như hỏi người chat xem muốn xem chi tiết về \
+                            tuyến đường nào không ? hoặc hôm nay bạn đi đến đâu vậy ?"
                         ),
                         # Biến `history` sẽ được `ConversationBufferMemory` tự động quản lý.
                         MessagesPlaceholder(variable_name="history"),

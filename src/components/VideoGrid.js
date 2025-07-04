@@ -2,27 +2,66 @@ import React, { useState, useEffect } from "react";
 import VideoCard from "./VideoCard";
 
 export default function VideoGrid({ focused, setFocused }) {
+  const [framesData, setFramesData] = useState(null);
+  const [vehiclesData, setVehiclesData] = useState(null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Fetch frames every 200ms
   useEffect(() => {
     let timer;
-    const fetchResults = () => {
-      fetch("http://127.0.0.1:8000/results")
-        .then((res) => res.json())
-        .then((data) => {
-          setData(data);
-          setLoading(false);
-        })
-        .catch(() => {
-          setData(null);
-          setLoading(false);
-        });
-      timer = setTimeout(fetchResults, 201);
+    const fetchFrames = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/frames");
+        const frames = await res.json();
+        setFramesData(frames);
+      } catch (e) {
+        setFramesData(null);
+      }
+      timer = setTimeout(fetchFrames, 201);
     };
-    fetchResults();
+    fetchFrames();
     return () => clearTimeout(timer);
   }, []);
+
+  // Fetch vehicles every 1000ms
+  useEffect(() => {
+    let timer;
+    const fetchVehicles = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/veheicles");
+        const vehicles = await res.json();
+        setVehiclesData(vehicles);
+      } catch (e) {
+        setVehiclesData(null);
+      }
+      timer = setTimeout(fetchVehicles, 4000);
+    };
+    fetchVehicles();
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Merge data when either framesData or vehiclesData changes
+  useEffect(() => {
+    if (!framesData && !vehiclesData) {
+      setData(null);
+      setLoading(true);
+      return;
+    }
+    const merged = {};
+    const allRoads = new Set([
+      ...Object.keys(framesData || {}),
+      ...Object.keys(vehiclesData || {}),
+    ]);
+    allRoads.forEach((road) => {
+      merged[road] = {
+        ...(vehiclesData && vehiclesData[road] ? vehiclesData[road] : {}),
+        ...(framesData && framesData[road] ? framesData[road] : {}),
+      };
+    });
+    setData(merged);
+    setLoading(false);
+  }, [framesData, vehiclesData]);
 
   if (loading) {
     return (
@@ -79,6 +118,7 @@ export default function VideoGrid({ focused, setFocused }) {
     "Đường Láng",
     "Văn Quán",
   ];
+
   if (!data) {
     return (
       <div style={gridStyle}>

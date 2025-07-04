@@ -14,9 +14,18 @@ class AnalyzeOnRoadForSingleThreading(AnalyzeOnRoad):
         
         super().__init__(path_video, model_path, time_step, is_draw, device, iou, conf, meter_per_pixel, show)
         self.queue_frame = Queue()        
-        self.lock = threading.Lock()
+        self.lock_for_info_veheicles = threading.Lock()
+        self.lock_for_get_frame = threading.Lock()
         self.thread = None    
         
+        self.info_veheicles= {
+            "count_car": 0,
+            "count_motor": 0,
+            "speed_car": 0,
+            "speed_motor": 0,
+        }
+        
+        self.frame_for_output_thread_base64 = None
     def process_on_single_video(self):
         cam = cv2.VideoCapture(self.path_video)
             
@@ -43,18 +52,18 @@ class AnalyzeOnRoadForSingleThreading(AnalyzeOnRoad):
                 break
                 
     def update_for_frame(self):
-        with self.lock:
+        with self.lock_for_get_frame:
             # Encode frame sang JPEG
             _, jpeg = cv2.imencode('.jpg', self.frame_output)
             # chuyển sang base64
-            self.result["frame"] = base64.b64encode(jpeg.tobytes()).decode('utf-8')
+            self.frame_for_output_thread_base64 = base64.b64encode(jpeg.tobytes()).decode('utf-8')
 
     def update_for_vehicle(self):
-        with self.lock:
-            self.result["count_car"] = self.count_car_display
-            self.result["count_motor"] = self.count_motor_display
-            self.result["speed_car"] = self.speed_car_display
-            self.result["speed_motor"] = self.speed_motor_display
+        with self.lock_for_info_veheicles:
+            self.info_veheicles["count_car"] = self.count_car_display
+            self.info_veheicles["count_motor"] = self.count_motor_display
+            self.info_veheicles["speed_car"] = self.speed_car_display
+            self.info_veheicles["speed_motor"] = self.speed_motor_display
         
     def start_thread(self):
         self.thread = threading.Thread(target= self.process_on_single_video, daemon= True)
@@ -71,8 +80,6 @@ class AnalyzeOnRoadForSingleThreading(AnalyzeOnRoad):
         # self.thread.join()  # Chờ thread xử lý video kết thúc
         # self.show_video()            
         # self.log()
-        
-        
         
     def start_single_thread(self):
         '''for debug'''
@@ -95,7 +102,14 @@ class AnalyzeOnRoadForSingleThreading(AnalyzeOnRoad):
     def get_info(self):
         with self.lock:
             return self.result
-    
+    def get_frame(self):
+        res = {"frame": None}
+        with self.lock_for_get_frame:
+            res["frame"] = self.frame_for_output_thread_base64
+            return res
+    def get_info_veheicles(self):
+        with self.lock_for_info_veheicles:
+            return self.info_veheicles
     def log(self):
         # ANSI màu
         YELLOW = "\033[93m"

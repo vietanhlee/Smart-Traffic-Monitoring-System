@@ -20,7 +20,7 @@ class AnalyzeOnRoadForMultiThreading:
         self.list_threads = []
         self.lock = threading.Lock()
         # self.results_all = {}
-
+    
     def process(self):
         for video in self.path_videos:
             ob = AnalyzeOnRoadForSingleThreading(path_video= video, show= self.show, device= self.device)
@@ -44,11 +44,27 @@ class AnalyzeOnRoadForMultiThreading:
         results_all = {}
         for ob in self.list_threads:
             name = ob.path_video.split('/')[-1][:-4]
-            info = ob.get_info()
+            info = ob.get_info_veheicles()
             results_all[name] = info 
         
         return results_all
     
+    def get_frame_of_roads(self):
+        results_all = {}
+        for ob in self.list_threads:
+            name = ob.path_video.split('/')[-1][:-4]
+            info = ob.get_frame()
+            results_all[name] = info
+        
+        return results_all
+    def get_info_veheicles_on_roads(self):
+        results_all = {}
+        for ob in self.list_threads:
+            name = ob.path_video.split('/')[-1][:-4]
+            info = ob.get_info_veheicles()
+            results_all[name] = info 
+            
+        return results_all
     
     def log(self):
         # ANSI màu
