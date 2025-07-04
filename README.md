@@ -1,3 +1,6 @@
+# 📺 DEMO
+
+![Dashboard Demo](https://s3.ezgif.com/tmp/ezgif-3cb579674a790e.gif)
 # Smart Transportation System
 
 ## 🚦 Overview
@@ -95,7 +98,4 @@ uvicorn fast_api:app --reload
 ```
 - API will run at: `http://127.0.0.1:8000`
 
-## 📺 DEMO
-
-![Dashboard Demo](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/display_for_github/demo.png)
 
