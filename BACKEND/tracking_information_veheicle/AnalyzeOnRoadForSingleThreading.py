@@ -2,7 +2,7 @@ import cv2
 import threading
 
 from scipy.__config__ import show
-from AnalyzeOnRoad import AnalyzeOnRoad
+from tracking_information_veheicle.AnalyzeOnRoad import AnalyzeOnRoad
 from queue import Queue
 import time
 import base64

@@ -135,17 +135,17 @@ class AnalyzeOnRoad:
                 label = f"{str(speed_id)} km/h" if class_id == 0 else f"{str(speed_id)} km/h"
                 color = (0, 0, 255) if class_id == 1 else (255, 0, 0)
                 
-                cv2.putText(self.frame_predict, label, (cx - 50, cy - 15),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (51, 153, 255), 3)
-                cv2.circle(self.frame_predict, (cx, cy), 6, color, -1)
+                # cv2.putText(self.frame_predict, label, (cx - 50, cy - 15),
+                            # cv2.FONT_HERSHEY_SIMPLEX, 0.9, (51, 153, 255), 3)
+                # cv2.circle(self.frame_predict, (cx, cy), 6, color, -1)
 
         self.frame_output[540:, 150:] = self.frame_predict
         
-        cv2.rectangle(self.frame_output, (150, 540), (1600, 1200), (0, 255, 255), 2)
-        cv2.putText(self.frame_output, f"Xe may: {self.count_motor_display} xe, Vtb = {self.speed_motor_display} km/h", (5, 80),
-                    cv2.FONT_HERSHEY_SIMPLEX, 2.8, (0, 0, 200), 12)
-        cv2.putText(self.frame_output, f"O to: {self.count_car_display} xe, Vtb = {self.speed_car_display} km/h", (5, 200),
-                    cv2.FONT_HERSHEY_SIMPLEX, 2.8, (200, 0, 0), 12)
+        cv2.rectangle(self.frame_output, (150, 540), (1600, 1200), (0, 255, 255), 4)
+        cv2.putText(self.frame_output, f"Xe may: {self.count_motor_display} xe, Vtb = {self.speed_motor_display} km/h", (15, 80),
+                    cv2.FONT_HERSHEY_SIMPLEX, 2.8, (0, 0, 200), 14)
+        cv2.putText(self.frame_output, f"O to: {self.count_car_display} xe, Vtb = {self.speed_car_display} km/h", (15, 200),
+                    cv2.FONT_HERSHEY_SIMPLEX, 2.8, (200, 0, 0), 14)
     
     def process_on_single_video(self):
         cam = cv2.VideoCapture(self.path_video)

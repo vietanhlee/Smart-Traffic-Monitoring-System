@@ -60,7 +60,15 @@ Additionally, the system aims to integrate a chatbot-based query interface that 
 - Required libraries from `requirements_cpu.txt` or `requirements_gpu.txt`
 - Web browser (Chrome, Edge, Firefox, etc.)
 
-### 💾 Installation
+
+### 💾 Installation for FRONTEND
+### REQUIREMENT: NODEJS > 18:
+#### install libraries:
+```bash
+npm install lucide-react
+```
+
+### 💾 Installation for BACKEND
 #### On CPU:
 ```bash
 pip install -r requirements_cpu.txt
@@ -71,11 +79,22 @@ pip install -r requirements_gpu.txt
 ```
 
 ### 🚀 Launch the System
+
+#### Run frontend:
+```bash
+npm start
+```
+
+#### Run backend:
+
+```bash
+cd BACKEND
+```
+
 ```bash
 uvicorn fast_api:app --reload
 ```
 - API will run at: `http://127.0.0.1:8000`
-- Open `index.html` in your browser to view the dashboard.
 
 ## 📺 DEMO
 
