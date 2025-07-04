@@ -1,9 +1,9 @@
 # Smart Transportation System
 
 ## 🚦 Overview
-This project is a Smart Transportation System designed to monitor and evaluate real-time traffic congestion in urban areas using traffic surveillance cameras. The system processes video streams, applies deep learning models for vehicle detection and tracking, and outputs key traffic metrics such as vehicle count and speed. These metrics are served via a local API and continuously streamed to a frontend interface.
+- This project is a Smart Transportation System designed to monitor and evaluate real-time traffic congestion in urban areas using traffic surveillance cameras. The system processes video streams, applies deep learning models for vehicle detection and tracking, and outputs key traffic metrics such as vehicle count and speed. These metrics are served via a local API and continuously streamed to a frontend interface.
 
-Additionally, the system aims to integrate a chatbot-based query interface that allows drivers or users to request traffic information about specific routes. The chatbot leverages language models and natural language processing to provide concise and useful responses, making the system both interactive and driver-friendly.
+- Additionally, the system aims to integrate a chatbot-based query interface that allows drivers or users to request traffic information about specific routes. The chatbot leverages language models and natural language processing to provide concise and useful responses, making the system both interactive and driver-friendly.
 
 ## 🎯 Objectives
 - Monitor traffic conditions using city surveillance cameras.
@@ -59,10 +59,9 @@ Additionally, the system aims to integrate a chatbot-based query interface that 
 - Python >= 3.11
 - Required libraries from `requirements_cpu.txt` or `requirements_gpu.txt`
 - Web browser (Chrome, Edge, Firefox, etc.)
-
+- NODEJS > 18
 
 ### 💾 Installation for FRONTEND
-### REQUIREMENT: NODEJS > 18:
 #### install libraries:
 ```bash
 npm install lucide-react
@@ -98,8 +97,5 @@ uvicorn fast_api:app --reload
 
 ## 📺 DEMO
 
-![Dashboard Demo](https://raw.githubusercontent.com/vietanhlee/SIC-project/refs/heads/main/display%20github/SIC.png)
-
----
-> This project helps drivers avoid congestion and make smarter navigation decisions using real-time traffic analysis and interactive chatbot support.
+![Dashboard Demo](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/display_for_github/demo.png)
 
