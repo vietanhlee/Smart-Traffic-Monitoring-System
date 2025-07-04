@@ -1,6 +1,6 @@
 # 📺 DEMO
 
-![Dashboard Demo](https://s3.ezgif.com/tmp/ezgif-3cb579674a790e.gif)
+![Dashboard Demo](https://s3.ezgif.com/tmp/ezgif-31877095f1ebb6.gif)
 # Smart Transportation System
 
 ## 🚦 Overview
