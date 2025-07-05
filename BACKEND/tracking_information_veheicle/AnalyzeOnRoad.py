@@ -3,7 +3,7 @@ import os
 import numpy as np
 from datetime import datetime
 from ultralytics import solutions
-import base64
+
 # Set environment variable to avoid KMP duplicate library error
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -91,9 +91,9 @@ class AnalyzeOnRoad:
         pass
         '''for sub class define'''
     def process_single_frame(self, frame_input) -> None:   
-        frame_in = cv2.resize(frame_input.copy(), (1600, 1200))
+        frame_in = cv2.resize(frame_input, (600, 400))
         self.frame_output = frame_in.copy()
-        self.frame_predict = np.ascontiguousarray(frame_in[540:, 150:])
+        self.frame_predict = np.ascontiguousarray(frame_in[130:, 50:])
         
         frame_predict_cp = self.frame_predict.copy()
         self.speed_tool.process(frame_predict_cp)
@@ -119,29 +119,41 @@ class AnalyzeOnRoad:
         self.update_data_for_vehicle()
                     
     def draw_info_to_frame_output(self):
+        
+        pts = np.array([[50, 400], [50, 265], [370, 130], [600, 130], [600, 400]], np.int32)
+        pts = pts.reshape((-1, 1, 2))  # Đảm bảo đúng shape (N,1,2)
+        
         if self.ids is not None:
             for i, box in enumerate(self.boxes):
+                x1, y1, x2, y2 = box
+                cx, cy = int((x1 + x2) / 2), int((y1 + y2) / 2)
+
+                result = cv2.pointPolygonTest(pts, (cx + 50, cy + 130), False)
+
+                if(result < 0):
+                    continue
+                
                 track_id = self.ids[i]
                 class_id = self.classes[i]
                 speed_id = self.speeds.get(track_id, 0)  # 0 là giá trị mặc định nếu không tìm thấy
 
-                x1, y1, x2, y2 = box
-                cx, cy = int((x1 + x2) / 2), int((y1 + y2) / 2)
-                    
+                
                 label = f"{str(speed_id)} km/h" if class_id == 0 else f"{str(speed_id)} km/h"
                 color = (0, 0, 255) if class_id == 1 else (255, 0, 0)
                 
                 cv2.putText(self.frame_predict, label, (cx - 50, cy - 15),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (51, 153, 255), 3)
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (51, 153, 255), 2)
                 cv2.circle(self.frame_predict, (cx, cy), 6, color, -1)
 
-        self.frame_output[540:, 150:] = self.frame_predict
+        self.frame_output[130:, 50:] = self.frame_predict
         
-        cv2.rectangle(self.frame_output, (150, 540), (1600, 1200), (0, 255, 255), 4)
-        cv2.putText(self.frame_output, f"Xe may: {self.count_motor_display} xe, Vtb = {self.speed_motor_display} km/h", (15, 80),
-                    cv2.FONT_HERSHEY_SIMPLEX, 2.8, (0, 0, 200), 14)
-        cv2.putText(self.frame_output, f"O to: {self.count_car_display} xe, Vtb = {self.speed_car_display} km/h", (15, 200),
-                    cv2.FONT_HERSHEY_SIMPLEX, 2.8, (200, 0, 0), 14)
+        # cv2.rectangle(self.frame_output, (50, 130), (600, 400), (0, 255, 255), 4)
+        
+        cv2.polylines(self.frame_output, [pts], isClosed=True, color=(0, 255, 255), thickness=4)
+        cv2.putText(self.frame_output, f"Xe may: {self.count_motor_display} xe, Vtb = {self.speed_motor_display} km/h", (5, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 200), 3)
+        cv2.putText(self.frame_output, f"O to: {self.count_car_display} xe, Vtb = {self.speed_car_display} km/h", (5, 80),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (200, 0, 0), 3)
     
     def process_on_single_video(self):
         cam = cv2.VideoCapture(self.path_video)
@@ -153,7 +165,7 @@ class AnalyzeOnRoad:
             
             self.process_single_frame(cap)
 
-            frame_display = cv2.resize(self.frame_output, (600, 400))
+            frame_display = self.frame_output
             if(self.show):
                 cv2.imshow('out', frame_display)
 
@@ -171,6 +183,6 @@ class AnalyzeOnRoad:
 #***************************************************  Code for testing script  *********************************************************************#
 
 if __name__ == '__main__':
-    obj = AnalyzeOnRoad(path_video= './video_test/Văn Quán.mp4')
+    obj = AnalyzeOnRoad(path_video= './video_test/Văn Phú.mp4')
     
     obj.process_on_single_video()

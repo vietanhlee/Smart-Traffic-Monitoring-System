@@ -7,10 +7,10 @@ services:
     volumes:
       - ./BACKEND:/app
   frontend:
-    build: ./FRONTEND_for_testing
+    build: ./
     ports:
       - "3000:3000"
     volumes:
-      - ./FRONTEND_for_testing:/app
+      - ./FRONTEND/app
     environment:
       - CHOKIDAR_USEPOLLING=true
