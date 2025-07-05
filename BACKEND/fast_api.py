@@ -1,5 +1,5 @@
 from fastapi.responses import JSONResponse
-from tracking_information_veheicle.AnalyzeOnRoadForMultiThreading import AnalyzeOnRoadForMultiThreading
+from tracking_information_veheicle import AnalyzeOnRoadForMultiThreading
 import sys
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException, Request

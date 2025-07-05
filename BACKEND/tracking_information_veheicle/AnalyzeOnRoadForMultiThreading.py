@@ -6,7 +6,7 @@ import time
 # sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 class AnalyzeOnRoadForMultiThreading:
     def __init__(self, path_videos = [
-                        # "./video test/Văn Quán.mp4",
+                        "./video_test/Văn Quán.mp4",
                         "./video_test/Văn Phú.mp4",
                         "./video_test/Nguyễn Trãi.mp4",
                         "./video_test/Ngã Tư Sở.mp4",

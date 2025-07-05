@@ -149,7 +149,7 @@ class AnalyzeOnRoad:
         while True:
             check, cap = cam.read()
             if not check:
-                print('Khong doc duoc video')
+                print(f'Không đọc được video: {self.path_video}')
             
             self.process_single_frame(cap)
 
@@ -171,6 +171,6 @@ class AnalyzeOnRoad:
 #***************************************************  Code for testing script  *********************************************************************#
 
 if __name__ == '__main__':
-    obj = AnalyzeOnRoad(path_video= './video_test/Ngã Tư Sở.mp4')
+    obj = AnalyzeOnRoad(path_video= './video_test/Văn Quán.mp4')
     
     obj.process_on_single_video()
