@@ -1,8 +1,12 @@
-utralytics
+langchain
+langchain_google_genai
+ultralytics
 numpy
 opencv-python
 fastapi
 uvicorn
 django
 flask
-torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+torch
+torchvision
+torchaudio

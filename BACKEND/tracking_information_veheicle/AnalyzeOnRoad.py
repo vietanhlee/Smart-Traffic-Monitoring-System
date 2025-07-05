@@ -131,9 +131,9 @@ class AnalyzeOnRoad:
                 label = f"{str(speed_id)} km/h" if class_id == 0 else f"{str(speed_id)} km/h"
                 color = (0, 0, 255) if class_id == 1 else (255, 0, 0)
                 
-                # cv2.putText(self.frame_predict, label, (cx - 50, cy - 15),
-                            # cv2.FONT_HERSHEY_SIMPLEX, 0.9, (51, 153, 255), 3)
-                # cv2.circle(self.frame_predict, (cx, cy), 6, color, -1)
+                cv2.putText(self.frame_predict, label, (cx - 50, cy - 15),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (51, 153, 255), 3)
+                cv2.circle(self.frame_predict, (cx, cy), 6, color, -1)
 
         self.frame_output[540:, 150:] = self.frame_predict
         

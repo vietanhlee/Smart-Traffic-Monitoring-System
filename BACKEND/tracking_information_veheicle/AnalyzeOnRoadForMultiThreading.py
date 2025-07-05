@@ -1,7 +1,9 @@
 from tracking_information_veheicle.AnalyzeOnRoadForSingleThreading import AnalyzeOnRoadForSingleThreading
 import threading
 import time
-
+# import sys
+# import os
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 class AnalyzeOnRoadForMultiThreading:
     def __init__(self, path_videos = [
                         # "./video test/Văn Quán.mp4",
@@ -80,7 +82,7 @@ class AnalyzeOnRoadForMultiThreading:
                 print(f"{'-'*102}")
                 for ob in self.list_threads:
                     name = ob.path_video.split('/')[-1][:-4]
-                    info = ob.get_info()
+                    info = ob.get_info_veheicles()
                     if isinstance(info, dict):
                         info_str = f"Ô tô: {info.get('count_car')} xe, Vtb: {info.get('speed_car')} km/h | Xe máy: {info.get('count_motor')} xe, Vtb: {info.get('speed_motor')} km/s"
                     else:

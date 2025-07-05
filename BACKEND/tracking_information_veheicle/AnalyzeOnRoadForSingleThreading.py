@@ -100,7 +100,7 @@ class AnalyzeOnRoadForSingleThreading(AnalyzeOnRoad):
         self.thread.join()  # Chờ thread xử lý video kết thúc
 
     def get_info(self):
-        with self.lock:
+        with self.lock_for_get_frame:
             return self.result
     def get_frame(self):
         res = {"frame": None}
