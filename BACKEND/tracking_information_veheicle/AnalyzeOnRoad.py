@@ -10,7 +10,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 class AnalyzeOnRoad:
     def __init__(self, path_video = None, model_path = "best.pt", time_step = 30,
-                 is_draw = True, device= 'cpu', iou = 0.3, conf = 0.2, meter_per_pixel = 0.05, show = True):
+                 is_draw = True, device= 'cpu', iou = 0.3, conf = 0.2, meter_per_pixel = 0.04, show = True):
         self.speed_tool = solutions.SpeedEstimator(
             model = model_path,
             verbose = False,
@@ -97,7 +97,7 @@ class AnalyzeOnRoad:
         
         frame_predict_cp = self.frame_predict.copy()
         self.speed_tool.process(frame_predict_cp)
-        
+        self.speed_tool.region = np.array([[50, 400], [50, 280], [370, 130], [600, 130], [600, 400]], np.int32) - np.array([[50, 130]])
         self.speeds = self.speed_tool.spd    
         self.ids = self.speed_tool.track_data.id.cpu().numpy().astype('int')
         self.boxes = self.speed_tool.track_data.xyxy.cpu().numpy().astype('int')
@@ -120,8 +120,7 @@ class AnalyzeOnRoad:
                     
     def draw_info_to_frame_output(self):
         
-        pts = np.array([[50, 400], [50, 265], [370, 130], [600, 130], [600, 400]], np.int32)
-        pts = pts.reshape((-1, 1, 2))  # Đảm bảo đúng shape (N,1,2)
+        pts = np.array([[50, 400], [50, 265], [370, 130], [600, 130], [600, 400]], np.int32).reshape((-1, 1, 2))  # Đảm bảo đúng shape (N,1,2)
         
         if self.ids is not None:
             for i, box in enumerate(self.boxes):
@@ -183,6 +182,6 @@ class AnalyzeOnRoad:
 #***************************************************  Code for testing script  *********************************************************************#
 
 if __name__ == '__main__':
-    obj = AnalyzeOnRoad(path_video= './video_test/Văn Phú.mp4')
+    obj = AnalyzeOnRoad(path_video= './video_test/Ngã Tư Sở.mp4')
     
     obj.process_on_single_video()
