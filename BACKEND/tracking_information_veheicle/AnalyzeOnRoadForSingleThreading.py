@@ -10,7 +10,7 @@ import base64
 class AnalyzeOnRoadForSingleThreading(AnalyzeOnRoad):
     def __init__(self, path_video=None, model_path="best.pt",  
                  time_step=30, is_draw=True, device='cpu', 
-                 iou=0.3, conf=0.2, meter_per_pixel=0.03, show=False):
+                 iou=0.3, conf=0.2, meter_per_pixel=0.06, show=False):
         
         super().__init__(path_video, model_path, time_step, is_draw, device, iou, conf, meter_per_pixel, show)
         self.queue_frame = Queue()        

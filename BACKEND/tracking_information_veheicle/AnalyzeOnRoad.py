@@ -7,10 +7,14 @@ from ultralytics import solutions
 # Set environment variable to avoid KMP duplicate library error
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
+def safe_avg_np(lst):
+    arr = np.array(lst, dtype=np.int32)
+    non_zero = arr[arr != 0]
+    return int(non_zero.mean()) if non_zero.size > 0 else 0
 
 class AnalyzeOnRoad:
     def __init__(self, path_video = None, model_path = "best.pt", time_step = 30,
-                 is_draw = True, device= 'cpu', iou = 0.3, conf = 0.2, meter_per_pixel = 0.04, show = True):
+                 is_draw = True, device= 'cpu', iou = 0.3, conf = 0.2, meter_per_pixel = 0.06, show = True):
         self.speed_tool = solutions.SpeedEstimator(
             model = model_path,
             verbose = False,
@@ -18,7 +22,8 @@ class AnalyzeOnRoad:
             device = device,
             iou = iou,
             conf = conf,
-            meter_per_pixel = meter_per_pixel,
+            meter_per_pixel = 0.15,
+            max_hist = 12
         )
         # DEBUG: Print available methods of SpeedEstimator
         # print("SpeedEstimator methods:", dir(self.speed_tool))  # <--- Thêm dòng này
@@ -57,25 +62,11 @@ class AnalyzeOnRoad:
         if self.delta_time >= self.time_step:
             self.time_pre = time_now
             
-            if self.list_count_car:
-                self.count_car_display = sum(self.list_count_car) // len(self.list_count_car)
-            else:
-                self.count_car_display = 0
-
-            if self.list_speed_car:
-                self.speed_car_display = sum(self.list_speed_car) // len(self.list_speed_car)
-            else:
-                self.speed_car_display = 0
-
-            if self.list_count_motor:
-                self.count_motor_display = sum(self.list_count_motor) // len(self.list_count_motor)
-            else:
-                self.count_motor_display = 0
-
-            if self.list_speed_motor:
-                self.speed_motor_display = sum(self.list_speed_motor) // len(self.list_speed_motor)
-            else:
-                self.speed_motor_display = 0
+            
+            self.count_car_display = safe_avg_np(self.list_count_car)
+            self.speed_car_display = safe_avg_np(self.list_speed_car)
+            self.count_motor_display = safe_avg_np(self.list_count_motor)
+            self.speed_motor_display = safe_avg_np(self.list_speed_motor)
             
             self.update_for_vehicle()
             
