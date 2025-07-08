@@ -1,5 +1,5 @@
 from fastapi.responses import JSONResponse
-from tracking_information_veheicle import AnalyzeOnRoadForMultiThreading
+from AnalyzeOnRoadForMultiThreading import AnalyzeOnRoadForMultiprocessing
 import sys
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException, Request
@@ -30,25 +30,14 @@ def startup_event():
     Sự kiện khởi động ứng dụng.
     """
     global analyze_multi
-    if analyze_multi is None:
-        analyze_multi = AnalyzeOnRoadForMultiThreading(show=False, show_log=False, )
-        analyze_multi.process()
-        
+    if analyze_multi is None:    
+        analyze_multi = AnalyzeOnRoadForMultiprocessing(
+            show_log= False
+        )
+        analyze_multi.run_multiprocessing() 
     global chat_llm
     if chat_llm is None:
         chat_llm = ChatLLM()
-
-# API endpoint lấy kết quả phân tích cho frontend
-@app.get("/results")
-def get_results():
-    global analyze_multi
-    if analyze_multi is None:
-        # Nếu chưa khởi tạo xong thì trả về lỗi
-        return JSONResponse(content={"error": "Analyzer not initialized"}, status_code=500)
-    # Lấy kết quả từ tất cả các luồng phân tích video
-    results = analyze_multi.get_results_for_all_threads()
-    return JSONResponse(content=results)
-
 
 @app.get("/veheicles")
 def get_veheicles():
@@ -57,7 +46,7 @@ def get_veheicles():
         # Nếu chưa khởi tạo xong thì trả về lỗi
         return JSONResponse(content={"error": "Analyzer not initialized"}, status_code=500)
     # Lấy kết quả từ tất cả các luồng phân tích video
-    infor_veheicles_on_roads = analyze_multi.get_info_veheicles_on_roads()
+    infor_veheicles_on_roads = analyze_multi.get_veheicles_info()
     return JSONResponse(content=infor_veheicles_on_roads)
 
 @app.get("/frames")
@@ -67,7 +56,7 @@ def get_frames():
         # Nếu chưa khởi tạo xong thì trả về lỗi
         return JSONResponse(content={"error": "Analyzer not initialized"}, status_code=500)
     # Lấy kết quả từ tất cả các luồng phân tích video
-    frame_of_roads = analyze_multi.get_frame_of_roads()
+    frame_of_roads = analyze_multi.get_frames()
     return JSONResponse(content= frame_of_roads)
 
 
