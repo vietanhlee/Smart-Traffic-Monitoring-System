@@ -62,11 +62,25 @@ class AnalyzeOnRoad:
         if self.delta_time >= self.time_step:
             self.time_pre = time_now
             
-            
-            self.count_car_display = safe_avg_np(self.list_count_car)
-            self.speed_car_display = safe_avg_np(self.list_speed_car)
-            self.count_motor_display = safe_avg_np(self.list_count_motor)
-            self.speed_motor_display = safe_avg_np(self.list_speed_motor)
+            if self.list_count_car:
+                self.count_car_display = int(sum(self.list_count_car) // len(self.list_count_car))
+            else:
+                self.count_car_display = 0
+
+            if self.list_speed_car:
+                self.speed_car_display = int(sum(self.list_speed_car) // len(self.list_speed_car))
+            else:
+                self.speed_car_display = 0
+
+            if self.list_count_motor:
+                self.count_motor_display = int(sum(self.list_count_motor) // len(self.list_count_motor))
+            else:
+                self.count_motor_display = 0
+
+            if self.list_speed_motor:
+                self.speed_motor_display = int(sum(self.list_speed_motor) // len(self.list_speed_motor))
+            else:
+                self.speed_motor_display = 0
             
             self.update_for_vehicle()
             
@@ -94,8 +108,8 @@ class AnalyzeOnRoad:
         self.boxes = self.speed_tool.track_data.xyxy.cpu().numpy().astype('int')
         self.classes = self.speed_tool.track_data.cls.cpu().numpy().astype('int')
     
-        count_car = np.count_nonzero(self.classes == 0)    
-        count_motor = np.count_nonzero(self.classes == 1)
+        count_car = int(np.count_nonzero(self.classes == 0))
+        count_motor = int(np.count_nonzero(self.classes == 1))
         self.list_count_car.append(count_car)
         self.list_count_motor.append(count_motor)
         
