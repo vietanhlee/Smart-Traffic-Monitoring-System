@@ -7,7 +7,7 @@ services:
     volumes:
       - ./BACKEND:/app
     env_file:
-      - .env
+      - ./BACKEND/.env
   frontend:
     build: ./
     build: ./
