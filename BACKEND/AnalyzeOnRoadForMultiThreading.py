@@ -215,7 +215,7 @@ if __name__ == '__main__':
     # freeze_support should be called immediately in the main block
     freeze_support()
     analyzer = AnalyzeOnRoadForMultiprocessing(
-        # show_log= False,
+        show_log= False,
     )
     analyzer.run_multiprocessing()
   
