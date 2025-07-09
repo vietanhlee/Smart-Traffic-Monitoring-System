@@ -162,7 +162,7 @@ class AnalyzeOnRoadForMultiprocessing():
             Process(target= self.log, args=(self.names, self.shared_data)).start()
 
         
-        self.join_process()
+        # self.join_process()
     
     def join_process(self):   
         """ Hàm để join các process """ 
@@ -215,7 +215,7 @@ if __name__ == '__main__':
     # freeze_support should be called immediately in the main block
     freeze_support()
     analyzer = AnalyzeOnRoadForMultiprocessing(
-        show_log= True,
+        # show_log= False,
     )
     analyzer.run_multiprocessing()
   
