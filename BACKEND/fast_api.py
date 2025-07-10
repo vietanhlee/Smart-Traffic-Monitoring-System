@@ -32,7 +32,9 @@ def startup_event():
     global analyze_multi
     if analyze_multi is None:    
         analyze_multi = AnalyzeOnRoadForMultiprocessing(
-            show_log= False
+            show_log= False,
+            show= False,
+            is_join_processes= False
         )
         analyze_multi.run_multiprocessing() 
     global chat_llm

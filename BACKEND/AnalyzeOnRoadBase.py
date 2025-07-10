@@ -41,7 +41,7 @@ class AnalyzeOnRoadBase:
             device (str): Dùng GPU hoặc CPU. Defaults to 'cpu'.
             iou (float): Ngưỡng tin cậy về bounding box . Defaults to 0.3.
             conf (float): Ngưỡng tin cậy về nhãn được dự đoán. Defaults to 0.2.
-            show (bool): Hiển thị video xử lý qua opencv, đặt là False khi tích làm server tránh lãng phí tài nguyên.\
+            show (bool): Hiển thị video xử lý qua opencv, đặt là False khi tích hợp làm server tránh lãng phí tài nguyên.\
             Defaults to True.
         """
         self.speed_tool = solutions.SpeedEstimator(

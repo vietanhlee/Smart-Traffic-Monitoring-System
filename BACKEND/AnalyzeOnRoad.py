@@ -10,8 +10,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 class AnalyzeOnRoad(AnalyzeOnRoadBase):
     """Class này kế thừa từ class Base (xử lý tuần tự). Class con này chưa phải là code để multiprocessing\
     mà chỉ là một chút cải tiến từ code base (class Base) để có thể vừa xử lý video đầu vào ở một process\
-    khác vừa có thể truy xuất thông tin về kết quả mà không bị hiện tượng tranh chấp dữ liệu
-    
+    khác vừa có thể truy xuất thông tin về kết quả mà không bị hiện tượng tranh chấp dữ liệu    
     """    
     def __init__(self, path_video, meter_per_pixel, info_dict, frame_dict, 
                  lock_info, lock_frame, model_path="best.pt", time_step=30,

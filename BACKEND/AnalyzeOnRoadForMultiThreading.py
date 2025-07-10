@@ -13,6 +13,7 @@ class AnalyzeOnRoadForMultiprocessing():
             của các process với nhau
         shared_data (Manager().dict()): dict quản lý các Lock và các kiểu dữ liệu chia sẽ chung khác\
             của các process với nhau chặt chẽ hơn
+        processes (list): các process con đang chạy 
     """
     def __init__(self,path_videos = [
                         "./video_test/Văn Quán.mp4",
@@ -21,7 +22,7 @@ class AnalyzeOnRoadForMultiprocessing():
                         "./video_test/Ngã Tư Sở.mp4",
                         "./video_test/Đường Láng.mp4",
                     ],
-        meter_per_pixels = [0.035, 0.08, 0.45, 0.12, 0.06], show_log = False):
+        meter_per_pixels = [0.035, 0.08, 0.45, 0.12, 0.06], show_log = False, show = False, is_join_processes = True):
         """_summary_
 
         Args:
@@ -36,19 +37,32 @@ class AnalyzeOnRoadForMultiprocessing():
         
         self.manager = Manager()
         self.shared_data = self.manager.dict()  # Dùng để lưu trữ thông tin chung giữa các process
+        
         self.show_log = show_log
+        self.show = show
         self.processes = []
         self.names = []
-        
+        self.is_join_processes = is_join_processes
     @staticmethod
     def run_analyze_process(path_video, meter_per_pixel, info_dict, frame_dict, 
-                        lock_info, lock_frame, **kwargs):
+                        lock_info, lock_frame, show):
         """Hàm chạy trong process riêng, làm hàm kích hoạt cho Multiprocessing. Đặt hàm này là static method vì\
         để tránh việc sử dụng multiprocessing bị lỗi do nó sẽ picke các biến liên quan đến hàm để chuyển dữ liệu\
         sang process con, đặc biệt là self chứa các tool của YOLO và các biến khác không thể picke được do đó \
         các đối tượng liên quan đến YOLO không picke được ta sẽ đưa nó vào hàm kích hoạt này luôn để khởi tạo\
         và khi gọi kích hoạt nó thì nó sẽ đồng thời được khởi tạo ở process con luôn, đảm bảo tính toàn vẹn dữ liệu
         Tất nhiên sẽ có nhưunxg thuộc tính khác trong self ko picke được nên ta để static cho an toàn dữ liệu
+        Args:
+            path_video (str): Đường dẫn đến video
+            meter_per_pixel (float): Tỉ lệ 1 mét ngoài đời với 1 pixel
+            lock_info (Manager().Lock()): Khoá để lấy và cập nhật dữ liệu thông tin các phương tiện hiện tại.
+            lock_frame (Manager().Lock()): Khoá lấy để và cập nhật dữ liệu frame hiện tại.
+            info_dict (Manager().dict()): Một dict dùng để chia sẽ giữ liệu trung gian giữa các process với nhau,\
+            mặc định là sẽ được truyền tham chiếu và nó sẽ được thay đỏi nếu các process con thay đổi nó cho nên\
+            ta có thể truy cập dữ liệu kết quả xử lý ở bên ngoài dễ dàng nhưng phải đảm bảo truy cập an toàn
+            frame_dict (Manager().dict()): Tương tự info_dict nhưng dùng để chứa thông tin mã hoá base64 của ảnh.\
+            Lý do tại sao dùng dict mà không dùng Manager().Value(str, "") là do tính bất biến của str dễ bị lỗi.\
+            Dùng dict thay thế thì cấu trúc nó sẽ như sau {"frame": <base64 string>}
         """
         try:
             analyzer = AnalyzeOnRoad(
@@ -58,7 +72,8 @@ class AnalyzeOnRoadForMultiprocessing():
                 frame_dict=frame_dict,
                 lock_info=lock_info,
                 lock_frame=lock_frame,
-                **kwargs
+                show= show
+                # **kwargs
             )
             analyzer.process_on_single_video()
         except Exception as e:
@@ -112,7 +127,8 @@ class AnalyzeOnRoadForMultiprocessing():
     def run_multiprocessing(self):
         """Hàm kích hoạt chạy multi processing"""
         freeze_support()
-        # Tạo shared data structures
+        
+        # Lặp qua để xử lý từng video với từng đường dẫn và tham số meter_per_pixel một 
         for path_video, meter_per_pixel in zip(self.path_videos, self.meter_per_pixels):
             name = path_video.split('/')[-1][:-4]
             self.names.append(name)
@@ -148,9 +164,9 @@ class AnalyzeOnRoadForMultiprocessing():
                 target=AnalyzeOnRoadForMultiprocessing.run_analyze_process, 
                 args=(
                     path_video, meter_per_pixel, info_dict, frame_dict, 
-                    lock_info, lock_frame
+                    lock_info, lock_frame, self.show
                 ), 
-                kwargs={'show': False}
+                # kwargs={'show': True}
             )
             self.processes.append(p)
       
@@ -161,8 +177,8 @@ class AnalyzeOnRoadForMultiprocessing():
         if self.show_log:
             Process(target= self.log, args=(self.names, self.shared_data)).start()
 
-        
-        # self.join_process()
+        if self.is_join_processes:
+            self.join_process()
     
     def join_process(self):   
         """ Hàm để join các process """ 
@@ -215,7 +231,9 @@ if __name__ == '__main__':
     # freeze_support should be called immediately in the main block
     freeze_support()
     analyzer = AnalyzeOnRoadForMultiprocessing(
-        show_log= False,
+        show_log= True,
+        show= True, 
+        is_join_processes= True
     )
     analyzer.run_multiprocessing()
   
