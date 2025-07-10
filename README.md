@@ -1,8 +1,8 @@
-# 📺 DEMO
+# Smart Transportation System
+
+## 📺 DEMO
 
 ![Dashboard Demo](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/display_for_github/demo.png)
-
-# Smart Transportation System
 
 ## 🚦 Overview
 
@@ -21,8 +21,8 @@
 
 ## 🧪 How to Run
 ## Please download `video road` [here](https://drive.google.com/drive/folders/1gkac5U5jEs174p7V7VC3rCmgvO_cVwxH?usp=drive_link) and put it into `BACKEND` folder
-### 🖥️ System Requirements
 
+### 🖥️ System Requirements
 - Python >= 3.11
 - Required libraries from `requirements_cpu.txt` or `requirements_gpu.txt`
 - Web browser (Chrome, Edge, Firefox, etc.)
@@ -33,14 +33,14 @@
 #### install libraries:
 
 ```bash
-npm install lucide-react
+npm install
 ```
 
 ### 💾 Installation for BACKEND
 
 #### Firstly:
 ```bash
-cd BACKEND
+cd app
 ```
 
 #### Secondly:
@@ -59,7 +59,7 @@ pip install -r requirements_gpu.txt
 
 #### Create `.env` file (required for Gemini API)
 
-In the `BACKEND` directory, create a file named `.env` and add your Google API key:
+In the `app` directory, create a file named `.env` and add your Google API key:
 
 ```bash
 GOOGLE_API_KEY=your_google_api_key_here
@@ -80,11 +80,11 @@ npm start
 #### Run backend:
 
 ```bash
-cd BACKEND
+cd app
 ```
 
 ```bash
-uvicorn fast_api:app --reload
+uvicorn main:app --reload
 ```
 
 - API will run at: `http://127.0.0.1:8000`
@@ -98,7 +98,7 @@ uvicorn fast_api:app --reload
 - OpenCV, YOLO (custom-trained)
 - Object Tracking (Bytetrack)
 - FastAPI
-- Multithreading (for processing multiple video streams)
+- Multiprocessing (for processing multiple video streams)
 - Langchain Platform (for building the LLM-driven chatbot)
 
 ### Frontend
