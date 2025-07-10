@@ -2,7 +2,7 @@ import cv2
 import os
 import numpy as np
 import base64
-from AnalyzeOnRoadBase import AnalyzeOnRoadBase
+from services.AnalyzeOnRoadBase import AnalyzeOnRoadBase
 
 # Đặt như này để tránh trường hợp lỗi do dùng chung thư viện AI 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"

@@ -23,21 +23,11 @@ yarn-debug.log*
 yarn-error.log*
 
 websocket.py
-duyet3
-runs
-DJANGO
-ideal.py
 streamlit_live_test_model.py
 tempCodeRunnerFile.py
 __pycache__
-temp
-training.ipynb
 video_test
-main.py
 .vscode
 .env
-flask_api
-LLMCHAT_testing
-
 BACKEND_threading
 note.txt

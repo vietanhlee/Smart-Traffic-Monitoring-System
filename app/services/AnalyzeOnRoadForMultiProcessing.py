@@ -2,7 +2,7 @@ from multiprocessing import Process, Manager
 import time
 from multiprocessing import freeze_support
 import os
-from AnalyzeOnRoad import AnalyzeOnRoad
+from services.AnalyzeOnRoad import AnalyzeOnRoad
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -10,9 +10,9 @@ class AnalyzeOnRoadForMultiprocessing():
     """
     Attributes:
         manager (Manager()): Đối tượng để tạo các Lock() và các kiểu dữ liệu chia sẽ chung khác\
-            của các process với nhau
+        của các process với nhau
         shared_data (Manager().dict()): dict quản lý các Lock và các kiểu dữ liệu chia sẽ chung khác\
-            của các process với nhau chặt chẽ hơn
+        của các process với nhau chặt chẽ hơn
         processes (list): các process con đang chạy 
     """
     def __init__(self,path_videos = [
@@ -22,15 +22,21 @@ class AnalyzeOnRoadForMultiprocessing():
                         "./video_test/Ngã Tư Sở.mp4",
                         "./video_test/Đường Láng.mp4",
                     ],
-        meter_per_pixels = [0.035, 0.08, 0.45, 0.12, 0.06], show_log = False, show = False, is_join_processes = True):
-        """_summary_
+        meter_per_pixels = [0.03, 0.09, 0.4, 0.11, 0.06], 
+        show_log = False, show = False, is_join_processes = True):
+        """Khi tích hợp API vào thiết kế do cơ chế envent loop vòng lặp bất tận nên không cần join\
+        các process lại để tránh bị kill. Do đó phải đặt is_join_processes = False nếu không nó sẽ chặn\
+        envent loop của api khiến server nghẽn
 
         Args:
             path_videos (list, optional): Đường dẫn các video. \
             Defaults to [ "./video_test/Văn Quán.mp4", "./video_test/Văn Phú.mp4", "./video_test/Nguyễn Trãi.mp4", "./video_test/Ngã Tư Sở.mp4", "./video_test/Đường Láng.mp4", ].
             meter_per_pixels (list, optional): list các tỉ số met/pixel. \
-            Defaults to [0.035, 0.08, 0.45, 0.12, 0.06].
+            Defaults to [0.03, 0.09, 0.4, 0.11, 0.06].
             show_log (bool, optional): hiển thị log hoặc không. Defaults to False.
+            show (bool, optional): hiển thị video bằng cv2 hoặc không. Defaults to False.
+            is_join_processes (bool, optional): join các process con lại (nên tắt đi khi tích hợp api).\ 
+            Defaults to True.
         """
         self.path_videos = path_videos
         self.meter_per_pixels = meter_per_pixels
@@ -51,7 +57,9 @@ class AnalyzeOnRoadForMultiprocessing():
         sang process con, đặc biệt là self chứa các tool của YOLO và các biến khác không thể picke được do đó \
         các đối tượng liên quan đến YOLO không picke được ta sẽ đưa nó vào hàm kích hoạt này luôn để khởi tạo\
         và khi gọi kích hoạt nó thì nó sẽ đồng thời được khởi tạo ở process con luôn, đảm bảo tính toàn vẹn dữ liệu
-        Tất nhiên sẽ có nhưunxg thuộc tính khác trong self ko picke được nên ta để static cho an toàn dữ liệu
+        Tất nhiên sẽ có nhưunxg thuộc tính khác trong self ko picke được nên ta để static cho an toàn dữ liệu\
+        Dùng @staticmethod để tránh pickle cả class instance. Chỉ truyền những tham số cần thiết,\ 
+        không truyền toàn bộ self
         Args:
             path_video (str): Đường dẫn đến video
             meter_per_pixel (float): Tỉ lệ 1 mét ngoài đời với 1 pixel
@@ -85,7 +93,8 @@ class AnalyzeOnRoadForMultiprocessing():
         Hàm này lấy data tổng thể ở share_data (Manager.dict() dùng để giao tiếp các process với nhau)
         Đặt hàm này là static method vì để tránh việc sử dụng multiprocessing bị lỗi do nó sẽ picke các biến\
         liên quan đến hàm để chuyển dữ liệu sang process con, đặc biệt là self chứa các tool của YOLO\
-        và các biến khác không thể picke được"""
+        và các biến khác không thể picke được.Dùng @staticmethod để tránh pickle cả class instance. Chỉ \
+        truyền những tham số cần thiết, không truyền toàn bộ self"""
         
         YELLOW = "\033[93m"
         GREEN = "\033[92m"

@@ -1,9 +1,9 @@
 from fastapi.responses import JSONResponse
-from AnalyzeOnRoadForMultiThreading import AnalyzeOnRoadForMultiprocessing
+from services.AnalyzeOnRoadForMultiProcessing import AnalyzeOnRoadForMultiprocessing
 import sys
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException, Request
-from CHATBOT import ChatLLM
+from services.CHATBOT import ChatLLM
 
 
 app = FastAPI()
@@ -29,6 +29,7 @@ def startup_event():
     """
     Sự kiện khởi động ứng dụng.
     """
+    
     global analyze_multi
     if analyze_multi is None:    
         analyze_multi = AnalyzeOnRoadForMultiprocessing(
@@ -81,27 +82,3 @@ def chat(request: ChatRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-# Các chú thích dưới đây là giải thích chi tiết cho từng phần code, bạn có thể xóa nếu muốn code gọn hơn.
-
-# 1. @app.on_event("startup")
-#    Khi server FastAPI khởi động, hàm này sẽ được gọi tự động.
-#    Mục đích: Khởi tạo đối tượng analyze_multi (phân tích đa luồng) nếu chưa có.
-#    Gọi analyze_multi.process() để bắt đầu xử lý các video ngay khi server chạy.
-
-# 2. @app.get("/results")
-#    Đây là endpoint GET, trả về kết quả phân tích cho frontend.
-#    Nếu analyze_multi chưa khởi tạo, trả về lỗi 500 và thông báo.
-#    Nếu đã có, gọi analyze_multi.get_results_for_all_threads() để lấy kết quả của tất cả các video/luồng.
-#    Trả về kết quả dưới dạng JSON cho frontend.
-
-# Lưu ý về luồng:
-# - Khi chạy FastAPI (bằng uvicorn/gunicorn), server sẽ giữ tiến trình chạy liên tục để lắng nghe request
-#  HTTP.
-# - Các thread bạn tạo trong analyze_multi.process() (mặc định daemon=False) sẽ tiếp tục chạy song song 
-# với main thread của FastAPI.
-# - FastAPI/uvicorn sẽ KHÔNG kết thúc chương trình cho đến khi bạn dừng server (Ctrl+C hoặc kill process).
-# - Vì vậy, không cần join() các thread phân tích video, chương trình vẫn không bị thoát vì event loop 
-# của FastAPI vẫn giữ tiến trình sống.
-# - Nếu chạy script này như một script Python bình thường (không phải FastAPI server), main thread kết 
-# thúc sẽ làm các thread con daemon=True bị dừng theo.
-# - Nhưng với FastAPI, tiến trình server luôn sống, nên các thread phân tích vẫn tiếp tục chạy song song.

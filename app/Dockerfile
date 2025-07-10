@@ -10,10 +10,6 @@ ARG DEVICE=cpu
 WORKDIR /app
 
 
-# Copy requirements and install dependencies
-# . = current directory 
-# COPY ./requirements_cpu.txt ./requirements_cpu.txt 
-
 # Copy cả hai file requirements vào container
 COPY requirements_cpu.txt .
 COPY requirements_gpu.txt .
