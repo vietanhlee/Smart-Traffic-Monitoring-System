@@ -3,12 +3,17 @@ from services.AnalyzeOnRoadForMultiProcessing import AnalyzeOnRoadForMultiproces
 import sys
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException, Request
-from services.CHATBOT import ChatLLM
+from services.ChatBot import ChatLLM
+import asyncio
+# Sử dụng POST thay vì GET cho endpoint chat
+from pydantic import BaseModel
 
+class ChatRequest(BaseModel):
+    message: str
 
 app = FastAPI()
-analyze_multi = None
 
+analyze_multi = None
 chat_llm = None
 
 # Cho phép gọi API từ frontend khác port (CORS)
@@ -43,42 +48,39 @@ def startup_event():
         chat_llm = ChatLLM()
 
 @app.get("/veheicles")
-def get_veheicles():
+async def get_veheicles():
     global analyze_multi
     if analyze_multi is None:
         # Nếu chưa khởi tạo xong thì trả về lỗi
         return JSONResponse(content={"error": "Analyzer not initialized"}, status_code=500)
     # Lấy kết quả từ tất cả các luồng phân tích video
-    infor_veheicles_on_roads = analyze_multi.get_veheicles_info()
+    infor_veheicles_on_roads = await asyncio.to_thread(analyze_multi.get_veheicles_info)
     return JSONResponse(content=infor_veheicles_on_roads)
 
 @app.get("/frames")
-def get_frames():
+async def get_frames():
     global analyze_multi
     if analyze_multi is None:
         # Nếu chưa khởi tạo xong thì trả về lỗi
         return JSONResponse(content={"error": "Analyzer not initialized"}, status_code=500)
     # Lấy kết quả từ tất cả các luồng phân tích video
-    frame_of_roads = analyze_multi.get_frames()
+    frame_of_roads = await asyncio.to_thread(analyze_multi.get_frames)
     return JSONResponse(content= frame_of_roads)
 
 
-# Sử dụng POST thay vì GET cho endpoint chat
-from pydantic import BaseModel
-
-class ChatRequest(BaseModel):
-    message: str
-
 @app.post("/chat")
-def chat(request: ChatRequest):
+async def chat(request: ChatRequest):
     """
     Nhận một tin nhắn và trả về phản hồi từ mô hình AI.
     """
     if not chat_llm:
         raise HTTPException(status_code=500, detail="ChatLLM chưa được khởi tạo.")
     try:
-        response = chat_llm.chat(request.message)
+        response = await asyncio.to_thread(lambda : chat_llm.chat(request.message))
         return {"response": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+@app.on_event("shutdown")
+def shutdown():
+    analyze_multi.join_process()
     

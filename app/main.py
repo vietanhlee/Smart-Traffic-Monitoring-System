@@ -1,24 +1,40 @@
 from fastapi import FastAPI
-from api import chat_bot, analyze_transportation
-from api.dependencies import analyzer, chat_bot
+from api import chat, veheicles_frames
+from api import state
+from services.AnalyzeOnRoadForMultiProcessing import AnalyzeOnRoadForMultiprocessing
+from services.ChatBot import ChatLLM
+from fastapi.middleware.cors import CORSMiddleware
 
-# analyzer = AnalyzeOnRoadForMultiprocessing(show= False,
-#                                            show_log= False,
-#                                            is_join_processes= False)
-# chat_bot = ChatLLM()
 
 app = FastAPI()
+# Cho phép gọi API từ frontend khác port (CORS)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Có thể chỉnh lại cho chặt hơn nếu cần
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.on_event("start_up")
-async def start_up():
-    analyzer.run_multiprocessing()
-    # print("Đã chạy các process")
+@app.on_event("startup")
+def start_up():
+    if state.analyzer is None:
+        state.analyzer = AnalyzeOnRoadForMultiprocessing(show= False,
+                                            show_log= False,
+                                            is_join_processes= False)
+        state.analyzer.run_multiprocessing()
+    if state.chat_bot is None:
+        state.chat_bot = ChatLLM()
 
-app.include_router(router= chat_bot.router, prefix= "/")
-app.include_router(router= analyze_transportation.router, prefix="/")
+app.include_router(chat.router, prefix="", tags=["post chat"])
+app.include_router(veheicles_frames.router, prefix="", tags=["veheicles and frames of processes"])
 
-
-
+@app.on_event("shutdown")
+def shutdown():
+    state.analyzer.join_process()
+    
+    
+    
 # 1. @app.on_event("startup")
 #    Khi server FastAPI khởi động, hàm này sẽ được gọi tự động.
 #    Mục đích: Khởi tạo đối tượng analyze_multi (phân tích đa luồng) nếu chưa có.
