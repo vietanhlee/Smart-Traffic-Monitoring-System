@@ -8,3 +8,5 @@ uvicorn
 torch
 torchvision
 torchaudio
+shapely
+dotenv
