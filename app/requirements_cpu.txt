@@ -5,8 +5,10 @@ numpy
 opencv-python
 fastapi
 uvicorn
+shapely
+python-dotenv
+lap
+git+https://github.com/ultralytics/CLIP.git
 torch
 torchvision
 torchaudio
-shapely
-dotenv
