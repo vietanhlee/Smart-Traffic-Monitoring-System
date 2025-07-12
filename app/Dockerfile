@@ -9,6 +9,9 @@ ARG DEVICE=cpu
 # chỉ định thư mục làm việc để chạy lệnh
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    libglib2.0-0
 
 # Copy cả hai file requirements vào container
 COPY requirements_cpu.txt .
