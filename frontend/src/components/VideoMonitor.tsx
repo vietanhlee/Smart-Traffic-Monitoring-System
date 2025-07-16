@@ -49,7 +49,6 @@ const VideoMonitor = ({
   trafficData,
   allowedRoads,
   selectedRoad,
-  setSelectedRoad,
   loading,
   isFullscreen,
 }: VideoMonitorProps) => {
@@ -192,7 +191,7 @@ const VideoMonitor = ({
                       <img
                         src={`data:image/jpeg;base64,${frame.frame}`}
                         alt={`Camera ${roadName}`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-fit"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">

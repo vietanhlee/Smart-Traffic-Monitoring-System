@@ -108,7 +108,7 @@ const VideoModal = ({
                   <img
                     src={`data:image/jpeg;base64,${frameData}`}
                     alt={`Camera ${roadName}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-fit"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-white">
