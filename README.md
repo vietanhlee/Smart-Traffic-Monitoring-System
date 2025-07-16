@@ -2,7 +2,7 @@
 
 ## 📺 DEMO
 
-![Dashboard Demo](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/display_for_github/demo.png)
+![Dashboard Demo](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/.github/demo.png)
 
 ## 🚦 Overview
 
