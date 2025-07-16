@@ -49,6 +49,7 @@ class AnalyzeOnRoadForMultiprocessing():
         self.processes = []
         self.names = []
         self.is_join_processes = is_join_processes
+    
     @staticmethod
     def run_analyze_process(path_video, meter_per_pixel, info_dict, frame_dict, 
                         lock_info, lock_frame, show):

@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from api import chat, veheicles_frames
 from api import state
 from services.AnalyzeOnRoadForMultiProcessing import AnalyzeOnRoadForMultiprocessing
-from services.ChatBot import ChatLLM
+from services.ChatBot import ChatBot
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -23,8 +23,9 @@ def start_up():
                                             show_log= False,
                                             is_join_processes= False)
         state.analyzer.run_multiprocessing()
+    
     if state.chat_bot is None:
-        state.chat_bot = ChatLLM()
+        state.chat_bot = ChatBot()
 
 app.include_router(chat.router, prefix="", tags=["post chat"])
 app.include_router(veheicles_frames.router, prefix="", tags=["veheicles and frames of processes"])
