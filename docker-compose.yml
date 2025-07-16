@@ -1,16 +1,16 @@
 version: "3.8"
 services:
   backend:
-    build: ./BACKEND
+    build: ./app
     ports:
       - "8000:8000"
     volumes:
-      - ./BACKEND:/app
+      - ./app:/app
   frontend:
-    build: ./
+    build: ./frontend
     ports:
-      - "3000:3000"
-    volumes:
-      - ./FRONTEND/app
+      - "5173:5173"
+    # volumes:
+    #   - ./frontend:/usr/src/app
     environment:
       - CHOKIDAR_USEPOLLING=true
