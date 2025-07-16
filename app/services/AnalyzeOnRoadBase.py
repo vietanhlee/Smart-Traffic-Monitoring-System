@@ -3,7 +3,8 @@ import os
 import numpy as np
 from datetime import datetime
 from ultralytics import solutions
-# Set environment variable to avoid KMP duplicate library error
+
+# Thêm cái này để tránh xung đột
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 class AnalyzeOnRoadBase:
