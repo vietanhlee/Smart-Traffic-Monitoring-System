@@ -15,6 +15,7 @@ import {
   Sun,
   Maximize2,
   Minimize2,
+  MessageCircle,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import VideoMonitor from "./VideoMonitor";
@@ -170,10 +171,31 @@ const TrafficDashboard = () => {
 
       {/* Main Content */}
       <Tabs defaultValue="monitor" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="monitor">Giám Sát</TabsTrigger>
-          <TabsTrigger value="analytics">Phân Tích</TabsTrigger>
-          <TabsTrigger value="chat">Trợ Lý AI</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 h-12">
+          <TabsTrigger
+            value="monitor"
+            className="text-base py-3 px-6 font-medium"
+          >
+            <div className="flex items-center space-x-2">
+              <MapPin className="h-5 w-5" />
+              <span>Giám Sát</span>
+            </div>
+          </TabsTrigger>
+          <TabsTrigger
+            value="analytics"
+            className="text-base py-3 px-6 font-medium"
+          >
+            <div className="flex items-center space-x-2">
+              <Settings className="h-5 w-5" />
+              <span>Phân Tích</span>
+            </div>
+          </TabsTrigger>
+          <TabsTrigger value="chat" className="text-base py-3 px-6 font-medium">
+            <div className="flex items-center space-x-2">
+              <MessageCircle className="h-5 w-5" />
+              <span>Trợ Lý AI</span>
+            </div>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="monitor" className="space-y-6">

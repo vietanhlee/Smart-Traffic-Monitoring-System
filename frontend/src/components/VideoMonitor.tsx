@@ -15,6 +15,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import VideoModal from "./VideoModal";
 
 interface VehicleData {
   count_car: number;
@@ -53,6 +54,8 @@ const VideoMonitor = ({
   isFullscreen,
 }: VideoMonitorProps) => {
   const [showFrames, setShowFrames] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalRoadName, setModalRoadName] = useState<string>("");
 
   const getTrafficStatus = (roadName: string) => {
     const data = trafficData[roadName];
@@ -178,10 +181,13 @@ const VideoMonitor = ({
                       ? "border-blue-500 shadow-lg shadow-blue-500/25"
                       : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                   }`}
-                  onClick={() => setSelectedRoad(isSelected ? null : roadName)}
+                  onClick={() => {
+                    setModalRoadName(roadName);
+                    setModalOpen(true);
+                  }}
                 >
                   {/* Video Frame */}
-                  <div className="relative aspect-video bg-gray-100 dark:bg-gray-800">
+                  <div className="relative aspect-video bg-gray-100 dark:bg-gray-800 overflow-hidden">
                     {showFrames && frame?.frame ? (
                       <img
                         src={`data:image/jpeg;base64,${frame.frame}`}
@@ -194,22 +200,29 @@ const VideoMonitor = ({
                       </div>
                     )}
 
-                    {/* Status Overlay */}
-                    <div className="absolute top-3 right-3">
+                    {/* Status Overlay - positioned to not cover video content */}
+                    <div className="absolute top-2 right-2 z-10">
                       <Badge
                         variant={getStatusBadgeVariant(color)}
-                        className="flex items-center space-x-1"
+                        className="flex items-center space-x-1 bg-black/70 text-white border-none backdrop-blur-sm"
                       >
                         <Icon className="h-3 w-3" />
-                        <span>{text}</span>
+                        <span className="text-xs">{text}</span>
                       </Badge>
                     </div>
 
-                    {/* Live Indicator */}
-                    <div className="absolute top-3 left-3">
-                      <div className="flex items-center space-x-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                        <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    {/* Live Indicator - positioned to not cover video content */}
+                    <div className="absolute top-2 left-2 z-10">
+                      <div className="flex items-center space-x-1 bg-red-500/90 text-white px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
                         <span>LIVE</span>
+                      </div>
+                    </div>
+
+                    {/* Click to expand hint */}
+                    <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-200 flex items-center justify-center opacity-0 hover:opacity-100">
+                      <div className="bg-white/90 dark:bg-gray-900/90 text-gray-900 dark:text-white px-3 py-2 rounded-lg text-sm font-medium backdrop-blur-sm">
+                        Click để phóng to
                       </div>
                     </div>
                   </div>
@@ -270,22 +283,16 @@ const VideoMonitor = ({
             })}
           </AnimatePresence>
         </div>
-
-        {selectedRoad && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
-          >
-            <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-              Đang xem: {selectedRoad}
-            </h4>
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              Click vào camera khác để chuyển đổi hoặc click lại để bỏ chọn
-            </p>
-          </motion.div>
-        )}
       </CardContent>
+
+      {/* Video Modal */}
+      <VideoModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        roadName={modalRoadName}
+        frameData={frameData[modalRoadName]?.frame || null}
+        trafficData={trafficData[modalRoadName]}
+      />
     </Card>
   );
 };

@@ -17,6 +17,10 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
+import type { Components } from "react-markdown";
 
 interface VehicleData {
   count_car: number;
@@ -173,7 +177,7 @@ Lưu ý: Hãy trả lời bằng tiếng Việt, ngắn gọn và dễ hiểu. N
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -191,14 +195,69 @@ Lưu ý: Hãy trả lời bằng tiếng Việt, ngắn gọn và dễ hiểu. N
       setCopiedMessageId(messageId);
       setTimeout(() => setCopiedMessageId(null), 2000);
       toast.success("Đã sao chép tin nhắn");
-    } catch (error) {
+    } catch {
       toast.error("Không thể sao chép tin nhắn");
     }
   };
 
+  // Custom markdown components for styling
+  const markdownComponents: Components = {
+    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+    strong: ({ children }) => (
+      <strong className="font-semibold">{children}</strong>
+    ),
+    em: ({ children }) => <em className="italic">{children}</em>,
+    ul: ({ children }) => (
+      <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>
+    ),
+    ol: ({ children }) => (
+      <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>
+    ),
+    li: ({ children }) => <li className="ml-2">{children}</li>,
+    code: ({ children, className }) => {
+      const isInline = !className;
+      return isInline ? (
+        <code className="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm font-mono">
+          {children}
+        </code>
+      ) : (
+        <code className={className}>{children}</code>
+      );
+    },
+    pre: ({ children }) => (
+      <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg overflow-x-auto mb-2 text-sm">
+        {children}
+      </pre>
+    ),
+    blockquote: ({ children }) => (
+      <blockquote className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 italic mb-2">
+        {children}
+      </blockquote>
+    ),
+    h1: ({ children }) => (
+      <h1 className="text-lg font-bold mb-2">{children}</h1>
+    ),
+    h2: ({ children }) => (
+      <h2 className="text-base font-bold mb-2">{children}</h2>
+    ),
+    h3: ({ children }) => (
+      <h3 className="text-sm font-bold mb-1">{children}</h3>
+    ),
+    a: ({ children, href }) => (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-500 hover:text-blue-600 underline"
+      >
+        {children}
+      </a>
+    ),
+  };
+
   return (
     <Card className="h-[600px] flex flex-col">
-      <CardHeader>
+      <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center space-x-2">
             <MessageCircle className="h-5 w-5" />
@@ -220,113 +279,123 @@ Lưu ý: Hãy trả lời bằng tiếng Việt, ngắn gọn và dễ hiểu. N
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col space-y-4">
-        {/* Messages */}
-        <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
-          <div className="space-y-4">
-            <AnimatePresence>
-              {messages.map((message) => (
-                <motion.div
-                  key={message.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className={`flex ${
-                    message.user ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <div
-                    className={`flex items-start space-x-3 max-w-[80%] ${
-                      message.user ? "flex-row-reverse space-x-reverse" : ""
+      <CardContent className="flex-1 flex flex-col min-h-0">
+        {/* Messages - Takes up remaining space */}
+        <div className="flex-1 min-h-0 mb-4">
+          <ScrollArea className="h-full pr-4" ref={scrollAreaRef}>
+            <div className="space-y-4">
+              <AnimatePresence>
+                {messages.map((message) => (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className={`flex ${
+                      message.user ? "justify-end" : "justify-start"
                     }`}
                   >
-                    <Avatar className="w-8 h-8">
-                      <AvatarFallback
-                        className={
-                          message.user
-                            ? "bg-blue-500 text-white"
-                            : "bg-purple-500 text-white"
-                        }
-                      >
-                        {message.user ? (
-                          <User className="h-4 w-4" />
-                        ) : (
-                          <Bot className="h-4 w-4" />
-                        )}
-                      </AvatarFallback>
-                    </Avatar>
-
                     <div
-                      className={`rounded-lg p-3 ${
-                        message.user
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                      className={`flex items-start space-x-3 max-w-[80%] ${
+                        message.user ? "flex-row-reverse space-x-reverse" : ""
                       }`}
                     >
-                      {message.typing ? (
-                        <div className="flex items-center space-x-1">
-                          <div className="flex space-x-1">
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                            <div
-                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                              style={{ animationDelay: "0.1s" }}
-                            ></div>
-                            <div
-                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                              style={{ animationDelay: "0.2s" }}
-                            ></div>
-                          </div>
-                          <span className="text-sm text-gray-500 ml-2">
-                            Đang trả lời...
-                          </span>
-                        </div>
-                      ) : (
-                        <>
-                          <p className="text-sm leading-relaxed">
-                            {message.text}
-                          </p>
-                          <div className="flex items-center justify-between mt-2">
-                            <span
-                              className={`text-xs ${
-                                message.user ? "text-blue-100" : "text-gray-500"
-                              }`}
-                            >
-                              {message.time}
-                            </span>
-                            {!message.user && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                                onClick={() =>
-                                  copyMessage(message.text, message.id)
-                                }
-                              >
-                                {copiedMessageId === message.id ? (
-                                  <Check className="h-3 w-3" />
-                                ) : (
-                                  <Copy className="h-3 w-3" />
-                                )}
-                              </Button>
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        </ScrollArea>
+                      <Avatar className="w-8 h-8">
+                        <AvatarFallback
+                          className={
+                            message.user
+                              ? "bg-blue-500 text-white"
+                              : "bg-purple-500 text-white"
+                          }
+                        >
+                          {message.user ? (
+                            <User className="h-4 w-4" />
+                          ) : (
+                            <Bot className="h-4 w-4" />
+                          )}
+                        </AvatarFallback>
+                      </Avatar>
 
-        {/* Input */}
-        <div className="flex space-x-2">
+                      <div
+                        className={`rounded-lg p-3 ${
+                          message.user
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                        }`}
+                      >
+                        {message.typing ? (
+                          <div className="flex items-center space-x-1">
+                            <div className="flex space-x-1">
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                              <div
+                                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                                style={{ animationDelay: "0.1s" }}
+                              ></div>
+                              <div
+                                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                                style={{ animationDelay: "0.2s" }}
+                              ></div>
+                            </div>
+                            <span className="text-sm text-gray-500 ml-2">
+                              Đang trả lời...
+                            </span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-sm leading-relaxed">
+                              <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                rehypePlugins={[rehypeHighlight]}
+                                components={markdownComponents}
+                              >
+                                {message.text}
+                              </ReactMarkdown>
+                            </div>
+                            <div className="flex items-center justify-between mt-2">
+                              <span
+                                className={`text-xs ${
+                                  message.user
+                                    ? "text-blue-100"
+                                    : "text-gray-500"
+                                }`}
+                              >
+                                {message.time}
+                              </span>
+                              {!message.user && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() =>
+                                    copyMessage(message.text, message.id)
+                                  }
+                                >
+                                  {copiedMessageId === message.id ? (
+                                    <Check className="h-3 w-3" />
+                                  ) : (
+                                    <Copy className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </ScrollArea>
+        </div>
+
+        {/* Input - Fixed at bottom */}
+        <div className="flex-shrink-0 flex space-x-2 pt-2 border-t border-gray-200 dark:border-gray-700">
           <Input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             placeholder="Hỏi về tình trạng giao thông..."
             disabled={isLoading}
             className="flex-1"

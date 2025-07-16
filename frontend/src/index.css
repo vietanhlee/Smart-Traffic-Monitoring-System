@@ -118,3 +118,15 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Highlight.js styling for code blocks */
+.hljs {
+  background: var(--color-muted) !important;
+  color: var(--color-foreground) !important;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.dark .hljs {
+  background: var(--color-card) !important;
+}
