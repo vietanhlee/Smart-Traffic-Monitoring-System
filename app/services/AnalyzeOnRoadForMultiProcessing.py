@@ -2,8 +2,8 @@ from multiprocessing import Process, Manager
 import time
 from multiprocessing import freeze_support
 import os
-from services.AnalyzeOnRoad import AnalyzeOnRoad
-
+from AnalyzeOnRoad import AnalyzeOnRoad
+import numpy as np 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 class AnalyzeOnRoadForMultiprocessing():
@@ -15,14 +15,22 @@ class AnalyzeOnRoadForMultiprocessing():
         của các process với nhau chặt chẽ hơn
         processes (list): các process con đang chạy 
     """
-    def __init__(self,path_videos = [
+    def __init__(self, regions = [
+                                np.array([[50, 400], [50, 265], [370, 130], [540, 130], [490, 400]]), 
+                                  np.array([[230, 400], [90, 260], [350, 200], [600, 320], [600, 400]]),
+                                  np.array([[50, 400], [50, 340], [400, 125], [530, 185], [470, 400]]),
+                                  np.array([[140, 400], [400, 200], [550, 200], [530, 400]]),
+                                  np.array([[50, 400], [50, 320], [390, 130], [550, 220], [480, 400]]),
+                                  ], 
+                                  
+                 path_videos = [
                         "./video_test/Văn Quán.mp4",
                         "./video_test/Văn Phú.mp4",
                         "./video_test/Nguyễn Trãi.mp4",
                         "./video_test/Ngã Tư Sở.mp4",
                         "./video_test/Đường Láng.mp4",
                     ],
-        meter_per_pixels = [0.03, 0.09, 0.4, 0.11, 0.06], 
+        meter_per_pixels = [0.03, 0.09, 0.3, 0.11, 0.06], 
         show_log = False, show = False, is_join_processes = True):
         """Khi tích hợp API vào thiết kế do cơ chế envent loop vòng lặp bất tận nên không cần join\
         các process lại để tránh bị kill. Do đó phải đặt is_join_processes = False nếu không nó sẽ chặn\
@@ -40,7 +48,7 @@ class AnalyzeOnRoadForMultiprocessing():
         """
         self.path_videos = path_videos
         self.meter_per_pixels = meter_per_pixels
-        
+        self.regions = regions
         self.manager = Manager()
         self.shared_data = self.manager.dict()  # Dùng để lưu trữ thông tin chung giữa các process
         
@@ -51,7 +59,7 @@ class AnalyzeOnRoadForMultiprocessing():
         self.is_join_processes = is_join_processes
     
     @staticmethod
-    def run_analyze_process(path_video, meter_per_pixel, info_dict, frame_dict, 
+    def run_analyze_process(region, path_video, meter_per_pixel, info_dict, frame_dict, 
                         lock_info, lock_frame, show):
         """Hàm chạy trong process riêng, làm hàm kích hoạt cho Multiprocessing. Đặt hàm này là static method vì\
         để tránh việc sử dụng multiprocessing bị lỗi do nó sẽ picke các biến liên quan đến hàm để chuyển dữ liệu\
@@ -81,7 +89,8 @@ class AnalyzeOnRoadForMultiprocessing():
                 frame_dict=frame_dict,
                 lock_info=lock_info,
                 lock_frame=lock_frame,
-                show= show
+                show= show, 
+                region= region
                 # **kwargs
             )
             analyzer.process_on_single_video()
@@ -139,7 +148,7 @@ class AnalyzeOnRoadForMultiprocessing():
         freeze_support()
         
         # Lặp qua để xử lý từng video với từng đường dẫn và tham số meter_per_pixel một 
-        for path_video, meter_per_pixel in zip(self.path_videos, self.meter_per_pixels):
+        for path_video, meter_per_pixel, region in zip(self.path_videos, self.meter_per_pixels, self.regions):
             name = path_video.split('/')[-1][:-4]
             self.names.append(name)
             
@@ -173,7 +182,7 @@ class AnalyzeOnRoadForMultiprocessing():
             p = Process(
                 target=AnalyzeOnRoadForMultiprocessing.run_analyze_process, 
                 args=(
-                    path_video, meter_per_pixel, info_dict, frame_dict, 
+                    region, path_video, meter_per_pixel, info_dict, frame_dict, 
                     lock_info, lock_frame, self.show
                 ), 
                 # kwargs={'show': True}

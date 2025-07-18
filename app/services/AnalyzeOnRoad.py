@@ -2,7 +2,7 @@ import cv2
 import os
 import numpy as np
 import base64
-from services.AnalyzeOnRoadBase import AnalyzeOnRoadBase
+from AnalyzeOnRoadBase import AnalyzeOnRoadBase
 
 # Đặt như này để tránh trường hợp lỗi do dùng chung thư viện AI 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
@@ -13,7 +13,7 @@ class AnalyzeOnRoad(AnalyzeOnRoadBase):
     khác vừa có thể truy xuất thông tin về kết quả mà không bị hiện tượng tranh chấp dữ liệu    
     """    
     def __init__(self, path_video, meter_per_pixel, info_dict, frame_dict, 
-                 lock_info, lock_frame, model_path="best.pt", time_step=30,
+                 lock_info, lock_frame, region, model_path="best.pt", time_step=30,
                  is_draw=True, device='cpu', iou=0.3, conf=0.2, show=True):
         """Class này kế thừa từ class Base (xử lý tuần tự). Class con này chưa phải là code để multiprocessing\
         mà chỉ là một chút cải tiến từ code base (class Base) để có thể vừa xử lý video đầu vào ở một process\
@@ -53,7 +53,7 @@ class AnalyzeOnRoad(AnalyzeOnRoadBase):
         >>> analyzer.process_on_single_video()
         """
         super().__init__(path_video, meter_per_pixel, model_path, time_step,
-                 is_draw, device, iou, conf, show)
+                 is_draw, device, iou, conf, show, region)
         self.lock_info = lock_info
         self.lock_frame = lock_frame
         self.info_dict = info_dict

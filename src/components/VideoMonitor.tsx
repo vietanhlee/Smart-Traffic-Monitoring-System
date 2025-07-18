@@ -67,7 +67,7 @@ const VideoMonitor = ({
       };
 
     const totalVehicles = data.count_car + data.count_motor;
-    if (totalVehicles > 15)
+    if (totalVehicles > 20)
       return {
         status: "congested",
         color: "red",

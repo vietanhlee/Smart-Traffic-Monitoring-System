@@ -30,7 +30,8 @@ class AnalyzeOnRoadBase:
             >>> analyzer.process_on_single_video()
     """
     def __init__(self, path_video, meter_per_pixel, model_path="best.pt", time_step=30,
-                 is_draw=True, device='cpu', iou=0.3, conf=0.2, show=True):
+                 is_draw=True, device='cpu', iou=0.3, conf=0.2, show=True,
+                 region = np.array([[50, 400], [50, 265], [370, 130], [600, 130], [600, 400]])):
         """Hàm xử lý uần tự như một Script đơn giản áp dụng YOLO và cải tiến hơn là ở việc gói gọn trong 1 class
 
         Args:
@@ -56,6 +57,7 @@ class AnalyzeOnRoadBase:
             max_hist=15
         )
         
+        self.region = region
         self.show = show
         self.path_video = path_video
         self.name = path_video.split('/')[-1][:-4] 
@@ -151,7 +153,8 @@ class AnalyzeOnRoadBase:
             # Đặt lại kích thước ảnh đầu vào đủ lớn để xử lý, copy để tránh thay đổi ảnh gốc, cắt ảnh để chỉ predict vùng cần thiết
             frame_in = cv2.resize(frame_input, (600, 400))
             self.frame_output = frame_in.copy()
-            self.frame_predict = np.ascontiguousarray(frame_in[130:, 50:])
+            # Cắt ảnh kiểu này tránh lỗi
+            self.frame_predict = np.ascontiguousarray(frame_in[130:, 50:]) 
             
             # Xử lý ảnh để dự đoán tốc độ
             # Sao chép frame_predict để tránh thay đổi ảnh gốc, sau đó xử lý
@@ -189,7 +192,7 @@ class AnalyzeOnRoadBase:
         """Hàm này để vẽ các thông tin lên ảnh"""
         try:
             # Đặt vùng cần chú ý
-            pts = np.array([[50, 400], [50, 265], [370, 130], [600, 130], [600, 400]], np.int32).reshape((-1, 1, 2))
+            pts = self.region.reshape((-1, 1, 2))
             
             if self.ids is not None:
                 for i, box in enumerate(self.boxes):

@@ -8,6 +8,7 @@ uvicorn
 shapely
 python-dotenv
 lap
+langgraph
 git+https://github.com/ultralytics/CLIP.git
 torch
 torchvision
