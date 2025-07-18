@@ -1,9 +1,9 @@
-from multiprocessing import Process, Manager
+from multiprocessing import Process, Manager, freeze_support
 import time
-from multiprocessing import freeze_support
 import os
-from AnalyzeOnRoad import AnalyzeOnRoad
+from services.AnalyzeOnRoad import AnalyzeOnRoad
 import numpy as np 
+
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 class AnalyzeOnRoadForMultiprocessing():
