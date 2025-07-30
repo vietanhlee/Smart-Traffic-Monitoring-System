@@ -58,7 +58,6 @@ class AnalyzeOnRoad(AnalyzeOnRoadBase):
         self.lock_frame = lock_frame
         self.info_dict = info_dict
         self.frame_dict = frame_dict
-        
     def convert_frame_to_base64(self, img: np.array) -> str:
         """ Hàm chuyển đổi ảnh dạng numpy sang base64
 

@@ -1,5 +1,6 @@
+from api import veheicles_frames_api
 from fastapi import FastAPI
-from api import chat, veheicles_frames
+from api import chat_api
 from api import state
 from services.AnalyzeOnRoadForMultiProcessing import AnalyzeOnRoadForMultiprocessing
 from services.ChatBot import ChatBot
@@ -27,8 +28,8 @@ def start_up():
     if state.chat_bot is None:
         state.chat_bot = ChatBot()
 
-app.include_router(chat.router, prefix="", tags=["post chat"])
-app.include_router(veheicles_frames.router, prefix="", tags=["veheicles and frames of processes"])
+app.include_router(chat_api.router, prefix="", tags=["post chat"])
+app.include_router(veheicles_frames_api.router, prefix="", tags=["veheicles and frames of processes"])
 
 @app.on_event("shutdown")
 def shutdown():
