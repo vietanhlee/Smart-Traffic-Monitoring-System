@@ -11,9 +11,7 @@ from langchain.prompts import (
     SystemMessagePromptTemplate,
 )
 
-promt = """
-Bạn là một trợ lý AI chuyên hỗ trợ người dùng tra cứu và tư vấn tình trạng giao thông theo từng tuyến đường hoặc khu vực.
-
+system_prompt = """Bạn là một trợ lý AI chuyên hỗ trợ người dùng tra cứu và tư vấn tình trạng giao thông theo từng tuyến đường hoặc khu vực.
 Dữ liệu bạn có thể được cung cấp bao gồm:
 - Số lượng phương tiện (ô tô, xe máy, v.v.)
 - Vận tốc trung bình của từng loại phương tiện
@@ -50,11 +48,14 @@ Yêu cầu về ngôn ngữ:
 - Nếu bị hỏi về tương lai (VD: 5h chiều) → nói: “Tôi chỉ hỗ trợ dữ liệu thời gian thực, chưa thể dự báo giao thông tương lai.”
 """
 
+# code lại phần chain thay vì dùng built-in conversation chain thì tự custom chain riêng
+# Giúp quản lý luồng tốt hơn, bao quát hơn và dễ tích hợp thêm agent hoặc toolcalling
+# Đổi lại là việc bất tiện hơn trong việc lưu context (lịch sử và ngữ cảnh) cho chain
 
 class ChatBot:
     def __init__(self):
         # --- Tải API Key từ file .env ---
-        load_dotenv() 
+        load_dotenv()
 
         if os.getenv("GOOGLE_API_KEY") is None:
             raise ValueError("GOOGLE_API_KEY không được tìm thấy. Vui lòng kiểm tra file .env của bạn.")
@@ -62,39 +63,43 @@ class ChatBot:
         # 'temperature' để điều chỉnh mức độ sáng tạo của mô hình (0.0 = chặt chẽ, 1.0 = sáng tạo)
         self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.9)
 
+        # --- Khởi tạo bộ nhớ (Memory) ---
+        # Này chỉ là thuộc tính giúp lưu lại context, phải tự save và load thủ công để lấy và đưa vào chain
+        self.memory = ConversationBufferMemory(memory_key= "history", return_messages= True)
+
         # --- Tạo Prompt Template với phần hướng dẫn (system prompt) ---
         # `MessagesPlaceholder` là một biến đặc biệt sẽ chứa lịch sử trò chuyện từ Memory.
         self.prompt = ChatPromptTemplate(
                     messages=[
-                        SystemMessagePromptTemplate.from_template(promt),
+                        SystemMessagePromptTemplate.from_template(system_prompt),
                         # Biến `history` sẽ được `ConversationBufferMemory` tự động quản lý.
                         MessagesPlaceholder(variable_name="history"),
                         HumanMessagePromptTemplate.from_template("{input}"),
                     ]
                 )
-
-        # --- Khởi tạo bộ nhớ (Memory) ---
-        # `ConversationBufferMemory` sẽ lưu trữ các tin nhắn.
-        # `return_messages=True` để nó trả về dưới dạng một danh sách các đối tượng tin nhắn,
-        # phù hợp với `MessagesPlaceholder`.
-        self.memory = ConversationBufferMemory(memory_key= "history", return_messages= True)
-
+        
         # --- Tạo chuỗi hội thoại (Conversation Chain) ---
         # Kết hợp LLM, Memory, và Prompt lại với nhau.
-        # `verbose=True` sẽ in ra các bước xử lý của chain, giúp bạn dễ dàng gỡ lỗi.
-        self.conversation_chain = ConversationChain(llm= self.llm,
-                                                    memory= self.memory,
-                                                    prompt= self.prompt,
-                                                    verbose= False)
+        self.conversation_chain = self.prompt | self.llm
     def chat(self, user_input):
         """Hàm để gửi tin nhắn từ người dùng và nhận phản hồi từ mô hình AI."""
-        response = self.conversation_chain.invoke({"input": user_input})
-        return response['response']
+        # chain được build gồm prompt --> llm mà prompt gồm "history" và "input" nên
+        # chain đầu vào là một dict có các key là "input" và "history"
+        input_for_chain = {
+            "input": user_input,
+            "history": self.memory.load_memory_variables({})['history'] # Load ra history
+        }
+        response = self.conversation_chain.invoke(input= input_for_chain)
+        # Do tự handel chain nên việc quản lý memory phải tự handel thủ công lại
+        # Lưu context cho memory
+        self.memory.save_context(inputs= {"input": user_input}, outputs= {'output': response.content})
+        return response.content
 
-# print("\n--- Lịch sử trò chuyện đã được lưu trong memory ---")
-# print(conversation_chain.memory.buffer)
 
-# --- Tạo đối tượng ChatLLM ---
+# class ChatBot:
+#     def __init__(self):
+#
+# # --- Tạo đối tượng ChatLLM --- for testing
 # chat_llm = ChatBot()
 # while True:
 #     user_input = input("Bạn: ")
@@ -103,5 +108,9 @@ class ChatBot:
 #         break
 #     response = chat_llm.chat(user_input)
 #     print("AI:", response)
-    # print("\n--- Lịch sử trò chuyện đã được cập nhật ---")
-    # print(chat_llm.memory.buffer)
+#     # print("\n--- Lịch sử trò chuyện đã được cập nhật ---")
+#     # print(chat_llm.memory.buffer)
+#     print("-" * 100)
+    
+    
+    

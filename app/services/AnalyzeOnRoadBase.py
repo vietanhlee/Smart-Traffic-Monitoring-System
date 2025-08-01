@@ -3,7 +3,6 @@ import os
 import numpy as np
 from datetime import datetime
 from ultralytics import solutions
-
 # Thêm cái này để tránh xung đột
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 

@@ -5,8 +5,7 @@ from api import state
 from services.AnalyzeOnRoadForMultiProcessing import AnalyzeOnRoadForMultiprocessing
 from services.ChatBot import ChatBot
 from fastapi.middleware.cors import CORSMiddleware
-
-
+import config
 app = FastAPI()
 # Cho phép gọi API từ frontend khác port (CORS)
 app.add_middleware(
@@ -22,7 +21,10 @@ def start_up():
     if state.analyzer is None:
         state.analyzer = AnalyzeOnRoadForMultiprocessing(show= False,
                                             show_log= False,
-                                            is_join_processes= False)
+                                            is_join_processes= False,
+                                            path_videos= config.PATH_VIDEOS,
+                                            meter_per_pixels= config.METER_PER_PIXELS,
+                                            regions= config.REGIONS)
         state.analyzer.run_multiprocessing()
     
     if state.chat_bot is None:
