@@ -12,4 +12,4 @@ langgraph
 git+https://github.com/ultralytics/CLIP.git
 torch
 torchvision
-torchaudio2
+torchaudio

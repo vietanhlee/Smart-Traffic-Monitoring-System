@@ -3,6 +3,7 @@ import os
 import numpy as np
 from datetime import datetime
 from ultralytics import solutions
+from services.utils import *
 # Thêm cái này để tránh xung đột
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -28,7 +29,8 @@ class AnalyzeOnRoadBase:
             >>> )
             >>> analyzer.process_on_single_video()
     """
-    def __init__(self, path_video, meter_per_pixel, model_path="best.pt", time_step=30,
+    def __init__(self, path_video = "./video_test/Đường Láng.mp4", meter_per_pixel = 0.06, 
+                 model_path="best_int8_openvino_model", time_step=30,
                  is_draw=True, device='cpu', iou=0.3, conf=0.2, show=True,
                  region = np.array([[50, 400], [50, 265], [370, 130], [600, 130], [600, 400]])):
         """Hàm xử lý uần tự như một Script đơn giản áp dụng YOLO và cải tiến hơn là ở việc gói gọn trong 1 class
@@ -78,28 +80,13 @@ class AnalyzeOnRoadBase:
         self.is_draw = is_draw
         self.delta_time = 0
 
-    def convert_frame_to_base64(self, img):
-        """Dành cho subclass định nghĩa, do không cần ở hiện tại"""
-        pass
     def update_for_frame(self):
         """Dành cho subclass định nghĩa, do không cần ở hiện tại"""
         pass
     def update_for_vehicle(self):
         """Dành cho subclass định nghĩa, do không cần ở hiện tại"""
         pass
-    def safe_avg_np(self, lst: list) -> int:
-        """Hàm tính trung bình cộng các số dương
-
-        Args:
-            lst (list): list các số đầu vào (tốc độ tức thời các phương tiện)
-
-        Returns:
-            int: giá trị trung bình
-        """
-        arr = np.array(lst, dtype=np.int32)
-        non_zero = arr[arr != 0]
-        return int(non_zero.mean()) if non_zero.size > 0 else 0
-    
+   
     def update_data(self):
         """Hàm này sẽ được gọi để cập nhật dữ liệu cho frame và thông tin phương tiện sau một khoảng thời gian\
             đã thiết lập là time_step"""
@@ -117,10 +104,10 @@ class AnalyzeOnRoadBase:
             self.time_pre = time_now
             
             # Tính toán trung bình các giá trị trong danh sách
-            self.count_car_display = self.safe_avg_np(self.list_count_car)
-            self.speed_car_display = self.safe_avg_np(self.list_speed_car)
-            self.count_motor_display = self.safe_avg_np(self.list_count_motor)
-            self.speed_motor_display = self.safe_avg_np(self.list_speed_motor)
+            self.count_car_display = safe_avg_np(self.list_count_car)
+            self.speed_car_display = safe_avg_np(self.list_speed_car)
+            self.count_motor_display = safe_avg_np(self.list_count_motor)
+            self.speed_motor_display = safe_avg_np(self.list_speed_motor)
             
             # Cập nhật thông tin phương tiện vào info_dict, cái này dành cho subclass ghi đè để cập nhật thông tin phương tiện
             self.update_for_vehicle()
@@ -147,7 +134,6 @@ class AnalyzeOnRoadBase:
         boxes là một numpy array chứa bounding boxes của các phương tiện
         classes là một numpy array chứa class của các phương tiện (0: ô tô, 1: xe máy)
         """
-        
         try:
             # Đặt lại kích thước ảnh đầu vào đủ lớn để xử lý, copy để tránh thay đổi ảnh gốc, cắt ảnh để chỉ predict vùng cần thiết
             frame_in = cv2.resize(frame_input, (600, 400))
@@ -215,8 +201,8 @@ class AnalyzeOnRoadBase:
                     
                     # Vẽ lên frame
                     cv2.putText(self.frame_predict, label, (cx - 50, cy - 15),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (51, 153, 255), 2)
-                    cv2.circle(self.frame_predict, (cx, cy), 6, color, -1)
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+                    cv2.circle(self.frame_predict, (cx, cy), 5, color, -1)
 
             # Gắn lại vùng được cắt để predict lại vào frame ban đầu
             self.frame_output[130:, 50:] = self.frame_predict
@@ -254,7 +240,6 @@ class AnalyzeOnRoadBase:
                     cv2.imshow(f'{self.name}', self.frame_output)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
-                    
         except KeyboardInterrupt:
             print(f"Đã dừng xử lý {self.name}")
         except Exception as e:
