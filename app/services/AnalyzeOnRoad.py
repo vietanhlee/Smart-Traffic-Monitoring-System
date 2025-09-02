@@ -1,6 +1,7 @@
 import os
-from services.AnalyzeOnRoadBase import AnalyzeOnRoadBase
-from services.utils import convert_frame_to_base64
+from AnalyzeOnRoadBase import AnalyzeOnRoadBase
+from utils import convert_frame_to_base64
+import conf
 # Đặt như này để tránh trường hợp lỗi do dùng chung thư viện AI 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -9,7 +10,7 @@ class AnalyzeOnRoad(AnalyzeOnRoadBase):
     mà chỉ là một chút cải tiến từ code base (class Base) để có thể vừa xử lý video đầu vào ở một process\
     khác vừa có thể truy xuất thông tin về kết quả mà không bị hiện tượng tranh chấp dữ liệu    
     """    
-    def __init__(self, path_video, meter_per_pixel, info_dict, frame_dict, region, model_path = 'best_int8_openvino_model', time_step=30,
+    def __init__(self, path_video, meter_per_pixel, info_dict, frame_dict, region, model_path = conf.models_path, time_step=30,
                  is_draw=True, device='cpu', iou=0.3, conf=0.2, show=True):
         """Class này kế thừa từ class Base (xử lý tuần tự). Class con này chưa phải là code để multiprocessing\
         mà chỉ là một chút cải tiến từ code base (class Base) để có thể vừa xử lý video đầu vào ở một process\

@@ -1,9 +1,11 @@
+import cvzone
 import cv2
 import os
 import numpy as np
 from datetime import datetime
 from ultralytics import solutions
-from services.utils import *
+from utils import *
+import conf
 # Thêm cái này để tránh xung đột
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -30,7 +32,7 @@ class AnalyzeOnRoadBase:
             >>> analyzer.process_on_single_video()
     """
     def __init__(self, path_video = "./video_test/Đường Láng.mp4", meter_per_pixel = 0.06, 
-                 model_path="best_int8_openvino_model", time_step=30,
+                 model_path= conf.models_path, time_step=30,
                  is_draw=True, device='cpu', iou=0.3, conf=0.2, show=True,
                  region = np.array([[50, 400], [50, 265], [370, 130], [600, 130], [600, 400]])):
         """Hàm xử lý uần tự như một Script đơn giản áp dụng YOLO và cải tiến hơn là ở việc gói gọn trong 1 class
@@ -79,7 +81,7 @@ class AnalyzeOnRoadBase:
         self.frame_predict = None
         self.is_draw = is_draw
         self.delta_time = 0
-
+        self.time_pre_for_fps = datetime.now()
     def update_for_frame(self):
         """Dành cho subclass định nghĩa, do không cần ở hiện tại"""
         pass
@@ -149,6 +151,7 @@ class AnalyzeOnRoadBase:
             
             # Lấy dữ liệu từ speed_tool như tốc độ, id, bounding boxes và class 
             self.speeds = self.speed_tool.spd
+            
             self.ids = self.speed_tool.track_data.id.cpu().numpy().astype('int')
             self.boxes = self.speed_tool.track_data.xyxy.cpu().numpy().astype('int')
             self.classes = self.speed_tool.track_data.cls.cpu().numpy().astype('int')
@@ -209,10 +212,33 @@ class AnalyzeOnRoadBase:
             
             # Cuối cùng vẽ các thông tin tổng quát
             cv2.polylines(self.frame_output, [pts], isClosed=True, color=(0, 255, 255), thickness=4)
-            cv2.putText(self.frame_output, f"Xe may: {self.count_motor_display} xe, Vtb = {self.speed_motor_display} km/h", (5, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 200), 3)
-            cv2.putText(self.frame_output, f"O to: {self.count_car_display} xe, Vtb = {self.speed_car_display} km/h", (5, 80),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (200, 0, 0), 3)
+      
+
+            info = [
+                f"Xe may: {self.count_motor_display} xe, Vtb = {self.speed_motor_display} km/h",
+                f"Oto: {self.count_car_display} xe, Vtb = {self.speed_car_display} km/h"
+            ]
+
+            # Màu chữ riêng cho từng dòng
+            colors = [
+                (0, 0, 200),   # Xe máy: đỏ sẫm
+                (200, 0, 0)    # Ô tô: đỏ tươi
+            ]
+
+            for i, t in enumerate(info):
+                cvzone.putTextRect(
+                    self.frame_output,
+                    t,
+                    (10, 25 + i * 35),    # vị trí hiển thị
+                    scale=1.5, thickness=2,
+                    colorT=colors[i],     # lấy màu theo dòng
+                    colorR=(50, 50, 50),  # nền xám
+                    border=2,
+                    colorB=(255, 255, 255) # viền trắng
+                )
+
+
+
         except Exception as e:
             print(f"Lỗi khi vẽ: {e}")
     
@@ -226,6 +252,7 @@ class AnalyzeOnRoadBase:
         
         try:
             while True:
+                time_now = datetime.now()
                 check, cap = cam.read()
                 if not check:
                     print(f'Kết thúc video: {self.path_video}')
@@ -234,14 +261,30 @@ class AnalyzeOnRoadBase:
                     continue
                 # Xử lý từng frame một
                 self.process_single_frame(cap)
-                
+                delta_time = (time_now - self.time_pre_for_fps).total_seconds()
+                fps = round(1 / delta_time)
+                self.time_pre_for_fps = time_now
+                cvzone.putTextRect(self.frame_output,
+                                    f"FPS: {fps}",
+                                    (515, 20),             # vị trí
+                                    scale=1.1, thickness=2,
+                                    colorT=(0, 255, 100),  # màu chữ
+                                    colorR=(50, 50, 50),   # màu nền (xám)
+                                    border=2,
+                                    colorB=(255, 255, 255) # màu viền (trắng)
+                                )
                 # Hiển thị frame nếu show là True            
                 if self.show:
                     cv2.imshow(f'{self.name}', self.frame_output)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
+                
         except KeyboardInterrupt:
             print(f"Đã dừng xử lý {self.name}")
+            # Giải phóng tài nguyên
+            cam.release()
+            if self.show:
+                cv2.destroyAllWindows()
         except Exception as e:
             print(f"Lỗi khi xử lý {self.name}: {e}")
         finally:

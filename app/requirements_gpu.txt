@@ -1,14 +1,18 @@
+numpy
+opencv-python
 langchain
 langchain_google_genai
 ultralytics
-numpy
-opencv-python
 fastapi
 uvicorn
 shapely
 python-dotenv
 lap
+MNN
+openvino
+onnxruntime
 langgraph
+git+https://github.com/ultralytics/CLIP.git
 git+https://github.com/ultralytics/CLIP.git
 --extra-index-url https://download.pytorch.org/whl/cu118
 torch

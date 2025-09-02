@@ -1,8 +1,8 @@
 from multiprocessing import Process, Manager, freeze_support
 import os
-from services.AnalyzeOnRoad import AnalyzeOnRoad
-from services.utils import *
-from services import conf
+from AnalyzeOnRoad import AnalyzeOnRoad
+from utils import *
+import conf
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 """ Trên Windows, Python multiprocessing sử dụng spawn method thay vì fork (như trên Linux/macOS)
@@ -171,10 +171,12 @@ class AnalyzeOnRoadForMultiprocessing():
                 'frame': data['frame'].get('frame', "")
             }
         return frames
+    
     def get_frame_road(self, road_name : str):
         data = {}
         data['frame'] = self.shared_data[road_name]['frame'].get('frame', "")
         return data
+    
     def get_info_road(self, road_name : str):
         data = {}
         data = dict(self.shared_data[road_name]['info'])
