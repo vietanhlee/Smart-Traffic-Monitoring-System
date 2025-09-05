@@ -1,8 +1,8 @@
 from multiprocessing import Process, Manager, freeze_support
 import os
-from AnalyzeOnRoad import AnalyzeOnRoad
-from utils import *
-import conf
+from services.AnalyzeOnRoad import AnalyzeOnRoad
+from services.utils import *
+from services import conf
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 """ Trên Windows, Python multiprocessing sử dụng spawn method thay vì fork (như trên Linux/macOS)
@@ -20,10 +20,8 @@ class AnalyzeOnRoadForMultiprocessing():
         của các process với nhau chặt chẽ hơn
         processes (list): các process con đang chạy 
     """
-    def __init__(self, regions = conf.regions,
-                 path_videos = conf.path_videos,
-        meter_per_pixels = conf.meter_per_pixels, 
-        show_log = False, show = False, is_join_processes = True):
+    def __init__(self, regions = conf.regions, path_videos = conf.path_videos,
+        meter_per_pixels = conf.meter_per_pixels, show_log = False, show = False, is_join_processes = True):
         """Khi tích hợp API vào thiết kế do cơ chế envent loop vòng lặp bất tận nên không cần join
         các process lại để tránh bị kill. Do đó phải đặt is_join_processes = False nếu không nó sẽ chặn
         envent loop của api khiến server nghẽn
@@ -184,8 +182,6 @@ class AnalyzeOnRoadForMultiprocessing():
     
     
     
-    
-
 #********************************************************************Script for testing************************************************************************
 if __name__ == '__main__':
     # freeze_support should be called immediately in the main block

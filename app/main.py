@@ -6,6 +6,8 @@ from services.AnalyzeOnRoadForMultiProcessing import AnalyzeOnRoadForMultiproces
 from services.ChatBot import ChatBot
 from fastapi.middleware.cors import CORSMiddleware
 import config
+from starlette.responses import RedirectResponse
+
 app = FastAPI()
 # Cho phép gọi API từ frontend khác port (CORS)
 app.add_middleware(
@@ -16,6 +18,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get(path= '/')
+def direct_home():
+    RedirectResponse(url= '')
 @app.on_event("startup")
 def start_up():
     if state.analyzer is None:

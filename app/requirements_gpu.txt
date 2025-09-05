@@ -1,5 +1,6 @@
 numpy
 opencv-python
+cvzone
 langchain
 langchain_google_genai
 ultralytics
@@ -10,11 +11,11 @@ python-dotenv
 lap
 MNN
 openvino
-onnxruntime
+onnxruntime-gpu
+onnx
 langgraph
 git+https://github.com/ultralytics/CLIP.git
-git+https://github.com/ultralytics/CLIP.git
---extra-index-url https://download.pytorch.org/whl/cu118
+--extra-index-url https://download.pytorch.org/whl/cu128
 torch
 torchvision
 torchaudio

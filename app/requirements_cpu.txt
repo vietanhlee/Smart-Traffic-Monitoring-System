@@ -1,5 +1,9 @@
 numpy
 opencv-python
+cvzone
+torch
+torchvision
+torchaudio
 langchain
 langchain_google_genai
 ultralytics
@@ -11,5 +15,6 @@ lap
 MNN
 openvino
 onnxruntime
+onnx
 langgraph
 git+https://github.com/ultralytics/CLIP.git

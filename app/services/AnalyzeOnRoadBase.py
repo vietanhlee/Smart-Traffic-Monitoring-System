@@ -4,8 +4,8 @@ import os
 import numpy as np
 from datetime import datetime
 from ultralytics import solutions
-from utils import *
-import conf
+from services.utils import *
+from services import conf
 # Thêm cái này để tránh xung đột
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -33,7 +33,7 @@ class AnalyzeOnRoadBase:
     """
     def __init__(self, path_video = "./video_test/Đường Láng.mp4", meter_per_pixel = 0.06, 
                  model_path= conf.models_path, time_step=30,
-                 is_draw=True, device='cpu', iou=0.3, conf=0.2, show=True,
+                 is_draw=True, device= conf.device, iou=0.3, conf=0.2, show=True,
                  region = np.array([[50, 400], [50, 265], [370, 130], [600, 130], [600, 400]])):
         """Hàm xử lý uần tự như một Script đơn giản áp dụng YOLO và cải tiến hơn là ở việc gói gọn trong 1 class
 
@@ -176,6 +176,7 @@ class AnalyzeOnRoadBase:
             self.update_data()
         except Exception as e:
             print(f"Lỗi khi xử lý với file {self.name}: {e}")
+            
     def draw_info_to_frame_output(self):
         """Hàm này để vẽ các thông tin lên ảnh"""
         try:
@@ -213,7 +214,6 @@ class AnalyzeOnRoadBase:
             # Cuối cùng vẽ các thông tin tổng quát
             cv2.polylines(self.frame_output, [pts], isClosed=True, color=(0, 255, 255), thickness=4)
       
-
             info = [
                 f"Xe may: {self.count_motor_display} xe, Vtb = {self.speed_motor_display} km/h",
                 f"Oto: {self.count_car_display} xe, Vtb = {self.speed_car_display} km/h"
@@ -237,8 +237,6 @@ class AnalyzeOnRoadBase:
                     colorB=(255, 255, 255) # viền trắng
                 )
 
-
-
         except Exception as e:
             print(f"Lỗi khi vẽ: {e}")
     
@@ -260,11 +258,9 @@ class AnalyzeOnRoadBase:
                     cam.set(cv2.CAP_PROP_POS_FRAMES, 0)
                     continue
                 # Xử lý từng frame một
-                self.process_single_frame(cap)
                 delta_time = (time_now - self.time_pre_for_fps).total_seconds()
                 fps = round(1 / delta_time)
-                self.time_pre_for_fps = time_now
-                cvzone.putTextRect(self.frame_output,
+                cvzone.putTextRect(cap,
                                     f"FPS: {fps}",
                                     (515, 20),             # vị trí
                                     scale=1.1, thickness=2,
@@ -273,6 +269,9 @@ class AnalyzeOnRoadBase:
                                     border=2,
                                     colorB=(255, 255, 255) # màu viền (trắng)
                                 )
+                self.time_pre_for_fps = time_now
+                self.process_single_frame(cap)
+                
                 # Hiển thị frame nếu show là True            
                 if self.show:
                     cv2.imshow(f'{self.name}', self.frame_output)

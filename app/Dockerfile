@@ -1,35 +1,41 @@
 # Backend Dockerfile for FastAPI
-FROM python
-
+FROM python:3.11   
 
 # Nhận biến ARG để xác định dùng GPU hay CPU
 ARG DEVICE=cpu
 
-
-# chỉ định thư mục làm việc để chạy lệnh
+# Chỉ định thư mục làm việc
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
-    libglib2.0-0
+# Cài dependency hệ thống cần cho OpenCV & hiển thị ảnh
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy cả hai file requirements vào container
-COPY requirements_cpu.txt .
-COPY requirements_gpu.txt .
+# Copy requirements
+COPY requirements_cpu.txt requirements_gpu.txt ./
 
-# Chọn file requirements phù hợp dựa trên biến DEVICE
+# Nâng pip
+RUN pip install --upgrade pip
+
+# Cài requirements phù hợp theo DEVICE
 RUN if [ "$DEVICE" = "gpu" ]; then \
         pip install --no-cache-dir -r requirements_gpu.txt; \
     else \
         pip install --no-cache-dir -r requirements_cpu.txt; \
     fi
 
-# Copy backend code
+# Copy toàn bộ source code vào container
 COPY . .
-# ❗ Lưu ý: EXPOSE chỉ mang tính mô tả, không thực sự publish cổng — cần
+
+# Mở port cho FastAPI
 EXPOSE 8000
 
-CMD ["uvicorn", "fast_api:app", "--host", "0.0.0.0", "--reload"]
-# --host 0.0.0.0: Cho phép truy cập từ bên ngoài container.
+# Run FastAPI bằng uvicorn
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 
-# docker build -t myapp-gpu --build-arg DEVICE=gpu .
+# docker build -t myapp-cpu --build-arg DEVICE=cpu .
