@@ -34,7 +34,7 @@ class AnalyzeOnRoadBase:
     """
     def __init__(self, path_video = "./video_test/Đường Láng.mp4", meter_per_pixel = 0.06, 
                  model_path= conf.models_path, time_step=30,
-                 is_draw=True, device= conf.device, iou=0.3, conf=0.2, show=True,
+                 is_draw=True, device= conf.device, iou=0.3, conf=0.2, show=False,
                  region = np.array([[50, 400], [50, 265], [370, 130], [600, 130], [600, 400]])):
         """Hàm xử lý uần tự như một Script đơn giản áp dụng YOLO và cải tiến hơn là ở việc gói gọn trong 1 class
 
@@ -140,11 +140,10 @@ class AnalyzeOnRoadBase:
         classes là một numpy array chứa class của các phương tiện (0: ô tô, 1: xe máy)
         """
         try:
-            # Đặt lại kích thước ảnh đầu vào đủ lớn để xử lý, copy để tránh thay đổi ảnh gốc, cắt ảnh để chỉ predict vùng cần thiết
-            frame_in = cv2.resize(frame_input, (600, 400))
-            self.frame_output = frame_in.copy()
+            # copy để tránh thay đổi ảnh gốc, cắt ảnh để chỉ predict vùng cần thiết
+            self.frame_output = frame_input.copy()
             # Cắt ảnh kiểu này tránh lỗi
-            self.frame_predict = np.ascontiguousarray(frame_in[130:, 50:]) 
+            self.frame_predict = np.ascontiguousarray(frame_input[130:, 50:]) 
             
             # Xử lý ảnh để dự đoán tốc độ
             # Sao chép frame_predict để tránh thay đổi ảnh gốc, sau đó xử lý
