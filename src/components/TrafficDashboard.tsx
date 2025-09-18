@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,28 +22,11 @@ import VideoMonitor from "./VideoMonitor";
 import ChatInterface from "./ChatInterface";
 import TrafficAnalytics from "./TrafficAnalytics";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMultipleTrafficInfo } from "../hooks/useWebSocket";
 
-interface VehicleData {
-  count_car: number;
-  count_motor: number;
-  speed_car: number;
-  speed_motor: number;
-}
 
-interface FrameData {
-  [roadName: string]: {
-    frame: string;
-  };
-}
-
-interface TrafficData {
-  [roadName: string]: VehicleData;
-}
 
 const TrafficDashboard = () => {
-  const [trafficData, setTrafficData] = useState<TrafficData>({});
-  const [frameData, setFrameData] = useState<FrameData>({});
-  const [loading, setLoading] = useState(true);
   const [selectedRoad, setSelectedRoad] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { theme, setTheme } = useTheme();
@@ -56,45 +39,13 @@ const TrafficDashboard = () => {
     "Văn Quán",
   ];
 
-  // Fetch traffic data every 1 second
-  useEffect(() => {
-    const fetchTrafficData = async () => {
-      try {
-        const response = await fetch("http://127.0.0.1:8000/veheicles");
-        if (response.ok) {
-          const data = await response.json();
-          setTrafficData(data);
-        }
-      } catch (error) {
-        console.error("Error fetching traffic data:", error);
-      }
-    };
+  // Use WebSocket for traffic data
+  const {
+    trafficData,
+    isAnyConnected,
+  } = useMultipleTrafficInfo(allowedRoads);
 
-    fetchTrafficData();
-    const interval = setInterval(fetchTrafficData, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Fetch frame data every 200ms
-  useEffect(() => {
-    const fetchFrameData = async () => {
-      try {
-        const response = await fetch("http://127.0.0.1:8000/frames");
-        if (response.ok) {
-          const data = await response.json();
-          setFrameData(data);
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error("Error fetching frame data:", error);
-        setLoading(false);
-      }
-    };
-
-    fetchFrameData();
-    const interval = setInterval(fetchFrameData, 200);
-    return () => clearInterval(interval);
-  }, []);
+  const loading = !isAnyConnected;
 
   const getTrafficStatus = (roadName: string) => {
     const data = trafficData[roadName];
@@ -207,7 +158,6 @@ const TrafficDashboard = () => {
             {/* Video Monitoring */}
             <div className={isFullscreen ? "col-span-1" : "col-span-3"}>
               <VideoMonitor
-                frameData={frameData}
                 trafficData={trafficData}
                 allowedRoads={allowedRoads}
                 selectedRoad={selectedRoad}

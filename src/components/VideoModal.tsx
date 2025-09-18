@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useFrameStream, useTrafficInfo } from "../hooks/useWebSocket";
 
 interface VideoModalProps {
   isOpen: boolean;
   onClose: () => void;
   roadName: string;
-  frameData: string | null;
   trafficData?: {
     count_car: number;
     count_motor: number;
@@ -20,10 +20,16 @@ const VideoModal = ({
   isOpen,
   onClose,
   roadName,
-  frameData,
   trafficData,
 }: VideoModalProps) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  
+  // Use WebSocket hooks for real-time data
+  const { data: frameData, isConnected: frameConnected } = useFrameStream(isOpen ? roadName : null);
+  const { data: liveTrafficData } = useTrafficInfo(isOpen ? roadName : null);
+  
+  // Use live traffic data if available, otherwise fallback to prop data
+  const currentTrafficData = liveTrafficData || trafficData;
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -104,9 +110,9 @@ const VideoModal = ({
             {/* Video */}
             <div className="relative bg-black p-4">
               <div className="relative aspect-video rounded-lg overflow-hidden">
-                {frameData ? (
+                {frameData?.frame && frameConnected ? (
                   <img
-                    src={`data:image/jpeg;base64,${frameData}`}
+                    src={`data:image/jpeg;base64,${frameData.frame}`}
                     alt={`Camera ${roadName}`}
                     className="w-full h-full object-fit"
                   />
@@ -114,23 +120,27 @@ const VideoModal = ({
                   <div className="w-full h-full flex items-center justify-center text-white">
                     <div className="text-center">
                       <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
-                      <p>Đang tải video...</p>
+                      <p>{frameConnected ? "Đang tải video..." : "Mất kết nối camera"}</p>
                     </div>
                   </div>
                 )}
 
                 {/* Live Indicator */}
                 <div className="absolute top-3 left-3">
-                  <div className="flex items-center space-x-1 bg-red-500/90 text-white px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
-                    <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
-                    <span>LIVE</span>
+                  <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${
+                    frameConnected 
+                      ? "bg-red-500/90 text-white" 
+                      : "bg-gray-500/90 text-white"
+                  }`}>
+                    <div className={`w-1.5 h-1.5 bg-white rounded-full ${frameConnected ? 'animate-pulse' : ''}`}></div>
+                    <span>{frameConnected ? "LIVE" : "OFFLINE"}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Traffic Info Bottom Panel */}
-            {trafficData && (
+            {currentTrafficData && (
               <div className="p-6 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center space-x-2">
                   <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-white">
@@ -190,7 +200,7 @@ const VideoModal = ({
                           </span>
                         </div>
                         <span className="font-semibold text-blue-600 dark:text-blue-400 text-lg">
-                          {trafficData.count_car}
+                          {currentTrafficData.count_car}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
@@ -213,7 +223,7 @@ const VideoModal = ({
                           </span>
                         </div>
                         <span className="font-semibold text-green-600 dark:text-green-400 text-lg">
-                          {trafficData.count_motor}
+                          {currentTrafficData.count_motor}
                         </span>
                       </div>
                       <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
@@ -221,7 +231,7 @@ const VideoModal = ({
                           Tổng cộng
                         </span>
                         <span className="font-bold text-purple-600 dark:text-purple-400 text-xl">
-                          {trafficData.count_car + trafficData.count_motor}
+                          {currentTrafficData.count_car + currentTrafficData.count_motor}
                         </span>
                       </div>
                     </div>
@@ -265,7 +275,7 @@ const VideoModal = ({
                           </span>
                         </div>
                         <span className="font-semibold text-blue-600 dark:text-blue-400">
-                          {trafficData.speed_car.toFixed(1)} km/h
+                          {currentTrafficData.speed_car.toFixed(1)} km/h
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
@@ -288,7 +298,7 @@ const VideoModal = ({
                           </span>
                         </div>
                         <span className="font-semibold text-green-600 dark:text-green-400">
-                          {trafficData.speed_motor.toFixed(1)} km/h
+                          {currentTrafficData.speed_motor.toFixed(1)} km/h
                         </span>
                       </div>
                     </div>
@@ -317,7 +327,7 @@ const VideoModal = ({
                     <div className="text-center">
                       {(() => {
                         const total =
-                          trafficData.count_car + trafficData.count_motor;
+                          currentTrafficData.count_car + currentTrafficData.count_motor;
                         if (total > 15) {
                           return (
                             <div className="flex items-center justify-center space-x-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">

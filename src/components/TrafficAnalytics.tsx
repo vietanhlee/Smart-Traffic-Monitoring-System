@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BarChart,
@@ -20,7 +18,6 @@ import {
 } from "recharts";
 import {
   TrendingUp,
-  TrendingDown,
   Activity,
   Car,
   Bike,
@@ -56,9 +53,6 @@ const TrafficAnalytics = ({
   allowedRoads,
 }: TrafficAnalyticsProps) => {
   const [historicalData, setHistoricalData] = useState<HistoricalData[]>([]);
-  const [selectedMetric, setSelectedMetric] = useState<"vehicles" | "speed">(
-    "vehicles"
-  );
 
   // Store historical data
   useEffect(() => {
@@ -394,7 +388,7 @@ const TrafficAnalytics = ({
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {pieData.map((entry, index) => (
+                    {pieData.map((_entry, index) => (
                       <Cell
                         key={`cell-${index}`}
                         fill={COLORS[index % COLORS.length]}
@@ -402,7 +396,7 @@ const TrafficAnalytics = ({
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value, name, props) => [
+                    formatter={(value, _name, props) => [
                       `${value} xe (${props.payload.cars} ô tô, ${props.payload.motors} xe máy)`,
                       "Tổng số xe",
                     ]}

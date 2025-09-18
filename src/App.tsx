@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 import TrafficDashboard from "./components/TrafficDashboard";
