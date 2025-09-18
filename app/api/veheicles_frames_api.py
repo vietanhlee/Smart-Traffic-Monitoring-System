@@ -1,10 +1,22 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, routing
 from fastapi.responses import JSONResponse
 from api import state
 import asyncio
+from services.AnalyzeOnRoadForMultiProcessing import AnalyzeOnRoadForMultiprocessing
+import config
 
 router = APIRouter()
 
+@router.on_event("startup")
+def start_up():
+    if state.analyzer is None:
+        state.analyzer = AnalyzeOnRoadForMultiprocessing(show= False,
+                                            show_log= False,
+                                            is_join_processes= False,
+                                            path_videos= config.PATH_VIDEOS,
+                                            meter_per_pixels= config.METER_PER_PIXELS,
+                                            regions= config.REGIONS)
+        state.analyzer.run_multiprocessing()
 
 @router.get(path= '/road_name')
 async def get_road_names():

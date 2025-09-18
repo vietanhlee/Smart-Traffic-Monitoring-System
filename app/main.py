@@ -20,20 +20,8 @@ app.add_middleware(
 
 @app.get(path= '/')
 def direct_home():
-    RedirectResponse(url= '')
-@app.on_event("startup")
-def start_up():
-    if state.analyzer is None:
-        state.analyzer = AnalyzeOnRoadForMultiprocessing(show= False,
-                                            show_log= False,
-                                            is_join_processes= False,
-                                            path_videos= config.PATH_VIDEOS,
-                                            meter_per_pixels= config.METER_PER_PIXELS,
-                                            regions= config.REGIONS)
-        state.analyzer.run_multiprocessing()
-    
-    if state.chat_bot is None:
-        state.chat_bot = ChatBot()
+    RedirectResponse(url= 'http://localhost:5173/')
+
 
 app.include_router(chat_api.router, prefix="", tags=["post chat"])
 app.include_router(veheicles_frames_api.router, prefix="", tags=["veheicles and frames of processes"])
