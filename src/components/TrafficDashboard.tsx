@@ -22,79 +22,40 @@ import VideoMonitor from "./VideoMonitor";
 import ChatInterface from "./ChatInterface";
 import TrafficAnalytics from "./TrafficAnalytics";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMultipleTrafficInfo, useMultipleFrameStreams } from "../hooks/useWebSocket";
+import { endpoints } from "../config";
 
-interface VehicleData {
-  count_car: number;
-  count_motor: number;
-  speed_car: number;
-  speed_motor: number;
-}
+// VehicleData shape is provided by backend; avoid explicit interface to keep flexible
 
-interface FrameData {
-  [roadName: string]: {
-    frame: string;
-  };
-}
-
-interface TrafficData {
-  [roadName: string]: VehicleData;
-}
+// TrafficData shape is inferred from hooks; explicit interface removed to avoid unused lint
 
 const TrafficDashboard = () => {
-  const [trafficData, setTrafficData] = useState<TrafficData>({});
-  const [frameData, setFrameData] = useState<FrameData>({});
-  const [loading, setLoading] = useState(true);
   const [selectedRoad, setSelectedRoad] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { theme, setTheme } = useTheme();
 
-  const allowedRoads = [
-    "Văn Phú",
-    "Nguyễn Trãi",
-    "Ngã Tư Sở",
-    "Đường Láng",
-    "Văn Quán",
-  ];
+  const [allowedRoads, setAllowedRoads] = useState<string[]>([]);
 
-  // Fetch traffic data every 1 second
   useEffect(() => {
-    const fetchTrafficData = async () => {
+    const fetchRoads = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/veheicles");
-        if (response.ok) {
-          const data = await response.json();
-          setTrafficData(data);
-        }
-      } catch (error) {
-        console.error("Error fetching traffic data:", error);
+        const res = await fetch(endpoints.roadNames);
+        const json = await res.json();
+        const names: string[] = json?.road_names ?? [];
+        setAllowedRoads(names);
+      } catch (e) {
+        // fallback to known demo names if API not ready
+        setAllowedRoads(["Văn Phú", "Nguyễn Trãi", "Ngã Tư Sở", "Đường Láng", "Văn Quán"]);
       }
     };
-
-    fetchTrafficData();
-    const interval = setInterval(fetchTrafficData, 1000);
-    return () => clearInterval(interval);
+    fetchRoads();
   }, []);
 
-  // Fetch frame data every 200ms
-  useEffect(() => {
-    const fetchFrameData = async () => {
-      try {
-        const response = await fetch("http://127.0.0.1:8000/frames");
-        if (response.ok) {
-          const data = await response.json();
-          setFrameData(data);
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error("Error fetching frame data:", error);
-        setLoading(false);
-      }
-    };
+  // Use WebSocket for traffic data
+  const { trafficData, isAnyConnected } = useMultipleTrafficInfo(allowedRoads);
+  const { frameData: frames } = useMultipleFrameStreams(allowedRoads);
 
-    fetchFrameData();
-    const interval = setInterval(fetchFrameData, 200);
-    return () => clearInterval(interval);
-  }, []);
+  const loading = !isAnyConnected;
 
   const getTrafficStatus = (roadName: string) => {
     const data = trafficData[roadName];
@@ -207,7 +168,7 @@ const TrafficDashboard = () => {
             {/* Video Monitoring */}
             <div className={isFullscreen ? "col-span-1" : "col-span-3"}>
               <VideoMonitor
-                frameData={frameData}
+                frameData={frames}
                 trafficData={trafficData}
                 allowedRoads={allowedRoads}
                 selectedRoad={selectedRoad}
