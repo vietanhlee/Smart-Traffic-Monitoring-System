@@ -64,6 +64,98 @@ npm run dev
 # Vite: http://localhost:5173
 ```
 
+### Docker
+
+#### Quick Start with Docker Compose
+
+The easiest way to run the entire system is using Docker Compose:
+
+```bash
+# From the project root directory
+docker compose up --build
+
+# Run in background
+docker compose up --build -d
+
+# Stop services
+docker compose down
+```
+
+This will start both the FastAPI backend and React frontend:
+- Backend: http://localhost:8000
+- Frontend: http://localhost:5173
+
+#### Individual Docker Builds
+
+**Backend (FastAPI):**
+
+```bash
+cd app
+
+# CPU version
+docker build -t smart-transport-backend-cpu --build-arg DEVICE=cpu .
+
+# GPU version (requires NVIDIA Docker)
+docker build -t smart-transport-backend-gpu --build-arg DEVICE=gpu .
+
+# Run backend container
+docker run -p 8000:8000 -v ./video_test:/app/video_test smart-transport-backend-cpu
+```
+
+**Frontend (React):**
+
+```bash
+# From project root
+docker build -t smart-transport-frontend .
+
+# Run frontend container
+docker run -p 5173:5173 smart-transport-frontend
+```
+
+#### Docker Compose Configuration
+
+The `docker-compose.yml` file includes:
+
+- **Backend service**: FastAPI with CPU/GPU support
+- **Frontend service**: React development server
+- **Volume mounting**: Video test files are mounted from `./app/video_test`
+- **Network**: Services communicate through a custom network
+
+#### Environment Variables for Docker
+
+Create a `.env` file in the project root for Docker Compose:
+
+```env
+# Backend configuration
+DEVICE=cpu  # or 'gpu' for GPU support
+
+# Optional: Google API key for chatbot
+GOOGLE_API_KEY=your_google_api_key_here
+
+# Frontend API endpoints (optional overrides)
+VITE_API_HTTP_BASE=http://localhost:8000
+VITE_API_WS_BASE=ws://localhost:8000
+```
+
+#### GPU Support
+
+For GPU support, ensure you have:
+1. NVIDIA Docker runtime installed
+2. NVIDIA drivers on your host system
+3. Change `DEVICE: gpu` in `docker-compose.yml` or use `--build-arg DEVICE=gpu`
+
+```bash
+# GPU version with Docker Compose
+docker compose up --build --build-arg DEVICE=gpu
+```
+
+#### Troubleshooting Docker
+
+- **Port conflicts**: Ensure ports 8000 and 5173 are not in use
+- **Video files**: Place test videos in `app/video_test/` directory
+- **Build cache**: Use `--no-cache` flag if builds fail: `docker compose build --no-cache`
+- **Logs**: Check container logs with `docker compose logs [service_name]`
+
 ## Configuration
 
 Frontend base URLs are centralized in `src/config.ts` and can be overridden using Vite env vars:

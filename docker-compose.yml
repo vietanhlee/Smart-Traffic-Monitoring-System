@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  fastapi:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+      args:
+        DEVICE: cpu
+    container_name: backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app/video_test:/app/video_test
+    networks:
+      - mynet
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile   # Dockerfile FE (ở cùng cấp với app/)
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - fastapi
+    networks:
+      - mynet
+
+networks:
+  mynet:
+
+
+# docker compose up --build
+

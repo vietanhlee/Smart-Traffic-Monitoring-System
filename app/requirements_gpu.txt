@@ -5,13 +5,13 @@ langchain
 langchain_google_genai
 ultralytics
 fastapi
-uvicorn
+uvicorn[standard]
 shapely
 python-dotenv
-lap
+lapx
 MNN
 openvino
-onnxruntime-gpu
+onnxruntime
 onnx
 langgraph
 git+https://github.com/ultralytics/CLIP.git
