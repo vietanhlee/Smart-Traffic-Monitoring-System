@@ -66,7 +66,7 @@ const VideoModal = ({
           className={`relative bg-white dark:bg-gray-900 rounded-xl shadow-2xl overflow-hidden ${
             isFullscreen
               ? "w-screen h-screen rounded-none"
-              : "w-[90vw] h-[90vh] max-w-6xl max-h-4xl"
+              : "w-[90vw] h-[90vh] max-w-5xl max-h-4xl"
           }`}
           onClick={(e) => e.stopPropagation()}
         >
@@ -100,7 +100,7 @@ const VideoModal = ({
           </div>
 
           {/* Video Content */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_380px]">
             {/* Video */}
             <div className="relative bg-black p-4">
               <div className="relative aspect-video rounded-lg overflow-hidden">
@@ -108,7 +108,7 @@ const VideoModal = ({
                   <img
                     src={`data:image/jpeg;base64,${frameData}`}
                     alt={`Camera ${roadName}`}
-                    className="w-full h-full object-fit"
+                    className="w-full h-full object-contain"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-white">
@@ -119,19 +119,13 @@ const VideoModal = ({
                   </div>
                 )}
 
-                {/* Live Indicator */}
-                <div className="absolute top-3 left-3">
-                  <div className="flex items-center space-x-1 bg-red-500/90 text-white px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
-                    <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
-                    <span>LIVE</span>
-                  </div>
-                </div>
+                {/* Live Indicator removed per request */}
               </div>
             </div>
 
-            {/* Traffic Info Bottom Panel */}
+            {/* Traffic Info Right Panel on desktop, stacked on mobile */}
             {trafficData && (
-              <div className="p-6 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+              <div className="p-6 bg-gray-50 dark:bg-gray-800 md:border-l border-gray-200 dark:border-gray-700 overflow-y-auto md:w-[380px]">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center space-x-2">
                   <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-white">
                     <svg
@@ -151,7 +145,7 @@ const VideoModal = ({
                   <span>Thông Tin Giao Thông</span>
                 </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                   {/* Vehicle Count Card */}
                   <div className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
                     <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center space-x-2">

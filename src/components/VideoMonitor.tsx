@@ -175,7 +175,7 @@ const VideoMonitor = ({
                   }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   whileHover={{ scale: 1.02 }}
-                  className={`relative overflow-hidden rounded-xl border-2 transition-all duration-300 cursor-pointer ${
+                  className={`relative overflow-hidden rounded-xl border-2 transition-all duration-300 cursor-pointer inline-block w-fit mx-auto ${
                     isSelected
                       ? "border-blue-500 shadow-lg shadow-blue-500/25"
                       : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
@@ -185,13 +185,13 @@ const VideoMonitor = ({
                     setModalOpen(true);
                   }}
                 >
-                  {/* Video Frame */}
-                  <div className="relative aspect-video bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                  {/* Video Frame (smaller, fits box) */}
+                  <div className="relative w-[480px] aspect-video bg-gray-100 dark:bg-gray-800 overflow-hidden mx-auto">
                     {showFrames && frame?.frame ? (
                       <img
                         src={`data:image/jpeg;base64,${frame.frame}`}
                         alt={`Camera ${roadName}`}
-                        className="w-full h-full object-fit"
+                        className="w-full h-full object-contain block"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -199,24 +199,10 @@ const VideoMonitor = ({
                       </div>
                     )}
 
-                    {/* Status Overlay - positioned to not cover video content */}
-                    <div className="absolute top-2 right-2 z-10">
-                      <Badge
-                        variant={getStatusBadgeVariant(color)}
-                        className="flex items-center space-x-1 bg-black/70 text-white border-none backdrop-blur-sm"
-                      >
-                        <Icon className="h-3 w-3" />
-                        <span className="text-xs">{text}</span>
-                      </Badge>
-                    </div>
+                    {/* Status Overlay removed per request */}
+                    
 
-                    {/* Live Indicator - positioned to not cover video content */}
-                    <div className="absolute top-2 left-2 z-10">
-                      <div className="flex items-center space-x-1 bg-red-500/90 text-white px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
-                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
-                        <span>LIVE</span>
-                      </div>
-                    </div>
+                    {/* Live Indicator removed per request */}
 
                     {/* Click to expand hint */}
                     <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-200 flex items-center justify-center opacity-0 hover:opacity-100">
@@ -226,11 +212,21 @@ const VideoMonitor = ({
                     </div>
                   </div>
 
-                  {/* Info Panel */}
-                  <div className="p-4 bg-white dark:bg-gray-900">
+                  {/* Info Panel (match video width) */}
+                  <div className="bg-white dark:bg-gray-900 box-border w-[480px] mx-auto p-3">
                     <h3 className="font-semibold text-lg mb-3 flex items-center space-x-2">
                       <span>{roadName}</span>
                     </h3>
+                    {/* Status moved below video */}
+                    <div className="mb-3">
+                      <Badge
+                        variant={getStatusBadgeVariant(color)}
+                        className="flex items-center space-x-2"
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span className="text-xs">{text}</span>
+                      </Badge>
+                    </div>
 
                     {data ? (
                       <div className="grid grid-cols-2 gap-4">
