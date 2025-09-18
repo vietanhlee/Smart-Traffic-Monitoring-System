@@ -75,13 +75,16 @@ VITE_API_WS_BASE=ws://localhost:8000
 
 ## API (FastAPI)
 
+Endpoints currently exposed by `app/main.py`:
+
 - GET `/road_name` — list of road names currently processed
 - GET `/frames/{road_name}` — latest frame (base64) for one road
+- GET `/info/{road_name}` — latest traffic metrics for one road (HTTP)
 - WS `/ws/frames/{road_name}` — continuous frames for one road
 - WS `/ws/info/{road_name}` — continuous traffic metrics for one road
 - POST `/chat` — AI assistant
 
-Example responses:
+HTTP examples:
 
 Frames (HTTP):
 ```json
@@ -98,6 +101,20 @@ Info (WS message):
   "speed_car": 32.4,
   "speed_motor": 26.1
 }
+```
+
+Curl:
+```bash
+# road list
+curl http://localhost:8000/road_name
+
+# one road info
+curl http://localhost:8000/info/%E2%80%9CNguy%E1%BB%85n%20Tr%C3%A3i%E2%80%9D
+
+# chat
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message":"Traffic on Nguyen Trai?"}'
 ```
 
 ## Architecture
