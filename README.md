@@ -1,187 +1,117 @@
 # Smart Transportation System
 
-## 📺 DEMO
+Real-time traffic monitoring and analytics using FastAPI (backend), React + Vite (frontend), and WebSockets for live streaming of frames and metrics.
+
+## Demo
 
 ![Demo](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/.github/demo.png)
-
-![Demo2](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/.github/demo2.png)
-
+![Demo 2](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/.github/demo2.png)
 ![Dashboard](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/.github/Dashboad.png)
+![Dashboard 2](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/.github/Dashboad2.png)
+![Chatbot](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/.github/chatbot.png)
+![Chatbot 2](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/.github/chatbot2.png)
 
-![Dashboard2](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/.github/Dashboad2.png)
+## Overview
 
-![CHATBOT](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/.github/chatbot.png)
+- Processes multiple road camera videos in parallel, detects/tracks vehicles, and computes metrics (vehicle counts and average speeds) per road.
+- Serves traffic data and frames through FastAPI.
+- Streams data to the frontend using WebSockets for low-latency visualization.
+- Includes an AI assistant endpoint for chat-based queries.
 
-![CHATBOT2](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/.github/chatbot2.png)
+## Requirements
 
+- Python 3.11+
+- Node.js 18+
+- Backend Python deps: `app/requirements_cpu.txt` or `app/requirements_gpu.txt`
+- Browser: Chrome/Edge/Firefox
 
-## 🚦 Overview
+## Data
 
-- This project is a Smart Transportation System designed to monitor and evaluate real-time traffic congestion in urban areas using traffic surveillance cameras. The system processes video streams, applies deep learning models for vehicle detection and tracking and outputs key traffic metrics such as avarage vehicle count and avarage speed. These metrics are served via a local API and continuously streamed to a frontend interface.
+Download demo videos and put them under the backend as instructed (e.g., `app/video_test/`).
 
-- Additionally, the system aims to integrate a chatbot-based query interface that allows drivers or users to request traffic information about specific routes. The chatbot leverages language models and natural language processing to provide concise and useful responses, making the system both interactive and driver-friendly.
-
-## 🎯 Objectives
-
-- Apply object detection and object tracking (e.g., YOLO with Bytetrack algorithm) to extract vehicle parameters such as avarage vehicle count and avarage speed.
-- Predict traffic congestion levels based on visual data.
-- Provide a simple API for querying traffic insights.
-- Stream results to a frontend client for visualization.
-- Support natural language queries about current traffic status through an integrated chatbot interface.
-
-
-## 🧪 How to Run
-## Please download `video road` [here](https://drive.google.com/drive/folders/1gkac5U5jEs174p7V7VC3rCmgvO_cVwxH?usp=drive_link) and put it into `BACKEND` folder
-
-### 🖥️ System Requirements
-- Python >= 3.11
-- Required libraries from `requirements_cpu.txt` or `requirements_gpu.txt`
-- Web browser (Chrome, Edge, Firefox, etc.)
-- NODEJS > 18
-
-### 💾 Installation for FRONTEND
-
-#### install libraries:
-
-```bash
-npm install
-```
-
-### 💾 Installation for BACKEND
-
-#### Firstly:
-```bash
-cd app
-```
-
-#### Secondly:
-
-##### For running on CPU 
-
-```bash
-pip install -r requirements_cpu.txt
-```
-
-##### For running on GPU
-
-```bash
-pip install -r requirements_gpu.txt
-```
-
-#### Create `.env` file (required for Gemini API)
-
-In the `app` directory, create a file named `.env` and add your Google API key:
-
-```bash
-GOOGLE_API_KEY=your_google_api_key_here
-```
-
-### 🚀 Launch the System
-
-#### Run frontend:
-Back to root
-```bash
-cd ..
-```
-
-```bash
-npm start
-```
-
-#### Run backend:
-
-```bash
-cd app
-```
-
-```bash
-uvicorn main:app --reload
-```
-
-- API will run at: `http://127.0.0.1:8000`
-
-
-## 🧠 Technologies Used
+## Setup
 
 ### Backend
 
-- Python
-- OpenCV, YOLO (custom-trained)
-- Object Tracking (Bytetrack)
-- FastAPI
-- Multiprocessing (for processing multiple video streams)
-- Langchain Platform (for building the LLM-driven chatbot)
+```bash
+cd app
+
+# CPU
+pip install -r requirements_cpu.txt
+
+# or GPU
+pip install -r requirements_gpu.txt
+
+# (Optional) Chat LLM
+echo GOOGLE_API_KEY=your_google_api_key_here > .env
+
+# Run FastAPI
+uvicorn main:app --reload
+# FastAPI: http://127.0.0.1:8000
+```
 
 ### Frontend
 
-- ReactJS 
+```bash
+# From repo root
+npm install
 
-## ⚙️ System Design
+# Configure API endpoints (optional overrides)
+echo VITE_API_HTTP_BASE=http://localhost:8000 > .env
+echo VITE_API_WS_BASE=ws://localhost:8000 >> .env
 
-### A. Video Tracking and Traffic Analysis
+npm run dev
+# Vite: http://localhost:5173
+```
 
-- Each video stream is assigned to a dedicated processing thread (1 video = 1 worker).
-- YOLO + Bytetrack are used to detect and track vehicles.
-- Extracted metrics: avarage vehicle count, average speed (for cars & motorbikes).
-- Processed results are stored in a shared variable with proper thread synchronization.
+## Configuration
 
-### B. API Layer
+Frontend base URLs are centralized in `src/config.ts` and can be overridden using Vite env vars:
 
-- Built with FastAPI.
-- Provides 3 main endpoints:
+```env
+VITE_API_HTTP_BASE=http://localhost:8000
+VITE_API_WS_BASE=ws://localhost:8000
+```
 
-#### 1. `/frames` (GET)
+## API (FastAPI)
 
-Returns the latest frame image for each road:
+- GET `/road_name` — list of road names currently processed
+- GET `/frames/{road_name}` — latest frame (base64) for one road
+- WS `/ws/frames/{road_name}` — continuous frames for one road
+- WS `/ws/info/{road_name}` — continuous traffic metrics for one road
+- POST `/chat` — AI assistant
 
+Example responses:
+
+Frames (HTTP):
 ```json
 {
-  "road_name": {
-    "frame": "<base64-encoded image>"
-  }
+  "frame": "<base64-jpeg>"
 }
 ```
 
-#### 2. `/veheicles` (GET)
-
-Returns vehicle information for each road:
-
+Info (WS message):
 ```json
 {
-  "road_name": {
-    "count_car": <average number of cars>,
-    "count_motor": <average number of motorbikes>,
-    "speed_car": <average speed of cars>,
-    "speed_motor": <average speed of motorbikes>
-  }
+  "count_car": 12,
+  "count_motor": 31,
+  "speed_car": 32.4,
+  "speed_motor": 26.1
 }
 ```
 
-#### 3. `/chat` (POST)
+## Architecture
 
-Receives a prompt from the frontend and returns a chatbot response:
+- Video processing: YOLO + tracking (e.g., ByteTrack), multi-processing per video.
+- Backend: FastAPI, background workers for analysis, WebSockets for live feeds.
+- Frontend: React + Vite; connects to backend via WebSockets using hooks in `src/hooks/useWebSocket.ts`.
 
-```json
-{
-  "message": "your massage"
-}
-```
+## Troubleshooting
 
-Returns:
+- Seeing 404s for `/veheicles` or old `/frames`? Close any legacy tabs (e.g., `FRONTEND_for_testing/index.html`) and hard-reload the Vite app. The current frontend uses `/road_name` and WS endpoints, not `/veheicles`.
+- CORS: Backend enables permissive CORS in `app/main.py`. If deploying, restrict `allow_origins`.
+- Env changes require restarting the Vite dev server.
 
-```json
-{
-  "response": "AI response"
-}
-```
+## License
 
-### C. Client Visualization
-
-- The web frontend continuously fetches `/frames` (every 200ms) and `/veheicles` (every 1s).
-- Data is merged and displayed visually: camera images, average vehicle counts & average speeds for each road.
-
-### D. Chatbot Query Interface
-
-- Uses Gemini API and Langchain Platform.
-- Users can ask: "What is the traffic like on Nguyen Trai street?"
-- The chatbot responds based on the latest traffic data.
+MIT (or project’s chosen license)
