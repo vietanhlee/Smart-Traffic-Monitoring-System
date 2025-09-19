@@ -16,6 +16,7 @@ interface WebSocketHook {
   reconnectCount: number;
   connect: () => void;
   disconnect: () => void;
+  send: (payload: any) => boolean;
 }
 
 export const useWebSocket = (
@@ -38,11 +39,17 @@ export const useWebSocket = (
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
+  const intentionalCloseRef = useRef(false);
 
   const connect = useCallback(() => {
     if (!url || !mountedRef.current) return;
 
     try {
+      // Prevent duplicate connections
+      if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {
+        return;
+      }
+
       wsRef.current = new WebSocket(url);
 
       wsRef.current.onopen = () => {
@@ -69,7 +76,7 @@ export const useWebSocket = (
         onClose?.();
 
         // Auto-reconnect if not exceeding max attempts
-        if (reconnectCount < maxReconnectAttempts) {
+        if (!intentionalCloseRef.current && reconnectCount < maxReconnectAttempts) {
           reconnectTimeoutRef.current = setTimeout(() => {
             if (mountedRef.current) {
               setReconnectCount(prev => prev + 1);
@@ -77,6 +84,8 @@ export const useWebSocket = (
             }
           }, reconnectInterval);
         }
+        // Reset the flag after handling close
+        intentionalCloseRef.current = false;
       };
 
       wsRef.current.onerror = (error) => {
@@ -97,6 +106,7 @@ export const useWebSocket = (
     }
     
     if (wsRef.current) {
+      intentionalCloseRef.current = true;
       wsRef.current.close();
       wsRef.current = null;
     }
@@ -104,6 +114,21 @@ export const useWebSocket = (
     setIsConnected(false);
     setData(null);
     setReconnectCount(0);
+  }, []);
+
+  const send = useCallback((payload: any) => {
+    const socket = wsRef.current;
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      return false;
+    }
+    try {
+      const message = typeof payload === 'string' ? payload : JSON.stringify(payload);
+      socket.send(message);
+      return true;
+    } catch (err) {
+      console.error('Failed to send over WebSocket:', err);
+      return false;
+    }
   }, []);
 
   useEffect(() => {
@@ -117,7 +142,9 @@ export const useWebSocket = (
       mountedRef.current = false;
       disconnect();
     };
-  }, [url, connect, disconnect]);
+    // We intentionally only depend on url to avoid reconnect loops when state changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url]);
 
   return {
     data,
@@ -126,6 +153,7 @@ export const useWebSocket = (
     reconnectCount,
     connect,
     disconnect,
+    send,
   };
 };
 

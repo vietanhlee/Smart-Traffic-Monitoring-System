@@ -17,6 +17,7 @@ export const endpoints = {
   roadNames: `${API_HTTP_BASE}/road_name`,
   framesWs: (roadName: string) => `${API_WS_BASE}/ws/frames/${encodeURIComponent(roadName)}`,
   infoWs: (roadName: string) => `${API_WS_BASE}/ws/info/${encodeURIComponent(roadName)}`,
+  chatWs: `${API_WS_BASE}/ws/chat`,
 };
 
 

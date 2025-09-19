@@ -21,6 +21,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import type { Components } from "react-markdown";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import { endpoints } from "@/config";
 
 interface VehicleData {
   count_car: number;
@@ -124,35 +126,10 @@ Lưu ý: Hãy trả lời bằng tiếng Việt, ngắn gọn và dễ hiểu. N
         fullPrompt = `Hiện tại hệ thống đang cập nhật dữ liệu giao thông. Bạn hãy trả lời như một trợ lý AI thông minh: ${userMessage}`;
       }
 
-      const response = await fetch("http://127.0.0.1:8000/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: fullPrompt }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const ok = chatSocketSend({ message: fullPrompt });
+      if (!ok) {
+        throw new Error("WebSocket not connected");
       }
-
-      const data = await response.json();
-
-      // Remove typing indicator and add bot response
-      setMessages((prev) => {
-        const filtered = prev.filter((msg) => msg.id !== "typing");
-        return [
-          ...filtered,
-          {
-            id: (Date.now() + 1).toString(),
-            text:
-              data.response ||
-              "Xin lỗi, tôi không thể xử lý yêu cầu của bạn lúc này.",
-            user: false,
-            time: new Date().toLocaleTimeString("vi-VN"),
-          },
-        ];
-      });
-
-      toast.success("Đã nhận được phản hồi từ AI");
     } catch (error) {
       console.error("Chat error:", error);
 
@@ -171,11 +148,37 @@ Lưu ý: Hãy trả lời bằng tiếng Việt, ngắn gọn và dễ hiểu. N
       });
 
       toast.error("Không thể kết nối với AI");
-    } finally {
       setIsLoading(false);
       inputRef.current?.focus();
     }
   };
+
+  // Chat WebSocket
+  const { data: chatData, send: chatSocketSend } = useWebSocket(endpoints.chatWs);
+
+  useEffect(() => {
+    if (!chatData) return;
+    try {
+      const responseText = chatData?.response as string | undefined;
+      if (!responseText) return;
+
+      setMessages((prev) => {
+        const filtered = prev.filter((msg) => msg.id !== "typing");
+        return [
+          ...filtered,
+          {
+            id: (Date.now() + 1).toString(),
+            text: responseText,
+            user: false,
+            time: new Date().toLocaleTimeString("vi-VN"),
+          },
+        ];
+      });
+      toast.success("Đã nhận được phản hồi từ AI");
+    } catch {}
+    setIsLoading(false);
+    inputRef.current?.focus();
+  }, [chatData]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
