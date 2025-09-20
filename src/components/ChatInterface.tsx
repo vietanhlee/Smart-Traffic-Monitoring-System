@@ -46,21 +46,46 @@ interface Message {
 interface ChatInterfaceProps {
   trafficData: TrafficData;
 }
+const STORAGE_KEY = "chat_history";
 
 const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      text: "Xin chào! Tôi là trợ lý AI của hệ thống giao thông thông minh. Bạn có thể hỏi tôi về tình trạng giao thông hiện tại, thống kê xe cộ, hoặc bất kỳ thông tin nào về các tuyến đường đang được giám sát. Tôi có thể giúp gì cho bạn?",
-      user: false,
-      time: new Date().toLocaleTimeString("vi-VN"),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    // Khởi tạo từ localStorage nếu có
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved) as Message[];
+      } catch {
+        return [
+          {
+            id: "1",
+            text: "Xin chào! Tôi là trợ lý AI của hệ thống giao thông thông minh. Bạn có thể hỏi tôi về tình trạng giao thông hiện tại, thống kê xe cộ, hoặc bất kỳ thông tin nào về các tuyến đường đang được giám sát. Tôi có thể giúp gì cho bạn?",
+            user: false,
+            time: new Date().toLocaleTimeString("vi-VN"),
+          },
+        ];
+      }
+    }
+    return [
+      {
+        id: "1",
+        text: "Xin chào! Tôi là trợ lý AI của hệ thống giao thông thông minh. Bạn có thể hỏi tôi về tình trạng giao thông hiện tại, thống kê xe cộ, hoặc bất kỳ thông tin nào về các tuyến đường đang được giám sát. Tôi có thể giúp gì cho bạn?",
+        user: false,
+        time: new Date().toLocaleTimeString("vi-VN"),
+      },
+    ];
+  });
+
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // 👉 Lưu messages vào localStorage mỗi khi thay đổi
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  }, [messages]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -68,26 +93,66 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
     }
   }, [messages]);
 
+  // Phân tích loại câu hỏi để xử lý phù hợp
+  const analyzeQuestionType = (question: string): string => {
+    const lowerQuestion = question.toLowerCase();
+    
+    if (lowerQuestion.includes('tuyến nào nên đi') || lowerQuestion.includes('đường nào tốt') || lowerQuestion.includes('nên đi đâu')) {
+      return 'route_recommendation';
+    }
+    if (lowerQuestion.includes('tuyến nào tắc') || lowerQuestion.includes('đường nào tắc') || lowerQuestion.includes('tắc nhất')) {
+      return 'congestion_analysis';
+    }
+    if (lowerQuestion.includes('tình trạng') || lowerQuestion.includes('tình hình') || lowerQuestion.includes('giao thông')) {
+      return 'traffic_overview';
+    }
+    if (lowerQuestion.includes('tốc độ') || lowerQuestion.includes('vận tốc')) {
+      return 'speed_analysis';
+    }
+    if (lowerQuestion.includes('có nên đi') || lowerQuestion.includes('đi được không')) {
+      return 'route_evaluation';
+    }
+    if (lowerQuestion.includes('so sánh') || lowerQuestion.includes('khác nhau')) {
+      return 'comparison';
+    }
+    
+    return 'general';
+  };
+
   const buildMonitoringInfo = (data: TrafficData) => {
     return Object.entries(data)
       .map(
         ([roadName, info]) =>
-          `${roadName}: ${info.count_car} ô tô (${info.speed_car.toFixed(
-            1
-          )} km/h), ${info.count_motor} xe máy (${info.speed_motor.toFixed(
-            1
-          )} km/h)`
+          `${roadName}: ${info.count_car} ô tô, ${info.count_motor} xe máy. Vận tốc: ${info.speed_car.toFixed(1)} km/h`
       )
       .join("; ");
   };
 
-  const buildPrompt = (monitoringInfo: string, userMessage: string) => {
-    return `Bạn là một trợ lý AI thông minh cho hệ thống giao thông. Dưới đây là thông tin giao thông hiện tại:
-${monitoringInfo}
-
-Hãy trả lời câu hỏi sau một cách thân thiện và hữu ích: ${userMessage}
-
-Lưu ý: Hãy trả lời bằng tiếng Việt, ngắn gọn và dễ hiểu. Nếu được hỏi về tình trạng giao thông, hãy phân tích dựa trên số lượng xe (>15 xe là tắc, 8-15 xe là đông, <8 xe là thông thoáng).`;
+  const buildSmartPrompt = (monitoringInfo: string, userMessage: string, questionType: string) => {
+    const baseData = `Dữ liệu giao thông hiện tại: ${monitoringInfo}`;
+    
+    switch (questionType) {
+      case 'route_recommendation':
+        return `${baseData}\n\nNgười dùng hỏi: "${userMessage}"\n\nHãy phân tích dữ liệu và đưa ra khuyến nghị tuyến đường tốt nhất dựa trên vận tốc và mật độ xe. Bắt đầu bằng câu trả lời trực tiếp, sau đó giải thích lý do.`;
+      
+      case 'congestion_analysis':
+        return `${baseData}\n\nNgười dùng hỏi: "${userMessage}"\n\nHãy xác định tuyến đường có tình trạng tắc nghẽn nhất dựa trên vận tốc và số lượng xe. Đưa ra câu trả lời rõ ràng về tuyến tệ nhất.`;
+      
+      case 'traffic_overview':
+        return `${baseData}\n\nNgười dùng hỏi: "${userMessage}"\n\nHãy tóm tắt tình hình giao thông tổng quan, không liệt kê chi tiết từng tuyến. Đưa ra nhận xét chung về tình trạng giao thông.`;
+      
+      case 'speed_analysis':
+        return `${baseData}\n\nNgười dùng hỏi: "${userMessage}"\n\nHãy phân tích và so sánh tốc độ giữa các tuyến đường. Tính toán tốc độ trung bình và đưa ra nhận xét.`;
+      
+      case 'route_evaluation':
+        return `${baseData}\n\nNgười dùng hỏi: "${userMessage}"\n\nHãy đánh giá cụ thể tuyến đường được hỏi dựa trên dữ liệu. Đưa ra lời khuyên có nên đi hay không và lý do.`;
+      
+      case 'comparison':
+        return `${baseData}\n\nNgười dùng hỏi: "${userMessage}"\n\nHãy so sánh các tuyến đường dựa trên dữ liệu. Đưa ra bảng so sánh và kết luận.`;
+      
+      default:
+        return `${baseData}\n\nNgười dùng hỏi: "${userMessage}"\n\nHãy trả lời câu hỏi một cách thân thiện và hữu ích .`;
+    }
   };
 
   const handleSendMessage = async () => {
@@ -117,11 +182,13 @@ Lưu ý: Hãy trả lời bằng tiếng Việt, ngắn gọn và dễ hiểu. N
     setMessages((prev) => [...prev, typingMsg]);
 
     try {
-      // Build prompt with current traffic data
+      // Phân tích loại câu hỏi và xây dựng prompt thông minh
+      const questionType = analyzeQuestionType(userMessage);
       let fullPrompt = userMessage;
+      
       if (Object.keys(trafficData).length > 0) {
         const monitoringInfo = buildMonitoringInfo(trafficData);
-        fullPrompt = buildPrompt(monitoringInfo, userMessage);
+        fullPrompt = buildSmartPrompt(monitoringInfo, userMessage, questionType);
       } else {
         fullPrompt = `Hiện tại hệ thống đang cập nhật dữ liệu giao thông. Bạn hãy trả lời như một trợ lý AI thông minh: ${userMessage}`;
       }
@@ -188,9 +255,16 @@ Lưu ý: Hãy trả lời bằng tiếng Việt, ngắn gọn và dễ hiểu. N
   };
 
   const clearChat = () => {
-    setMessages([messages[0]]); // Keep only the welcome message
+    const welcomeMsg: Message = {
+      id: "1",
+      text: "Xin chào! Tôi là trợ lý AI của hệ thống giao thông thông minh. Bạn có thể hỏi tôi về tình trạng giao thông hiện tại, thống kê xe cộ, hoặc bất kỳ thông tin nào về các tuyến đường đang được giám sát. Tôi có thể giúp gì cho bạn?",
+      user: false,
+      time: new Date().toLocaleTimeString("vi-VN"),
+    };
+    setMessages([welcomeMsg]);
     toast.success("Đã xóa lịch sử chat");
   };
+
 
   const copyMessage = async (text: string, messageId: string) => {
     try {

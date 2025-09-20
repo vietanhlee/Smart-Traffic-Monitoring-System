@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_ollama import ChatOllama
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import (
@@ -11,22 +12,18 @@ from langchain.prompts import (
     SystemMessagePromptTemplate,
 )
 
-system_prompt = """Bạn là trợ lý AI tư vấn giao thông theo thời gian thực. Khi người dùng hỏi về tình trạng các tuyến đường, hãy:
-- Phân tích dữ liệu (số xe, vận tốc) đã cung cấp.
-- Trả lời ngắn gọn, rõ ràng, chuyên nghiệp, không chào hỏi dài dòng.
+system_prompt = """BẠN LÀ TRỢ LÝ AI TƯ VẤN GIAO THÔNG THÔNG MINH.
 
-Định dạng trả lời:
-- [Tên tuyến]: [số ô tô], [số xe máy]. Vận tốc: [x] km/h → [mức độ: ùn tắc/đông/thông thoáng]. (Nếu có thể, ước tính thời gian di chuyển.)
+NHIỆM VỤ CHÍNH:
+- Phân tích câu hỏi của người dùng để hiểu ý định cụ thể
+- Nếu hỏi thông tin về tuyến đường nào đó thì buộc phải đưa đầy đủ thông tin về số lượng và tốc độ của oto lẫn xe máy
+- Đưa ra lời khuyên và phân tích dựa trên dữ liệu giao thông 
 
-Nguyên tắc:
-- Nhiều xe, vận tốc < 15 km/h → Ùn tắc
-- Nhiều xe, vận tốc >= 15 km/h → Đông
-- Vận tốc >= 30 km/h → Thông thoáng
-- Ít xe, vận tốc thấp → Chậm nhưng không tắc
-
-Nếu không có dữ liệu: “Hiện tại chưa có dữ liệu cho tuyến đường này.”
-Nếu bị hỏi về tương lai: “Tôi chỉ hỗ trợ dữ liệu thời gian thực, chưa thể dự báo giao thông tương lai.”
-Sau trả lời, có thể gợi ý: “Bạn muốn xem chi tiết tuyến nào không?” hoặc “Bạn cần chỉ đường không?”.
+NGUYÊN TẮC PHÂN LOẠI:
+   - Nhiều xe + vận tốc < 12 km/h → Ùn tắc
+   - Nhiều xe + vận tốc 12-30 km/h → Đông
+   - Vận tốc >= 30 km/h → Thông thoáng
+   - Ít xe + vận tốc thấp → Chậm nhưng không tắc
 """
 
 # code lại phần chain thay vì dùng built-in conversation chain thì tự custom chain riêng
@@ -42,7 +39,7 @@ class ChatBot:
             raise ValueError("GOOGLE_API_KEY không được tìm thấy. Vui lòng kiểm tra file .env của bạn.")
 
         # 'temperature' để điều chỉnh mức độ sáng tạo của mô hình (0.0 = chặt chẽ, 1.0 = sáng tạo)
-        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.9)
+        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro", temperature=0.6)
 
         # --- Khởi tạo bộ nhớ (Memory) ---
         # Này chỉ là thuộc tính giúp lưu lại context, phải tự save và load thủ công để lấy và đưa vào chain
@@ -77,9 +74,6 @@ class ChatBot:
         return response.content
 
 
-# class ChatBot:
-#     def __init__(self):
-#
 # # --- Tạo đối tượng ChatLLM --- for testing
 # chat_llm = ChatBot()
 # while True:
