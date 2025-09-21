@@ -158,7 +158,7 @@ docker compose up --build --build-arg DEVICE=gpu
 - **Logs**: Check container logs with `docker compose logs [service_name]`
 
 ## Configuration
-
+`https://drive.google.com/drive/folders/1gkac5U5jEs174p7V7VC3rCmgvO_cVwxH?usp=drive_link`
 Frontend base URLs are centralized in `src/config.ts` and can be overridden using Vite env vars:
 
 ```env
