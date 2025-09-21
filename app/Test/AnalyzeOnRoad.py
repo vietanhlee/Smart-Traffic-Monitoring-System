@@ -1,7 +1,7 @@
 import os
-from services.AnalyzeOnRoadBase import AnalyzeOnRoadBase
-from services.utils import convert_frame_to_base64
-from services import conf
+from AnalyzeOnRoadBase import AnalyzeOnRoadBase
+from utils import convert_frame_to_base64
+import conf
 # Đặt như này để tránh trường hợp lỗi do dùng chung thư viện AI 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 

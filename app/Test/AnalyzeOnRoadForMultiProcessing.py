@@ -1,8 +1,8 @@
 from multiprocessing import Process, Manager, freeze_support
 import os
-from services.AnalyzeOnRoad import AnalyzeOnRoad
-from services.utils import *
-from services import conf
+from AnalyzeOnRoad import AnalyzeOnRoad
+from utils import *
+import conf
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 """ Trên Windows, Python multiprocessing sử dụng spawn method thay vì fork (như trên Linux/macOS)
