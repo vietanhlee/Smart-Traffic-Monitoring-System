@@ -10,6 +10,7 @@ Real-time traffic monitoring and analytics using FastAPI (backend), React + Vite
 ![Dashboard 2](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/.github/Dashboad2.png)
 ![Chatbot](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/.github/chatbot1.png)
 ![Chatbot 2](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/.github/chatbot2.png)
+![Chatbot3](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/.github/chatbot3.png)
 
 ## Overview
 
@@ -221,6 +222,4 @@ curl -X POST http://localhost:8000/chat \
 - CORS: Backend enables permissive CORS in `app/main.py`. If deploying, restrict `allow_origins`.
 - Env changes require restarting the Vite dev server.
 
-## License
 
-MIT (or project’s chosen license)
