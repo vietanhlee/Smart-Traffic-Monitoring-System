@@ -17,4 +17,5 @@ openvino
 onnxruntime
 onnx
 langgraph
+requests
 git+https://github.com/ultralytics/CLIP.git

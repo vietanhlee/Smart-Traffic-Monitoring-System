@@ -251,7 +251,7 @@ const TrafficDashboard = () => {
         </TabsContent>
 
         <TabsContent value="chat">
-          <ChatInterface trafficData={trafficData} />
+          <ChatInterface />
         </TabsContent>
       </Tabs>
     </div>

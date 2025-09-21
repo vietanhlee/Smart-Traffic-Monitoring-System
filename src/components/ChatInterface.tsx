@@ -41,6 +41,7 @@ interface Message {
   user: boolean;
   time: string;
   typing?: boolean;
+  image?: string[];
 }
 
 interface ChatInterfaceProps {
@@ -87,69 +88,125 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   }, [messages]);
 
+  // Kiểm tra trafficData
+  useEffect(() => {
+    const hasData = trafficData && Object.keys(trafficData).length > 0;
+    console.log("Traffic Data Status:", {
+      hasData,
+      roads: Object.keys(trafficData || {}),
+      data: trafficData,
+    });
+
+    if (!hasData && messages.length === 1) {
+      // Chỉ hiển thị thông báo nếu là tin nhắn chào đầu tiên
+      setMessages([
+        {
+          id: "1",
+          text: "Xin chào! Tôi là trợ lý AI của hệ thống giao thông thông minh. Hiện tại hệ thống đang khởi động và thu thập dữ liệu giao thông. Tôi sẽ thông báo ngay khi có thông tin từ các tuyến đường.",
+          user: false,
+          time: new Date().toLocaleTimeString("vi-VN"),
+        },
+      ]);
+    }
+  }, [trafficData, messages.length]);
+
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, [messages]);
 
+  // Tìm tên tuyến đường từ câu hỏi
+  const findRequestedRoad = (question: string): string | null => {
+    const roadNames = trafficData ? Object.keys(trafficData) : [];
+    return (
+      roadNames.find((road) =>
+        question.toLowerCase().includes(road.toLowerCase())
+      ) || null
+    );
+  };
+
   // Phân tích loại câu hỏi để xử lý phù hợp
   const analyzeQuestionType = (question: string): string => {
     const lowerQuestion = question.toLowerCase();
-    
-    if (lowerQuestion.includes('tuyến nào nên đi') || lowerQuestion.includes('đường nào tốt') || lowerQuestion.includes('nên đi đâu')) {
-      return 'route_recommendation';
+
+    if (
+      lowerQuestion.includes("tuyến nào nên đi") ||
+      lowerQuestion.includes("đường nào tốt") ||
+      lowerQuestion.includes("nên đi đâu")
+    ) {
+      return "route_recommendation";
     }
-    if (lowerQuestion.includes('tuyến nào tắc') || lowerQuestion.includes('đường nào tắc') || lowerQuestion.includes('tắc nhất')) {
-      return 'congestion_analysis';
+    if (
+      lowerQuestion.includes("tuyến nào tắc") ||
+      lowerQuestion.includes("đường nào tắc") ||
+      lowerQuestion.includes("tắc nhất")
+    ) {
+      return "congestion_analysis";
     }
-    if (lowerQuestion.includes('tình trạng') || lowerQuestion.includes('tình hình') || lowerQuestion.includes('giao thông')) {
-      return 'traffic_overview';
+    if (
+      lowerQuestion.includes("tình trạng") ||
+      lowerQuestion.includes("tình hình") ||
+      lowerQuestion.includes("giao thông")
+    ) {
+      return "traffic_overview";
     }
-    if (lowerQuestion.includes('tốc độ') || lowerQuestion.includes('vận tốc')) {
-      return 'speed_analysis';
+    if (lowerQuestion.includes("tốc độ") || lowerQuestion.includes("vận tốc")) {
+      return "speed_analysis";
     }
-    if (lowerQuestion.includes('có nên đi') || lowerQuestion.includes('đi được không')) {
-      return 'route_evaluation';
+    if (
+      lowerQuestion.includes("có nên đi") ||
+      lowerQuestion.includes("đi được không")
+    ) {
+      return "route_evaluation";
     }
-    if (lowerQuestion.includes('so sánh') || lowerQuestion.includes('khác nhau')) {
-      return 'comparison';
+    if (
+      lowerQuestion.includes("so sánh") ||
+      lowerQuestion.includes("khác nhau")
+    ) {
+      return "comparison";
     }
-    
-    return 'general';
+
+    return "general";
   };
 
   const buildMonitoringInfo = (data: TrafficData) => {
     return Object.entries(data)
       .map(
         ([roadName, info]) =>
-          `${roadName}: ${info.count_car} ô tô, ${info.count_motor} xe máy. Vận tốc: ${info.speed_car.toFixed(1)} km/h`
+          `${roadName}: ${info.count_car} ô tô, ${
+            info.count_motor
+          } xe máy. Vận tốc: ${info.speed_car.toFixed(1)} km/h`
       )
       .join("; ");
   };
 
-  const buildSmartPrompt = (monitoringInfo: string, userMessage: string, questionType: string) => {
+  const buildSmartPrompt = (
+    monitoringInfo: string,
+    userMessage: string,
+    questionType: string
+  ) => {
     const baseData = `Dữ liệu giao thông hiện tại: ${monitoringInfo}`;
-    
+
     switch (questionType) {
-      case 'route_recommendation':
+      case "route_recommendation":
         return `${baseData}\n\nNgười dùng hỏi: "${userMessage}"\n\nHãy phân tích dữ liệu và đưa ra khuyến nghị tuyến đường tốt nhất dựa trên vận tốc và mật độ xe. Bắt đầu bằng câu trả lời trực tiếp, sau đó giải thích lý do.`;
-      
-      case 'congestion_analysis':
+
+      case "congestion_analysis":
         return `${baseData}\n\nNgười dùng hỏi: "${userMessage}"\n\nHãy xác định tuyến đường có tình trạng tắc nghẽn nhất dựa trên vận tốc và số lượng xe. Đưa ra câu trả lời rõ ràng về tuyến tệ nhất.`;
-      
-      case 'traffic_overview':
+
+      case "traffic_overview":
         return `${baseData}\n\nNgười dùng hỏi: "${userMessage}"\n\nHãy tóm tắt tình hình giao thông tổng quan, không liệt kê chi tiết từng tuyến. Đưa ra nhận xét chung về tình trạng giao thông.`;
-      
-      case 'speed_analysis':
+
+      case "speed_analysis":
         return `${baseData}\n\nNgười dùng hỏi: "${userMessage}"\n\nHãy phân tích và so sánh tốc độ giữa các tuyến đường. Tính toán tốc độ trung bình và đưa ra nhận xét.`;
-      
-      case 'route_evaluation':
+
+      case "route_evaluation":
         return `${baseData}\n\nNgười dùng hỏi: "${userMessage}"\n\nHãy đánh giá cụ thể tuyến đường được hỏi dựa trên dữ liệu. Đưa ra lời khuyên có nên đi hay không và lý do.`;
-      
-      case 'comparison':
+
+      case "comparison":
         return `${baseData}\n\nNgười dùng hỏi: "${userMessage}"\n\nHãy so sánh các tuyến đường dựa trên dữ liệu. Đưa ra bảng so sánh và kết luận.`;
-      
+
       default:
         return `${baseData}\n\nNgười dùng hỏi: "${userMessage}"\n\nHãy trả lời câu hỏi một cách thân thiện và hữu ích .`;
     }
@@ -159,6 +216,7 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
     if (!input.trim() || isLoading) return;
 
     const userMessage = input.trim();
+    console.log("Sending message:", { message: userMessage }); // Log tin nhắn gửi đi
     setInput("");
     setIsLoading(true);
 
@@ -182,20 +240,52 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
     setMessages((prev) => [...prev, typingMsg]);
 
     try {
+      if (!isWsConnected) {
+        // Fallback response khi không có kết nối
+        setMessages((prev) => {
+          const filtered = prev.filter((msg) => msg.id !== "typing");
+          return [
+            ...filtered,
+            {
+              id: Date.now().toString(),
+              text: "Xin lỗi, hiện tại tôi không thể kết nối với máy chủ. Tôi sẽ cố gắng kết nối lại và trả lời bạn sớm nhất có thể.",
+              user: false,
+              time: new Date().toLocaleTimeString("vi-VN"),
+            },
+          ];
+        });
+        setIsLoading(false);
+        throw new Error("WebSocket chưa được kết nối");
+      }
+
       // Phân tích loại câu hỏi và xây dựng prompt thông minh
       const questionType = analyzeQuestionType(userMessage);
       let fullPrompt = userMessage;
-      
-      if (Object.keys(trafficData).length > 0) {
-        const monitoringInfo = buildMonitoringInfo(trafficData);
-        fullPrompt = buildSmartPrompt(monitoringInfo, userMessage, questionType);
+
+      // Kiểm tra dữ liệu giao thông và tuyến đường cụ thể
+      const requestedRoad = findRequestedRoad(userMessage);
+
+      if (!trafficData || Object.keys(trafficData).length === 0) {
+        fullPrompt =
+          "Xin lỗi, hiện tại hệ thống đang khởi động và chưa có dữ liệu giao thông. Vui lòng thử lại sau vài giây.";
+      } else if (requestedRoad && !trafficData[requestedRoad]) {
+        fullPrompt = `Xin lỗi, tôi không tìm thấy dữ liệu cho tuyến ${requestedRoad}. Các tuyến đường đang được giám sát là: ${Object.keys(
+          trafficData
+        ).join(", ")}.`;
       } else {
-        fullPrompt = `Hiện tại hệ thống đang cập nhật dữ liệu giao thông. Bạn hãy trả lời như một trợ lý AI thông minh: ${userMessage}`;
+        const monitoringInfo = buildMonitoringInfo(trafficData);
+        fullPrompt = buildSmartPrompt(
+          monitoringInfo,
+          userMessage,
+          questionType
+        );
       }
 
-      const ok = chatSocketSend({ message: fullPrompt });
+      const ok = chatSocketSend({ message: userMessage }); // Gửi đúng format
+      console.log("Message sent status:", ok);
+
       if (!ok) {
-        throw new Error("WebSocket not connected");
+        throw new Error("Không thể gửi tin nhắn");
       }
     } catch (error) {
       console.error("Chat error:", error);
@@ -221,28 +311,87 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
   };
 
   // Chat WebSocket
-  const { data: chatData, send: chatSocketSend } = useWebSocket(endpoints.chatWs);
+  const {
+    data: chatData,
+    send: chatSocketSend,
+    isConnected: isWsConnected,
+    error: wsError,
+  } = useWebSocket(endpoints.chatWs1);
+
+  useEffect(() => {
+    if (wsError) {
+      console.error("WebSocket Error:", wsError);
+      toast.error(`Lỗi kết nối: ${wsError}`);
+    }
+  }, [wsError]);
+
+  // Monitor connection status
+  useEffect(() => {
+    console.log("WebSocket Connection Status:", isWsConnected);
+  }, [isWsConnected]);
 
   useEffect(() => {
     if (!chatData) return;
     try {
-      const responseText = chatData?.response as string | undefined;
-      if (!responseText) return;
+      // Log toàn bộ dữ liệu nhận được từ WebSocket
+      console.log("WebSocket Raw Response:", chatData);
+
+      const responseText = chatData?.text as string | undefined;
+      const responseImage = chatData?.image as string[] | undefined;
+
+      // Log chi tiết từng phần của response
+      console.log("Response Text:", responseText);
+      console.log("Response Images:", responseImage);
+
+      // Nếu cả text và image đều không tồn tại -> bỏ qua
+      if (
+        (!responseText || responseText === "") &&
+        (!responseImage || responseImage.length === 0)
+      ) {
+        return;
+      }
+
+      // Normalize images to full data URIs immediately
+      const normalizedImages =
+        (responseImage || []).map((img) =>
+          img?.startsWith?.("data:") ? img : `data:image/jpeg;base64,${img}`
+        ) || [];
 
       setMessages((prev) => {
         const filtered = prev.filter((msg) => msg.id !== "typing");
-        return [
-          ...filtered,
-          {
-            id: (Date.now() + 1).toString(),
-            text: responseText,
-            user: false,
-            time: new Date().toLocaleTimeString("vi-VN"),
-          },
-        ];
+        const newMessage = {
+          id: (Date.now() + 1).toString(),
+          text: responseText ?? "", // cho phép text rỗng nếu chỉ có ảnh
+          image: normalizedImages, // Đã normalize ở đây
+          user: false,
+          time: new Date().toLocaleTimeString("vi-VN"),
+        };
+
+        // Prevent adding exact duplicate (same text and same images) repeatedly
+        const last = filtered[filtered.length - 1];
+        const isDuplicate =
+          last &&
+          last.text === newMessage.text &&
+          JSON.stringify(last.image || []) === JSON.stringify(newMessage.image);
+
+        if (isDuplicate) {
+          console.log("Duplicate message received — skipping append.");
+          return filtered;
+        }
+
+        console.log("Appending new message (text length, images):", {
+          textLength: (newMessage.text || "").length,
+          imageCount: newMessage.image.length,
+        });
+
+        return [...filtered, newMessage];
       });
+
       toast.success("Đã nhận được phản hồi từ AI");
-    } catch {}
+    } catch (error) {
+      console.error("Error processing WebSocket response:", error);
+      toast.error("Lỗi khi xử lý phản hồi");
+    }
     setIsLoading(false);
     inputRef.current?.focus();
   }, [chatData]);
@@ -264,7 +413,6 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
     setMessages([welcomeMsg]);
     toast.success("Đã xóa lịch sử chat");
   };
-
 
   const copyMessage = async (text: string, messageId: string) => {
     try {
@@ -306,6 +454,24 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
         {children}
       </pre>
     ),
+    img: ({ src, alt }) => {
+      if (!src) return null;
+
+      // Log để debug src
+      console.log("Markdown Image src:", src);
+
+      return (
+        <img
+          src={src.startsWith("data:") ? src : `data:image/jpeg;base64,${src}`}
+          alt={alt || "AI generated image"}
+          className="max-w-full h-auto rounded-lg shadow-lg mb-2"
+          onError={(e) => {
+            console.error("Markdown Image load error:", e);
+            e.currentTarget.style.display = "none";
+          }}
+        />
+      );
+    },
     blockquote: ({ children }) => (
       <blockquote className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 italic mb-2">
         {children}
@@ -400,6 +566,22 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
                             : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                         }`}
                       >
+                        {message.image && message.image.length > 0 && (
+                          <div className="mb-2">
+                            {message.image.map((imgSrc, index) => (
+                              <img
+                                key={index}
+                                src={imgSrc} // already normalized in useEffect
+                                alt={`AI generated image ${index + 1}`}
+                                className="max-w-full h-auto rounded-lg shadow-lg mb-2"
+                                onError={(e) => {
+                                  console.error(`Image ${index + 1} load error:`, e);
+                                  e.currentTarget.style.display = "none";
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )}
                         {message.typing ? (
                           <div className="flex items-center space-x-1">
                             <div className="flex space-x-1">

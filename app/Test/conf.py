@@ -13,5 +13,5 @@ path_videos = [
     "./video_test/Đường Láng.mp4",
 ]
 meter_per_pixels = [0.03, 0.09, 0.3, 0.11, 0.06]
-models_path = './AI models/model N/openvino models/best_int8_openvino_model'
+models_path = r'./AI models/model N/openvino models/best_int8_openvino_model'
 device = 'cpu'

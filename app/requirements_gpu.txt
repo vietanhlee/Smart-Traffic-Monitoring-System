@@ -14,6 +14,7 @@ openvino
 onnxruntime
 onnx
 langgraph
+requests
 git+https://github.com/ultralytics/CLIP.git
 --extra-index-url https://download.pytorch.org/whl/cu128
 torch

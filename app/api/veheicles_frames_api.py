@@ -18,7 +18,7 @@ def start_up():
                                             regions= config.REGIONS)
         state.analyzer.run_multiprocessing()
 
-@router.get(path= '/road_name')
+@router.get(path= '/roads_name')
 async def get_road_names():
     """
     API endpoint trả về danh sách tên các tuyến đường (road_name) mà analyzer đang xử lý.
@@ -44,14 +44,7 @@ async def get_road_names():
 #             }, status_code=500)
 #     return JSONResponse(content= data)
 
-@router.get(path= '/frames/{road_name}')
-async def get_frame_road(road_name: str):
-    data = await asyncio.to_thread(state.analyzer.get_frame_road, road_name)
-    if data is None:
-        return JSONResponse(content={
-            "Lỗi: Dữ liệu bị lỗi, kiểm tra core"
-            }, status_code=500)
-    return JSONResponse(content= data)
+
 
 from fastapi import WebSocket, WebSocketDisconnect
 
@@ -101,3 +94,11 @@ async def get_info_road(road_name: str):
             }, status_code=500)
     return JSONResponse(content= data)
 
+@router.get(path= '/frames/{road_name}')
+async def get_frame_road(road_name: str):
+    data = await asyncio.to_thread(state.analyzer.get_frame_road, road_name)
+    if data is None:
+        return JSONResponse(content={
+            "Lỗi: Dữ liệu bị lỗi, kiểm tra core"
+            }, status_code=500)
+    return JSONResponse(content= data)

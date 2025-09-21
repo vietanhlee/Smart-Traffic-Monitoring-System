@@ -172,15 +172,15 @@ class AnalyzeOnRoadForMultiprocessing():
     
     def get_frame_road(self, road_name : str):
         data = {}
+        if road_name not in self.names:
+            return {}
         data['frame'] = self.shared_data[road_name]['frame'].get('frame', "")
         return data
     
     def get_info_road(self, road_name : str):
-        data = {}
-        data = dict(self.shared_data[road_name]['info'])
-        return data
-    
-    
+        if road_name not in self.names:
+            return {}
+        return dict(self.shared_data[road_name]['info'])
     
 #********************************************************************Script for testing************************************************************************
 if __name__ == '__main__':

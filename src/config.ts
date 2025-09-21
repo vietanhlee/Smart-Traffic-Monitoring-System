@@ -14,10 +14,11 @@ export const API_WS_BASE: string = trimTrailingSlash(
 );
 
 export const endpoints = {
-  roadNames: `${API_HTTP_BASE}/road_name`,
+  roadNames: `${API_HTTP_BASE}/roads_name`,
   framesWs: (roadName: string) => `${API_WS_BASE}/ws/frames/${encodeURIComponent(roadName)}`,
   infoWs: (roadName: string) => `${API_WS_BASE}/ws/info/${encodeURIComponent(roadName)}`,
   chatWs: `${API_WS_BASE}/ws/chat`,
+  chatWs1: `${API_WS_BASE}/ws/chat1`,
 };
 
 

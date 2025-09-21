@@ -4,8 +4,8 @@ import os
 import numpy as np
 from datetime import datetime
 from ultralytics import solutions
-from utils import *
-import conf
+from services.utils import *
+from services import conf
 
 # Thêm cái này để tránh xung đột
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"

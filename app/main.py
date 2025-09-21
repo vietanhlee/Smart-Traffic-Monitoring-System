@@ -18,9 +18,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get(path= '/')
 def direct_home():
-    RedirectResponse(url= 'http://localhost:5173/')
+    return RedirectResponse(url= 'http://localhost:5173/')
 
 
 app.include_router(chat_api.router, prefix="", tags=["post chat"])
