@@ -3,10 +3,24 @@
 import asyncio
 import cv2
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from threading import Thread, Lock
-
 app = FastAPI()
+
+
+# --- Thêm CORS ---
+origins = [
+    "*",  # hoặc cụ thể: "http://your-frontend-domain:port"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 latest_frame = None
 frame_lock = Lock()
