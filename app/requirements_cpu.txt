@@ -12,10 +12,7 @@ uvicorn[standard]
 shapely
 python-dotenv
 lap
-# MNN
 openvino
-# onnxruntime
-# onnx
 langgraph
-# requests
+gdown
 git+https://github.com/ultralytics/CLIP.git
