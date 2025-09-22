@@ -19,6 +19,6 @@ PATH_VIDEOS = [
 METER_PER_PIXELS = [0.03,
                     0.09,
                     0.5,
-                    # 0.11,
+                    0.11,
                     # 0.06
                     ]
