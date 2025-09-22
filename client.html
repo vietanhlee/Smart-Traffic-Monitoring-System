@@ -7,7 +7,7 @@
       const canvas = document.getElementById('cv');
       const ctx = canvas.getContext('2d');
 
-      const ws = new WebSocket("ws://160.19.205.198:8000/ws/frames");
+      const ws = new WebSocket("ws://160.19.205.198:8000/ws/frames_latest");
       ws.binaryType = "arraybuffer"; // nhận binary dạng ArrayBuffer
 
       ws.onopen = () => console.log("WS open");
