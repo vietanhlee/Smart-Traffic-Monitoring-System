@@ -11,7 +11,7 @@ class AnalyzeOnRoad(AnalyzeOnRoadBase):
     khác vừa có thể truy xuất thông tin về kết quả mà không bị hiện tượng tranh chấp dữ liệu    
     """    
     def __init__(self, path_video, meter_per_pixel, info_dict, frame_dict, region, model_path = conf.models_path, time_step=30,
-                 is_draw=True, device='cpu', iou=0.3, conf=0.2, show=True):
+                 is_draw=True, device= conf.device, iou=0.3, conf=0.2, show=True):
         """Class này kế thừa từ class Base (xử lý tuần tự). Class con này chưa phải là code để multiprocessing\
         mà chỉ là một chút cải tiến từ code base (class Base) để có thể vừa xử lý video đầu vào ở một process\
         khác vừa có thể truy xuất thông tin về kết quả mà không bị hiện tượng tranh chấp dữ liệu
