@@ -1,6 +1,6 @@
 import os
 from services.AnalyzeOnRoadBase import AnalyzeOnRoadBase
-from services.utils import convert_frame_to_base64
+from services.utils import convert_frame_to_byte
 from services import conf
 # Đặt như này để tránh trường hợp lỗi do dùng chung thư viện AI 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
@@ -58,7 +58,7 @@ class AnalyzeOnRoad(AnalyzeOnRoadBase):
         >>> self.frame_dict["frame"] = self.convert_frame_to_base64(self.frame_output)
         """
         try: 
-           self.frame_dict["frame"] = convert_frame_to_base64(self.frame_output)
+           self.frame_dict["frame"] = convert_frame_to_byte(self.frame_output)
         except Exception as e:
             print(f"Lỗi khi chuyển đổi frame sang base64 hoặc lỗi khoá lock của process của {self.name}: {e}")
 

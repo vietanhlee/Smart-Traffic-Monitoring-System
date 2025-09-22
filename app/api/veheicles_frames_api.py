@@ -4,6 +4,8 @@ from api import state
 import asyncio
 from services.AnalyzeOnRoadForMultiProcessing import AnalyzeOnRoadForMultiprocessing
 import config
+from fastapi.responses import Response
+from fastapi import WebSocket, WebSocketDisconnect
 
 router = APIRouter()
 
@@ -26,28 +28,6 @@ async def get_road_names():
     # Lấy danh sách tên các tuyến đường từ shared_data của analyzer
     return JSONResponse(content={"road_names": state.analyzer.names})
 
-# @router.get(path= '/veheicles')
-# async def get_veheicles():
-#     data = await asyncio.to_thread(state.analyzer.get_veheicles_info) # Truyền hàm
-#     if data is None:
-#         return JSONResponse(content={
-#             "Lỗi: Dữ liệu bị lỗi, kiểm tra core"
-#             }, status_code=500)
-#     return JSONResponse(content= data)
-
-# @router.get(path= '/frames')
-# async def get_frames():
-#     data = await asyncio.to_thread(state.analyzer.get_frames)
-#     if data is None:
-#         return JSONResponse(content={
-#             "Lỗi: Dữ liệu bị lỗi, kiểm tra core"
-#             }, status_code=500)
-#     return JSONResponse(content= data)
-
-
-
-from fastapi import WebSocket, WebSocketDisconnect
-
 @router.websocket("/ws/frames/{road_name}")
 async def websocket_frames(websocket: WebSocket, road_name: str):
     """
@@ -57,10 +37,9 @@ async def websocket_frames(websocket: WebSocket, road_name: str):
     try:
         while True:
             # Lấy frame hiện tại của tuyến đường
-            data = await asyncio.to_thread(state.analyzer.get_frame_road, road_name)
-            frame_base64 = data.get("frame", "")
-            await websocket.send_json({"frame": frame_base64})
-            await asyncio.sleep(0.1)
+            frame_bytes = await asyncio.to_thread(state.analyzer.get_frame_road, road_name)
+            await websocket.send_bytes(frame_bytes)
+            await asyncio.sleep(1/15)
     except WebSocketDisconnect:
         # Client đóng kết nối
         pass
@@ -94,9 +73,21 @@ async def get_info_road(road_name: str):
             }, status_code=500)
     return JSONResponse(content= data)
 
-@router.get(path= '/frames/{road_name}')
+
+@router.get(path='/frames/{road_name}')
 async def get_frame_road(road_name: str):
-    data = await asyncio.to_thread(state.analyzer.get_frame_road, road_name)
+    frame_bytes = await asyncio.to_thread(state.analyzer.get_frame_road, road_name)
+
+    if frame_bytes is None:
+        return JSONResponse(
+            content={"error": "Lỗi: Dữ liệu bị lỗi, kiểm tra core"},
+            status_code=500
+        )
+    return Response(content=frame_bytes, media_type="image/jpeg")
+
+@router.get(path= '/frames_base64/{road_name}')
+async def get_frame_road(road_name: str):
+    data = await asyncio.to_thread(state.analyzer.get_frame_road_as_base64, road_name)
     if data is None:
         return JSONResponse(content={
             "Lỗi: Dữ liệu bị lỗi, kiểm tra core"

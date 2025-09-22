@@ -67,8 +67,14 @@ export const useWebSocket = (
       wsRef.current.onmessage = (event) => {
         if (!mountedRef.current) return;
         try {
-          const parsedData = JSON.parse(event.data);
-          setData(parsedData);
+          // Check if the data is binary
+          if (event.data instanceof ArrayBuffer) {
+            const binaryData = new Uint8Array(event.data);
+            setData(binaryData);
+          } else {
+            const parsedData = JSON.parse(event.data);
+            setData(parsedData);
+          }
         } catch (err) {
           console.error("Failed to parse WebSocket message:", err);
         }
@@ -399,22 +405,39 @@ export const useMultipleFrameStreams = (roadNames: string[]) => {
       if (currentSockets[road]) return;
       const wsUrl = endpoints.framesWs(road);
       const ws = new WebSocket(wsUrl);
+      ws.binaryType = "arraybuffer"; // Set to handle binary data
       currentSockets[road] = ws;
 
       ws.onopen = () => setConnections((prev) => ({ ...prev, [road]: true }));
       ws.onmessage = (event) => {
         try {
-          const parsed = JSON.parse(event.data);
-          const frame = parsed?.frame;
-          if (frame) {
-            if (lastFrameRef.current[road] === frame) return;
-            lastFrameRef.current[road] = frame;
-            setFrameData((prev) => {
-              const prevForRoad = prev[road]?.frame;
-              if (prevForRoad === frame) return prev;
-              return { ...prev, [road]: { frame } };
-            });
+          // Convert the received binary data to a blob URL
+          const blob = new Blob([event.data], { type: "image/jpeg" });
+          const imageUrl = URL.createObjectURL(blob);
+
+          if (lastFrameRef.current[road] === imageUrl) {
+            URL.revokeObjectURL(imageUrl); // Clean up unused blob URL
+            return;
           }
+
+          // Clean up the previous blob URL to prevent memory leaks
+          if (lastFrameRef.current[road]) {
+            URL.revokeObjectURL(lastFrameRef.current[road]);
+          }
+
+          lastFrameRef.current[road] = imageUrl;
+          setFrameData((prev) => {
+            const prevForRoad = prev[road]?.frame;
+            if (prevForRoad === imageUrl) {
+              URL.revokeObjectURL(imageUrl);
+              return prev;
+            }
+            // Clean up previous blob URL if it exists
+            if (prevForRoad) {
+              URL.revokeObjectURL(prevForRoad);
+            }
+            return { ...prev, [road]: { frame: imageUrl } };
+          });
         } catch (error) {
           console.error("Error processing frame:", error);
         }

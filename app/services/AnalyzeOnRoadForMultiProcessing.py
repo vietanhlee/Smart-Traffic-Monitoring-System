@@ -1,4 +1,5 @@
 from multiprocessing import Process, Manager, freeze_support
+import base64
 import os
 from services.AnalyzeOnRoad import AnalyzeOnRoad
 from services.utils import *
@@ -139,44 +140,28 @@ class AnalyzeOnRoadForMultiprocessing():
             p.join()
         print("All self.processes stopped.")
     
-    def get_veheicles_info(self) -> dict:
-        """Hàm để lấy thông tin về các phương tiện qua shared_data là Manager().dict() làm trung gian quản lý 
-        và phải đặt ở main Process
-        Returns:
-            dict: Thông tin các phương tiện ở mỗi tuyến đường {tuyến đuòng : {thông tin}}
-        """
-        vehicles_info = {}
-        for name, data in self.shared_data.items():
-            vehicles_info[name] = dict(data['info'])
-        return vehicles_info
-    
-    def get_frames(self) -> str:
-        """Hàm để lấy frame từ các video qua shared_data là Manager().dict() làm trung gian quản lý
-        và phải đặt ở main Process
-        >>> frames[name] = {
-                'frame': data['frame'].get('frame', ""), 
-            }
-        Bản thân cái data['frame'] là một dict {'frame': ảnh base64} do việc chia sẽ các biến kiểu str
-        bị hạn chế trong multi processing nên ta lấy kiểu Manager.dict() chứa data str đó. Ví dụ như: dict = {'frame': <str base64>}
-        phải cầm được khoá thì mới được lấy dữ liệu
 
-        Returns:
-            str: các ảnh được mã hoá base64 
-        """
-        frames = {}
-        for name, data in self.shared_data.items():
-            frames[name] = {
-                'frame': data['frame'].get('frame', "")
-            }
-        return frames
-    
     def get_frame_road(self, road_name : str):
-        data = {}
+        data = b""
         if road_name not in self.names:
-            return {}
-        data['frame'] = self.shared_data[road_name]['frame'].get('frame', "")
+            return data
+        data = self.shared_data[road_name]['frame'].get('frame', b"")
         return data
     
+    def get_frame_road_as_base64(self, road_name: str):
+        data = {}
+        if road_name not in self.names:
+            return data
+
+        frame_bytes = self.shared_data[road_name]['frame'].get('frame', b"")
+        if frame_bytes:
+            # Chuyển bytes → base64 string
+            frame_base64 = base64.b64encode(frame_bytes).decode("utf-8")
+            data['frame'] = frame_base64
+        else:
+            data['frame'] = ""
+
+        return data
     def get_info_road(self, road_name : str):
         if road_name not in self.names:
             return {}

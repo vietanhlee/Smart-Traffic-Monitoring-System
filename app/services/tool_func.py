@@ -16,7 +16,7 @@ def get_frame_road(road_name : str) -> str:
         str: Chuỗi base64 của ảnh JPEG
     """
     try:
-        response = requests.get(f"{BASE_URL}/frames/{road_name}")
+        response = requests.get(f"{BASE_URL}/frames_base64/{road_name}")
         if response.status_code == 200:
             data = response.json()
             if "frame" in data and data["frame"]:

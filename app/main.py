@@ -2,10 +2,7 @@ from api import veheicles_frames_api
 from fastapi import FastAPI
 from api import chat_api
 from api import state
-from services.AnalyzeOnRoadForMultiProcessing import AnalyzeOnRoadForMultiprocessing
-from services.ChatBot import ChatBot
 from fastapi.middleware.cors import CORSMiddleware
-import config
 from starlette.responses import RedirectResponse
 
 app = FastAPI()

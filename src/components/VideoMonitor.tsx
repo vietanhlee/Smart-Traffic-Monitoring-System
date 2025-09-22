@@ -26,7 +26,7 @@ interface VehicleData {
 
 interface FrameData {
   [roadName: string]: {
-    frame: string;
+    frame: string; // Now contains blob URL
   };
 }
 
@@ -189,7 +189,7 @@ const VideoMonitor = ({
                   <div className="relative w-[480px] aspect-video bg-gray-100 dark:bg-gray-800 overflow-hidden mx-auto">
                     {showFrames && frame?.frame ? (
                       <img
-                        src={`data:image/jpeg;base64,${frame.frame}`}
+                        src={frame.frame}
                         alt={`Camera ${roadName}`}
                         className="w-full h-full object-contain block"
                       />
@@ -200,7 +200,6 @@ const VideoMonitor = ({
                     )}
 
                     {/* Status Overlay removed per request */}
-                    
 
                     {/* Live Indicator removed per request */}
 

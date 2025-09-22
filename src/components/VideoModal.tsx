@@ -7,7 +7,7 @@ interface VideoModalProps {
   isOpen: boolean;
   onClose: () => void;
   roadName: string;
-  frameData: string | null;
+  frameData: string | null; // Now using blob URL string
   trafficData?: {
     count_car: number;
     count_motor: number;
@@ -106,7 +106,7 @@ const VideoModal = ({
               <div className="relative aspect-video rounded-lg overflow-hidden">
                 {frameData ? (
                   <img
-                    src={`data:image/jpeg;base64,${frameData}`}
+                    src={frameData}
                     alt={`Camera ${roadName}`}
                     className="w-full h-full object-contain"
                   />

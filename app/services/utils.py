@@ -1,21 +1,20 @@
-import base64
 import numpy as np
 import cv2
 import time
-def convert_frame_to_base64(img: np.array) -> str:
-    """ Hàm chuyển đổi ảnh dạng numpy sang base64
+def convert_frame_to_byte(img: np.array) -> bytes:
+    """ Hàm chuyển đổi ảnh dạng numpy sang bytes
     Args:
         img (np.array): dũ liệu ảnh được đọc bởi cv2
 
     Returns:
-        str: mã base64
+        bytes: mã bytes
     """
     if img is not None:
         try:
             _, jpeg = cv2.imencode('.jpg', img)
-            return base64.b64encode(jpeg.tobytes()).decode('utf-8')
+            return jpeg.tobytes()
         except Exception as e:
-            print(f"Lỗi chuyển đổi sang base64 {e}")
+            print(f"Lỗi chuyển đổi sang bytes {e}")
             return None
     return None
 
