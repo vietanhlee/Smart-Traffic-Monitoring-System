@@ -1,9 +1,9 @@
 numpy
 opencv-python
 cvzone
-torch==2.3.0
-torchvision==0.18.0
-torchaudio==2.3.0
+torch
+torchvision
+torchaudio
 langchain
 langchain_google_genai
 ultralytics
@@ -11,11 +11,11 @@ fastapi
 uvicorn[standard]
 shapely
 python-dotenv
-lapx
-MNN
+lap
+# MNN
 openvino
-onnxruntime
-onnx
+# onnxruntime
+# onnx
 langgraph
-requests
+# requests
 git+https://github.com/ultralytics/CLIP.git
