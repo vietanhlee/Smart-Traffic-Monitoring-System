@@ -1,0 +1,45 @@
+<!-- index.html -->
+<!doctype html>
+<html>
+  <body>
+    <canvas id="cv" width="640" height="360"></canvas>
+    <script>
+      const canvas = document.getElementById('cv');
+      const ctx = canvas.getContext('2d');
+
+      const ws = new WebSocket("ws://localhost:8000/ws/frames");
+      ws.binaryType = "arraybuffer"; // nhận binary dạng ArrayBuffer
+
+      ws.onopen = () => console.log("WS open");
+      ws.onclose = () => console.log("WS closed");
+      ws.onerror = (e) => console.error("WS error", e);
+
+      // Option A: createImageBitmap (recommended)
+      ws.onmessage = async (evt) => {
+        try {
+          const ab = evt.data; // ArrayBuffer
+          const blob = new Blob([ab], { type: 'image/jpeg' });
+          // createImageBitmap thường nhanh hơn decode sang <img>
+          const imgBitmap = await createImageBitmap(blob);
+          // vẽ lên canvas
+          ctx.drawImage(imgBitmap, 0, 0, canvas.width, canvas.height);
+          imgBitmap.close();
+        } catch (err) {
+          console.error("decode/display err", err);
+        }
+      };
+
+      // Fallback Option B (if older browser):
+      // ws.onmessage = (evt) => {
+      //   const blob = new Blob([evt.data], { type: 'image/jpeg' });
+      //   const url = URL.createObjectURL(blob);
+      //   const img = new Image();
+      //   img.onload = () => {
+      //     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      //     URL.revokeObjectURL(url);
+      //   };
+      //   img.src = url;
+      // };
+    </script>
+  </body>
+</html>
