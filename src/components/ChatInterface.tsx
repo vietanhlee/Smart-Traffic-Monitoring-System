@@ -351,18 +351,15 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
         return;
       }
 
-      // Normalize images to full data URIs immediately
-      const normalizedImages =
-        (responseImage || []).map((img) =>
-          img?.startsWith?.("data:") ? img : `data:image/jpeg;base64,${img}`
-        ) || [];
+      // Use the image URLs directly as they are already properly formatted
+      const imageUrls = responseImage || [];
 
       setMessages((prev) => {
         const filtered = prev.filter((msg) => msg.id !== "typing");
         const newMessage = {
           id: (Date.now() + 1).toString(),
           text: responseText ?? "", // cho phép text rỗng nếu chỉ có ảnh
-          image: normalizedImages, // Đã normalize ở đây
+          image: imageUrls, // Use URLs directly
           user: false,
           time: new Date().toLocaleTimeString("vi-VN"),
         };
@@ -462,7 +459,7 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
 
       return (
         <img
-          src={src.startsWith("data:") ? src : `data:image/jpeg;base64,${src}`}
+          src={src} // Use URL directly as it's already properly formatted
           alt={alt || "AI generated image"}
           className="max-w-full h-auto rounded-lg shadow-lg mb-2"
           onError={(e) => {
@@ -571,12 +568,21 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
                             {message.image.map((imgSrc, index) => (
                               <img
                                 key={index}
-                                src={imgSrc} // already normalized in useEffect
+                                src={imgSrc} // Use image URL directly
                                 alt={`AI generated image ${index + 1}`}
                                 className="max-w-full h-auto rounded-lg shadow-lg mb-2"
                                 onError={(e) => {
-                                  console.error(`Image ${index + 1} load error:`, e);
+                                  console.error(
+                                    `Image ${index + 1} load error:`,
+                                    e
+                                  );
                                   e.currentTarget.style.display = "none";
+                                  e.currentTarget.nextElementSibling =
+                                    document.createElement("div");
+                                  e.currentTarget.nextElementSibling.textContent =
+                                    "Không thể tải ảnh";
+                                  e.currentTarget.nextElementSibling.className =
+                                    "text-red-500 text-sm";
                                 }}
                               />
                             ))}

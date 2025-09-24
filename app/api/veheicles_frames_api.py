@@ -39,7 +39,7 @@ async def websocket_frames(websocket: WebSocket, road_name: str):
             # Lấy frame hiện tại của tuyến đường
             frame_bytes = await asyncio.to_thread(state.analyzer.get_frame_road, road_name)
             await websocket.send_bytes(frame_bytes)
-            await asyncio.sleep(1/15)
+            await asyncio.sleep(1/30)
     except WebSocketDisconnect:
         # Client đóng kết nối
         pass

@@ -185,8 +185,8 @@ const VideoMonitor = ({
                     setModalOpen(true);
                   }}
                 >
-                  {/* Video Frame (smaller, fits box) */}
-                  <div className="relative w-[480px] aspect-video bg-gray-100 dark:bg-gray-800 overflow-hidden mx-auto">
+                  {/* Video Frame (responsive) */}
+                  <div className="relative w-full max-w-[480px] aspect-video bg-gray-100 dark:bg-gray-800 overflow-hidden mx-auto">
                     {showFrames && frame?.frame ? (
                       <img
                         src={frame.frame}
@@ -211,8 +211,8 @@ const VideoMonitor = ({
                     </div>
                   </div>
 
-                  {/* Info Panel (match video width) */}
-                  <div className="bg-white dark:bg-gray-900 box-border w-[480px] mx-auto p-3">
+                  {/* Info Panel (responsive) */}
+                  <div className="bg-white dark:bg-gray-900 box-border w-full max-w-[480px] mx-auto p-3">
                     <h3 className="font-semibold text-lg mb-3 flex items-center space-x-2">
                       <span>{roadName}</span>
                     </h3>

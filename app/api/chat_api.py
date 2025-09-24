@@ -87,7 +87,7 @@ async def websocket_chat1(websocket: WebSocket):
             # Gọi Agent trong thread pool để không block event loop
             response = await asyncio.to_thread(lambda: state.agent.get_response(user_message))
             await websocket.send_json({
-                "text": response["text"],
+                "text": response["text"], 
                 "image": response["image"]
             })
 
