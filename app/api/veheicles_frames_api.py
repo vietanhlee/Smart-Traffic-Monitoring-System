@@ -84,12 +84,3 @@ async def get_frame_road(road_name: str):
             status_code=500
         )
     return Response(content=frame_bytes, media_type="image/jpeg")
-
-@router.get(path= '/frames_base64/{road_name}')
-async def get_frame_road(road_name: str):
-    data = await asyncio.to_thread(state.analyzer.get_frame_road_as_base64, road_name)
-    if data is None:
-        return JSONResponse(content={
-            "Lỗi: Dữ liệu bị lỗi, kiểm tra core"
-            }, status_code=500)
-    return JSONResponse(content= data)
