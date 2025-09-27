@@ -270,15 +270,15 @@ export const useFrameStream = (roadName: string | null) => {
 
 // Hook for multiple traffic info streams
 export const useMultipleTrafficInfo = (roadNames: string[]) => {
+  interface VehicleData {
+    count_car: number;
+    count_motor: number;
+    speed_car: number;
+    speed_motor: number;
+  }
+
   interface TrafficData {
-    [key: string]: {
-      vehicle_count?: number;
-      frame_count?: number;
-      vehicle_types?: {
-        [type: string]: number;
-      };
-      [key: string]: unknown;
-    };
+    [key: string]: VehicleData;
   }
 
   const [trafficData, setTrafficData] = useState<TrafficData>({});
@@ -329,13 +329,22 @@ export const useMultipleTrafficInfo = (roadNames: string[]) => {
           if (lastMessageRef.current[road] === event.data) return;
           lastMessageRef.current[road] = event.data;
           const parsed = JSON.parse(event.data);
+          
+          // Transform the data to match VehicleData interface
+          const vehicleData: VehicleData = {
+            count_car: parsed.count_car || 0,
+            count_motor: parsed.count_motor || 0,
+            speed_car: parsed.speed_car || 0,
+            speed_motor: parsed.speed_motor || 0,
+          };
+          
           setTrafficData((prev) => {
             const prevForRoad = prev[road];
             // Cheap stringify compare to guard nested equality
             const prevStr = prevForRoad ? JSON.stringify(prevForRoad) : "";
-            const nextStr = JSON.stringify(parsed);
+            const nextStr = JSON.stringify(vehicleData);
             if (prevStr === nextStr) return prev;
-            return { ...prev, [road]: parsed };
+            return { ...prev, [road]: vehicleData };
           });
         } catch (error) {
           console.error("Error processing message:", error);

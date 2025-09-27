@@ -53,9 +53,9 @@ const TrafficAnalytics = ({
   allowedRoads,
 }: TrafficAnalyticsProps) => {
   const [historicalData, setHistoricalData] = useState<HistoricalData[]>([]);
-  const [selectedMetric, setSelectedMetric] = useState<"vehicles" | "speed">(
-    "vehicles"
-  );
+  // const [selectedMetric, setSelectedMetric] = useState<"vehicles" | "speed">(
+  //   "vehicles"
+  // );
 
   // Store historical data
   useEffect(() => {
@@ -391,7 +391,7 @@ const TrafficAnalytics = ({
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {pieData.map((entry, index) => (
+                    {pieData.map((_, index) => (
                       <Cell
                         key={`cell-${index}`}
                         fill={COLORS[index % COLORS.length]}
@@ -399,7 +399,7 @@ const TrafficAnalytics = ({
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value, name, props) => [
+                    formatter={(value, _, props) => [
                       `${value} xe (${props.payload.cars} ô tô, ${props.payload.motors} xe máy)`,
                       "Tổng số xe",
                     ]}

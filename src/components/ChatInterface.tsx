@@ -281,7 +281,7 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
         );
       }
 
-      const ok = chatSocketSend({ message: userMessage }); // Gửi đúng format
+      const ok = chatSocketSend({ message: fullPrompt }); // Gửi prompt thông minh tới AI
       console.log("Message sent status:", ok);
 
       if (!ok) {
@@ -577,12 +577,12 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
                                     e
                                   );
                                   e.currentTarget.style.display = "none";
-                                  e.currentTarget.nextElementSibling =
-                                    document.createElement("div");
-                                  e.currentTarget.nextElementSibling.textContent =
-                                    "Không thể tải ảnh";
-                                  e.currentTarget.nextElementSibling.className =
-                                    "text-red-500 text-sm";
+                                  const errorDiv = document.createElement("div");
+                                  errorDiv.textContent = "Không thể tải ảnh";
+                                  errorDiv.className = "text-red-500 text-sm";
+                                  if (e.currentTarget.parentNode) {
+                                    e.currentTarget.parentNode.appendChild(errorDiv);
+                                  }
                                 }}
                               />
                             ))}

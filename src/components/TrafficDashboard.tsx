@@ -25,9 +25,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useMultipleTrafficInfo, useMultipleFrameStreams } from "../hooks/useWebSocket";
 import { endpoints } from "../config";
 
-// VehicleData shape is provided by backend; avoid explicit interface to keep flexible
-
-// TrafficData shape is inferred from hooks; explicit interface removed to avoid unused lint
+// Import types from the WebSocket hook
+type VehicleData = {
+  count_car: number;
+  count_motor: number;
+  speed_car: number;
+  speed_motor: number;
+};
 
 const TrafficDashboard = () => {
   const [selectedRoad, setSelectedRoad] = useState<string | null>(null);
@@ -43,7 +47,7 @@ const TrafficDashboard = () => {
         const json = await res.json();
         const names: string[] = json?.road_names ?? [];
         setAllowedRoads(names);
-      } catch (e) {
+      } catch {
         // fallback to known demo names if API not ready
         setAllowedRoads(["Văn Phú", "Nguyễn Trãi", "Ngã Tư Sở", "Đường Láng", "Văn Quán"]);
       }
@@ -58,7 +62,7 @@ const TrafficDashboard = () => {
   const loading = !isAnyConnected;
 
   const getTrafficStatus = (roadName: string) => {
-    const data = trafficData[roadName];
+    const data = trafficData[roadName] as VehicleData | undefined;
     if (!data) return { status: "unknown", color: "gray", icon: Clock };
 
     const totalVehicles = data.count_car + data.count_motor;
@@ -226,9 +230,9 @@ const TrafficDashboard = () => {
                               {data && (
                                 <div className="text-xs text-gray-500 flex items-center space-x-1">
                                   <Car className="h-3 w-3" />
-                                  <span>{data.count_car}</span>
+                                  <span>{String(data.count_car)}</span>
                                   <Bike className="h-3 w-3" />
-                                  <span>{data.count_motor}</span>
+                                  <span>{String(data.count_motor)}</span>
                                 </div>
                               )}
                             </div>
@@ -251,7 +255,7 @@ const TrafficDashboard = () => {
         </TabsContent>
 
         <TabsContent value="chat">
-          <ChatInterface />
+          <ChatInterface trafficData={trafficData} />
         </TabsContent>
       </Tabs>
     </div>
