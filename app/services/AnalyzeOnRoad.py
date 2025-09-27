@@ -58,10 +58,10 @@ class AnalyzeOnRoad(AnalyzeOnRoadBase):
         >>> self.frame_dict["frame"] = self.convert_frame_to_base64(self.frame_output)
         """
         try: 
-           self.frame_dict["frame"] = convert_frame_to_byte(self.frame_output)
+           self.frame_dict["frame"] = self.frame_output
         except Exception as e:
             print(f"Lỗi khi chuyển đổi frame sang base64 hoặc lỗi khoá lock của process của {self.name}: {e}")
-
+            
     def update_for_vehicle(self):
         """Hàm ghi đè hàm ở class cha cập nhật thông tin về processing đang xử lý hiện tại và gán vào Manage.dict()
         để chia sẽ với nhau. Thực hiện việc lấy khoá Manager().Lock() rồi mới cập nhật để tránh data hazard"""
