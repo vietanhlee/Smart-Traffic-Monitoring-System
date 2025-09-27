@@ -13,6 +13,7 @@ shapely
 python-dotenv
 lap
 openvino
+pydantic
 langgraph
 gdown
 git+https://github.com/ultralytics/CLIP.git
