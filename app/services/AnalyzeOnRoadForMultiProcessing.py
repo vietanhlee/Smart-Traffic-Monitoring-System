@@ -1,9 +1,9 @@
 from multiprocessing import Process, Manager, freeze_support
-import base64
 import os
 from services.AnalyzeOnRoad import AnalyzeOnRoad
 from services.utils import *
 from services import conf
+from services.utils import convert_frame_to_byte
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 """ Trên Windows, Python multiprocessing sử dụng spawn method thay vì fork (như trên Linux/macOS)
@@ -140,28 +140,13 @@ class AnalyzeOnRoadForMultiprocessing():
             p.join()
         print("All self.processes stopped.")
     
-
     def get_frame_road(self, road_name : str):
         data = b""
         if road_name not in self.names:
             return data
-        data = self.shared_data[road_name]['frame'].get('frame', b"")
+        data = convert_frame_to_byte(self.shared_data[road_name]['frame'].get('frame', b""))
         return data
     
-    def get_frame_road_as_base64(self, road_name: str):
-        data = {}
-        if road_name not in self.names:
-            return data
-
-        frame_bytes = self.shared_data[road_name]['frame'].get('frame', b"")
-        if frame_bytes:
-            # Chuyển bytes → base64 string
-            frame_base64 = base64.b64encode(frame_bytes).decode("utf-8")
-            data['frame'] = frame_base64
-        else:
-            data['frame'] = ""
-
-        return data
     def get_info_road(self, road_name : str):
         if road_name not in self.names:
             return {}
