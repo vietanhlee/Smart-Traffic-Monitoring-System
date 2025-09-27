@@ -316,7 +316,7 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
     send: chatSocketSend,
     isConnected: isWsConnected,
     error: wsError,
-  } = useWebSocket(endpoints.chatWs1);
+  } = useWebSocket(endpoints.chatWs);
 
   useEffect(() => {
     if (wsError) {

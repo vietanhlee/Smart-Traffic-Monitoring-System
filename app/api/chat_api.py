@@ -3,7 +3,6 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from schemas.ChatRequest import ChatRequest 
 from schemas.ChatResponse import ChatResponse
 import asyncio
-from services.ChatBot import ChatBot
 from services.ChatBotAgent import ChatBotAgent
 
 router = APIRouter()
@@ -11,9 +10,6 @@ router = APIRouter()
 @router.on_event("startup")
 def start_up():
     print("🚀 Starting up chat API...")
-    if state.chat_bot is None:
-        print("📱 Initializing ChatBot...")
-        state.chat_bot = ChatBot()
     if not hasattr(state, 'agent') or state.agent is None:
         print("🤖 Initializing Agent...")
         try:
@@ -29,46 +25,16 @@ async def test():
 
 @router.post(path='/chat', response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    data = await asyncio.to_thread(lambda : state.chat_bot.chat(user_input= request.message))
+    data = await asyncio.to_thread(lambda : state.agent.chat(user_input= request.message))
     # data = await asyncio.to_thread(chat_bot.chat, request.message)
     # await asyncio.to_thread(func(arg))	Gọi func(arg) NGAY lập tức, sai mục đích
     return ChatResponse(
-        message=data["message"],
+        message=data["text"],
         image=data["image"]
     )
 
 @router.websocket("/ws/chat")
 async def websocket_chat(websocket: WebSocket):
-    """
-    WebSocket endpoint cho ChatBot:
-    - Client gửi JSON {"message": "..."}
-    - Server trả JSON {"response": "..."}
-    """
-    await websocket.accept()
-    try:
-        while True:
-            data = await websocket.receive_json()
-            user_message = data.get("message", "")
-            if not user_message:
-                await websocket.send_json({"response": "Bạn chưa nhập tin nhắn."})
-                continue
-
-            # Gọi ChatBot trong thread pool để không block event loop
-            response = await asyncio.to_thread(lambda: state.chat_bot.chat(user_input=user_message))
-            await websocket.send_json({
-                "message": response["message"],
-                "image": response["image"]
-            })
-
-    except WebSocketDisconnect:
-        # Client đóng kết nối
-        pass
-    except Exception as e:
-        await websocket.close()
-
-
-@router.websocket("/ws/chat1")
-async def websocket_chat1(websocket: WebSocket):
     """
     WebSocket endpoint cho Agent (ChatBotAgent):
     - Client gửi JSON {"message": "..."}
