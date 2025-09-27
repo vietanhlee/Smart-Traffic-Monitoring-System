@@ -1,5 +1,5 @@
 from services.AnalyzeOnRoadForMultiProcessing import AnalyzeOnRoadForMultiprocessing
-from services.ChatBot import ChatBot
+# from services.ChatBot import ChatBot
 from services.ChatBotAgent import ChatBotAgent
 
 # Phần gắn tạm để gợi ý code
