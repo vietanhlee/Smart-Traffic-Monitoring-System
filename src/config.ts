@@ -6,11 +6,11 @@
 const trimTrailingSlash = (url: string) => url.replace(/\/$/, "");
 
 export const API_HTTP_BASE: string = trimTrailingSlash(
-  (import.meta as any).env?.VITE_API_HTTP_BASE ?? "http://localhost:8000"
+  (import.meta as any).env?.VITE_API_HTTP_BASE ?? "http://92.244.39.20:8000/"
 );
 
 export const API_WS_BASE: string = trimTrailingSlash(
-  (import.meta as any).env?.VITE_API_WS_BASE ?? "ws://localhost:8000"
+  (import.meta as any).env?.VITE_API_WS_BASE ?? "ws://92.244.39.20:8000/"
 );
 
 export const endpoints = {
