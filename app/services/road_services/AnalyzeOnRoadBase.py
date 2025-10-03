@@ -1,3 +1,4 @@
+from abc import abstractmethod
 import cvzone
 import cv2
 import os
@@ -5,7 +6,7 @@ import numpy as np
 from datetime import datetime
 from ultralytics import solutions
 from services.utils import *
-from services import conf
+from services.road_services import conf
 
 # Thêm cái này để tránh xung đột
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
@@ -59,7 +60,7 @@ class AnalyzeOnRoadBase:
             iou=iou,
             conf=conf,
             meter_per_pixel=meter_per_pixel,
-            max_hist=15
+            max_hist=20
         )
         
         self.region = region
@@ -85,13 +86,14 @@ class AnalyzeOnRoadBase:
         self.delta_time = 0
         self.time_pre_for_fps = datetime.now()
     
+    @abstractmethod
     def update_for_frame(self):
-        """Dành cho subclass định nghĩa, do không cần ở hiện tại"""
         pass
+    
+    @abstractmethod
     def update_for_vehicle(self):
-        """Dành cho subclass định nghĩa, do không cần ở hiện tại"""
         pass
-   
+    
     def update_data(self):
         """Hàm này sẽ được gọi để cập nhật dữ liệu cho frame và thông tin phương tiện sau một khoảng thời gian
             đã thiết lập là time_step"""
@@ -134,10 +136,10 @@ class AnalyzeOnRoadBase:
         >>> self.ids = self.speed_tool.track_data.id.cpu().numpy().astype('int')
         >>> self.boxes = self.speed_tool.track_data.xyxy.cpu().numpy().astype('int')
         >>> self.classes = self.speed_tool.track_data.cls.cpu().numpy().astype('int')
-        Tốc độ là một dict với key là id của phương tiện và value là tốc độ tương ứng
-        ids là một numpy array chứa id của các phương tiện
+        speeds là một dict với key là id của phương tiện và value là tốc độ tương ứng
         boxes là một numpy array chứa bounding boxes của các phương tiện
-        classes là một numpy array chứa class của các phương tiện (0: ô tô, 1: xe máy)
+        ids là một numpy array chứa id của các phương tiện tương ứng với boxes
+        classes là một numpy array chứa class của các phương tiện tương ứng với boxes (0: ô tô, 1: xe máy)
         """
         try:
             # copy để tránh thay đổi ảnh gốc, cắt ảnh để chỉ predict vùng cần thiết
@@ -153,10 +155,10 @@ class AnalyzeOnRoadBase:
             if self.speed_tool.track_data is not None:
                 # Lấy dữ liệu từ speed_tool như tốc độ, id, bounding boxes và class 
                 self.speeds = self.speed_tool.spd
-                self.ids = self.speed_tool.track_data.id.cpu().numpy().astype('int')
-                self.boxes = self.speed_tool.track_data.xyxy.cpu().numpy().astype('int')
-                self.classes = self.speed_tool.track_data.cls.cpu().numpy().astype('int')
-            
+                self.ids = self.speed_tool.track_data.id.cpu().numpy().astype(np.int32)
+                self.boxes = self.speed_tool.track_data.xyxy.cpu().numpy().astype(np.int32)
+                self.classes = self.speed_tool.track_data.cls.cpu().numpy().astype(np.int32)
+
                 # Tính toán số lượng ô tô và xe máy, lưu vào danh sách            
                 count_car = np.count_nonzero(self.classes == 0)
                 count_motor = np.count_nonzero(self.classes == 1)

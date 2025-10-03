@@ -1,6 +1,6 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Annotated
 
 class ChatResponse(BaseModel):
-    message: str
-    image: Optional[str] = None  # Base64 encoded image
+    message: Annotated[str, "Phản hồi từ ChatBotAgent"]
+    image: Optional[str] = None 

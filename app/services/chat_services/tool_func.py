@@ -2,6 +2,7 @@ import requests
 import json
 from langchain_core.tools import tool
 from typing import Annotated
+
 BASE_URL = "http://localhost:8000"
 
 @tool

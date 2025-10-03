@@ -1,7 +1,6 @@
 import os
-from services.AnalyzeOnRoadBase import AnalyzeOnRoadBase
-from services.utils import convert_frame_to_byte
-from services import conf
+from services.road_services.AnalyzeOnRoadBase import AnalyzeOnRoadBase
+from services.road_services import conf
 # Đặt như này để tránh trường hợp lỗi do dùng chung thư viện AI 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 

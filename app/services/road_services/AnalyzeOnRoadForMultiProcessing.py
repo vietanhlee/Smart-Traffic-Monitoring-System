@@ -1,8 +1,8 @@
 from multiprocessing import Process, Manager, freeze_support
 import os
-from services.AnalyzeOnRoad import AnalyzeOnRoad
+from services.road_services.AnalyzeOnRoad import AnalyzeOnRoad
 from services.utils import *
-from services import conf
+from services.road_services import conf
 from services.utils import convert_frame_to_byte
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -22,11 +22,16 @@ class AnalyzeOnRoadForMultiprocessing():
         processes (list): các process con đang chạy 
     """
     def __init__(self, regions = conf.regions, path_videos = conf.path_videos,
-        meter_per_pixels = conf.meter_per_pixels, show_log = False, show = False, is_join_processes = True):
+        meter_per_pixels = conf.meter_per_pixels, show_log = False, show = False, is_join_processes = False):
         """Khi tích hợp API vào thiết kế do cơ chế envent loop vòng lặp bất tận nên không cần join
         các process lại để tránh bị kill. Do đó phải đặt is_join_processes = False nếu không nó sẽ chặn
         envent loop của api khiến server nghẽn
-
+        
+        Join giúp giữ các sub thực hiện xong việc của nó và sẽ không bị kill khi main kết thúc
+        tức là những câu lệnh sau join sẽ không thực hiện được nếu các process con chưa kết thúc.
+        Vậy nên khi chạy như một script bình thường thì nên join, còn khi tích hợp api thì không nên join
+        để tránh nghẽn event loop của api.
+        
         Args:
             path_videos (list, optional): Đường dẫn các video. 
             Defaults to [ "./video_test/Văn Quán.mp4", "./video_test/Văn Phú.mp4", "./video_test/Nguyễn Trãi.mp4", "./video_test/Ngã Tư Sở.mp4", "./video_test/Đường Láng.mp4", ].

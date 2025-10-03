@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import time
+
 def convert_frame_to_byte(img: np.array) -> bytes:
     """ Hàm chuyển đổi ảnh dạng numpy sang bytes
     Args:

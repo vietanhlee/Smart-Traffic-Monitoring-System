@@ -3,31 +3,26 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from schemas.ChatRequest import ChatRequest 
 from schemas.ChatResponse import ChatResponse
 import asyncio
-from services.ChatBotAgent import ChatBotAgent
+from services.chat_services.ChatBotAgent import ChatBotAgent
 
 router = APIRouter()
 
 @router.on_event("startup")
 def start_up():
-    print("🚀 Starting up chat API...")
+    print("Starting up chat API...")
     if not hasattr(state, 'agent') or state.agent is None:
-        print("🤖 Initializing Agent...")
+        print("Initializing Agent...")
         try:
             state.agent = ChatBotAgent()
-            print("✅ Agent initialized successfully")
+            print("Agent initialized successfully")
         except Exception as e:
-            print(f"❌ Failed to initialize Agent: {e}")
+            print(f"Failed to initialize Agent: {e}")
             state.agent = None
 
-@router.get("/test")
-async def test():
-    return {"status": "OK", "agent_ready": state.agent is not None}
 
 @router.post(path='/chat', response_model=ChatResponse)
 async def chat(request: ChatRequest):
     data = await asyncio.to_thread(lambda : state.agent.chat(user_input= request.message))
-    # data = await asyncio.to_thread(chat_bot.chat, request.message)
-    # await asyncio.to_thread(func(arg))	Gọi func(arg) NGAY lập tức, sai mục đích
     return ChatResponse(
         message=data["text"],
         image=data["image"]
@@ -50,7 +45,7 @@ async def websocket_chat(websocket: WebSocket):
                 await websocket.send_json({"text": "Bạn chưa nhập tin nhắn.", "image": None})
                 continue
 
-            # Gọi Agent trong thread pool để không block event loop
+
             response = await asyncio.to_thread(lambda: state.agent.get_response(user_message))
             await websocket.send_json({
                 "text": response["text"], 
@@ -58,7 +53,6 @@ async def websocket_chat(websocket: WebSocket):
             })
 
     except WebSocketDisconnect:
-        # Client đóng kết nối
         pass
     except Exception as e:
         print(f"WebSocket error: {e}")
