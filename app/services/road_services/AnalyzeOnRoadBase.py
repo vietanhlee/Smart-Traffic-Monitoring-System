@@ -4,7 +4,6 @@ import cv2
 import os
 import numpy as np
 from datetime import datetime
-from collections import deque
 from ultralytics import solutions
 from services.utils import *
 from services.road_services import conf
@@ -37,8 +36,7 @@ class AnalyzeOnRoadBase:
     def __init__(self, path_video = "./video_test/Đường Láng.mp4", meter_per_pixel = 0.06, 
                  model_path= conf.models_path, time_step=30,
                  is_draw=True, device= conf.device, iou=0.3, conf=0.2, show=False,
-                 region = np.array([[50, 400], [50, 265], [370, 130], [600, 130], [600, 400]]),
-                 max_buffer_size=900):  # ~30s at 30fps
+                 region = np.array([[50, 400], [50, 265], [370, 130], [600, 130], [600, 400]])):
         """Hàm xử lý tuần tự như một Script đơn giản áp dụng YOLO và cải tiến hơn là ở việc gói gọn trong 1 class
 
         Args:
@@ -161,7 +159,7 @@ class AnalyzeOnRoadBase:
                 self.frame_output[self.roi_y_start:, self.roi_x_start:]
             )
             
-            # Xử lý prediction - speed_tool tự copy nội bộ nên không cần copy thêm
+            # Cần dùng bản copy để tránh công cụ ghi đè label lên ảnh đầu vào
             self.speed_tool.process(self.frame_predict.copy())
             
             if self.speed_tool.track_data is not None:
@@ -237,11 +235,9 @@ class AnalyzeOnRoadBase:
                     class_id = self.classes[idx]
                     speed_id = self.speeds.get(track_id, 0)
                     
-                    # Pre-compute color and label
                     color = self.color_motor if class_id == 1 else self.color_car
                     label = f"{speed_id} km/h"
                     
-                    # Draw on frame_predict (ROI)
                     cx_local = cx[idx]
                     cy_local = cy[idx]
                     
