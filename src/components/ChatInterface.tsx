@@ -424,30 +424,30 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
 
   // Custom markdown components for styling
   const markdownComponents: Components = {
-    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+    p: ({ children }) => <p className="mb-1 sm:mb-2 last:mb-0 text-xs sm:text-sm break-words">{children}</p>,
     strong: ({ children }) => (
-      <strong className="font-semibold">{children}</strong>
+      <strong className="font-semibold break-words">{children}</strong>
     ),
-    em: ({ children }) => <em className="italic">{children}</em>,
+    em: ({ children }) => <em className="italic break-words">{children}</em>,
     ul: ({ children }) => (
-      <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>
+      <ul className="list-disc list-inside mb-1 sm:mb-2 space-y-0.5 sm:space-y-1 text-xs sm:text-sm break-words">{children}</ul>
     ),
     ol: ({ children }) => (
-      <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>
+      <ol className="list-decimal list-inside mb-1 sm:mb-2 space-y-0.5 sm:space-y-1 text-xs sm:text-sm break-words">{children}</ol>
     ),
-    li: ({ children }) => <li className="ml-2">{children}</li>,
+    li: ({ children }) => <li className="ml-1 sm:ml-2 break-words">{children}</li>,
     code: ({ children, className }) => {
       const isInline = !className;
       return isInline ? (
-        <code className="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm font-mono">
+        <code className="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-xs font-mono break-all">
           {children}
         </code>
       ) : (
-        <code className={className}>{children}</code>
+        <code className={`${className} break-all`}>{children}</code>
       );
     },
     pre: ({ children }) => (
-      <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg overflow-x-auto mb-2 text-sm">
+      <pre className="bg-gray-100 dark:bg-gray-800 p-2 sm:p-3 rounded-lg overflow-x-auto mb-1 sm:mb-2 text-xs sm:text-sm break-all">
         {children}
       </pre>
     ),
@@ -461,7 +461,7 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
         <img
           src={src} // Use URL directly as it's already properly formatted
           alt={alt || "AI generated image"}
-          className="max-w-full h-auto rounded-lg shadow-lg mb-2"
+          className="max-w-full h-auto rounded-lg shadow-lg mb-1 sm:mb-2"
           onError={(e) => {
             console.error("Markdown Image load error:", e);
             e.currentTarget.style.display = "none";
@@ -470,25 +470,25 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
       );
     },
     blockquote: ({ children }) => (
-      <blockquote className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 italic mb-2">
+      <blockquote className="border-l-2 sm:border-l-4 border-gray-300 dark:border-gray-600 pl-2 sm:pl-4 italic mb-1 sm:mb-2 text-xs sm:text-sm break-words">
         {children}
       </blockquote>
     ),
     h1: ({ children }) => (
-      <h1 className="text-lg font-bold mb-2">{children}</h1>
+      <h1 className="text-sm sm:text-lg font-bold mb-1 sm:mb-2 break-words">{children}</h1>
     ),
     h2: ({ children }) => (
-      <h2 className="text-base font-bold mb-2">{children}</h2>
+      <h2 className="text-xs sm:text-base font-bold mb-1 sm:mb-2 break-words">{children}</h2>
     ),
     h3: ({ children }) => (
-      <h3 className="text-sm font-bold mb-1">{children}</h3>
+      <h3 className="text-xs sm:text-sm font-bold mb-0.5 sm:mb-1 break-words">{children}</h3>
     ),
     a: ({ children, href }) => (
       <a
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-blue-500 hover:text-blue-600 underline"
+        className="text-blue-500 hover:text-blue-600 underline text-xs sm:text-sm break-all"
       >
         {children}
       </a>
@@ -496,15 +496,15 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
   };
 
   return (
-    <Card className="h-[600px] flex flex-col">
-      <CardHeader className="flex-shrink-0">
+    <Card className="h-[600px] sm:h-[500px] md:h-[600px] flex flex-col">
+      <CardHeader className="flex-shrink-0 px-3 sm:px-6">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center space-x-2">
-            <MessageCircle className="h-5 w-5" />
-            <span>Trợ Lý AI Giao Thông</span>
+          <CardTitle className="flex items-center space-x-2 text-sm sm:text-base">
+            <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="truncate">Trợ Lý AI Giao Thông</span>
           </CardTitle>
-          <div className="flex items-center space-x-2">
-            <Badge variant="outline" className="text-xs">
+          <div className="flex items-center space-x-1 sm:space-x-2">
+            <Badge variant="outline" className="text-xs hidden sm:inline-flex">
               {messages.length - 1} tin nhắn
             </Badge>
             <Button
@@ -512,18 +512,20 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
               size="sm"
               onClick={clearChat}
               disabled={messages.length <= 1}
+              className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline ml-1">Xóa</span>
             </Button>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col min-h-0">
+      <CardContent className="flex-1 flex flex-col min-h-0 px-3 sm:px-6">
         {/* Messages - Takes up remaining space */}
-        <div className="flex-1 min-h-0 mb-4">
-          <ScrollArea className="h-full pr-4" ref={scrollAreaRef}>
-            <div className="space-y-4">
+        <div className="flex-1 min-h-0 mb-3 sm:mb-4">
+          <ScrollArea className="h-full pr-2 sm:pr-4" ref={scrollAreaRef}>
+            <div className="space-y-3 sm:space-y-4">
               <AnimatePresence>
                 {messages.map((message) => (
                   <motion.div
@@ -536,28 +538,28 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
                     }`}
                   >
                     <div
-                      className={`flex items-start space-x-3 max-w-[80%] ${
+                      className={`flex items-start space-x-2 sm:space-x-3 max-w-[90%] sm:max-w-[85%] ${
                         message.user ? "flex-row-reverse space-x-reverse" : ""
                       }`}
                     >
-                      <Avatar className="w-8 h-8">
+                      <Avatar className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0">
                         <AvatarFallback
                           className={
                             message.user
-                              ? "bg-blue-500 text-white"
-                              : "bg-purple-500 text-white"
+                              ? "bg-blue-500 text-white text-xs"
+                              : "bg-purple-500 text-white text-xs"
                           }
                         >
                           {message.user ? (
-                            <User className="h-4 w-4" />
+                            <User className="h-3 w-3 sm:h-4 sm:w-4" />
                           ) : (
-                            <Bot className="h-4 w-4" />
+                            <Bot className="h-3 w-3 sm:h-4 sm:w-4" />
                           )}
                         </AvatarFallback>
                       </Avatar>
 
                       <div
-                        className={`rounded-lg p-3 ${
+                        className={`rounded-lg p-2 sm:p-3 min-w-0 flex-1 ${
                           message.user
                             ? "bg-blue-500 text-white"
                             : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
@@ -568,7 +570,7 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
                             {message.image.map((imgSrc, index) => (
                               <img
                                 key={index}
-                                src={imgSrc} // Use image URL directly
+                                src={imgSrc}
                                 alt={`AI generated image ${index + 1}`}
                                 className="max-w-full h-auto rounded-lg shadow-lg mb-2"
                                 onError={(e) => {
@@ -579,7 +581,7 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
                                   e.currentTarget.style.display = "none";
                                   const errorDiv = document.createElement("div");
                                   errorDiv.textContent = "Không thể tải ảnh";
-                                  errorDiv.className = "text-red-500 text-sm";
+                                  errorDiv.className = "text-red-500 text-xs sm:text-sm";
                                   if (e.currentTarget.parentNode) {
                                     e.currentTarget.parentNode.appendChild(errorDiv);
                                   }
@@ -591,23 +593,23 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
                         {message.typing ? (
                           <div className="flex items-center space-x-1">
                             <div className="flex space-x-1">
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce"></div>
                               <div
-                                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                                className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce"
                                 style={{ animationDelay: "0.1s" }}
                               ></div>
                               <div
-                                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                                className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce"
                                 style={{ animationDelay: "0.2s" }}
                               ></div>
                             </div>
-                            <span className="text-sm text-gray-500 ml-2">
+                            <span className="text-xs sm:text-sm text-gray-500 ml-2">
                               Đang trả lời...
                             </span>
                           </div>
                         ) : (
                           <>
-                            <div className="text-sm leading-relaxed">
+                            <div className="text-xs sm:text-sm leading-relaxed break-words overflow-wrap-anywhere">
                               <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 rehypePlugins={[rehypeHighlight]}
@@ -616,7 +618,7 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
                                 {message.text}
                               </ReactMarkdown>
                             </div>
-                            <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center justify-between mt-1 sm:mt-2">
                               <span
                                 className={`text-xs ${
                                   message.user
@@ -630,15 +632,15 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-6 w-6 p-0"
+                                  className="h-5 w-5 sm:h-6 sm:w-6 p-0"
                                   onClick={() =>
                                     copyMessage(message.text, message.id)
                                   }
                                 >
                                   {copiedMessageId === message.id ? (
-                                    <Check className="h-3 w-3" />
+                                    <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                   ) : (
-                                    <Copy className="h-3 w-3" />
+                                    <Copy className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                   )}
                                 </Button>
                               )}
@@ -663,17 +665,18 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
             onKeyDown={handleKeyDown}
             placeholder="Hỏi về tình trạng giao thông..."
             disabled={isLoading}
-            className="flex-1"
+            className="flex-1 text-sm sm:text-base"
           />
           <Button
             onClick={handleSendMessage}
             disabled={!input.trim() || isLoading}
             size="icon"
+            className="h-9 w-9 sm:h-10 sm:w-10"
           >
             {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
             ) : (
-              <Send className="h-4 w-4" />
+              <Send className="h-3 w-3 sm:h-4 sm:w-4" />
             )}
           </Button>
         </div>

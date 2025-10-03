@@ -4,6 +4,7 @@ import cv2
 import os
 import numpy as np
 from datetime import datetime
+from collections import deque
 from ultralytics import solutions
 from services.utils import *
 from services.road_services import conf
@@ -36,8 +37,9 @@ class AnalyzeOnRoadBase:
     def __init__(self, path_video = "./video_test/Đường Láng.mp4", meter_per_pixel = 0.06, 
                  model_path= conf.models_path, time_step=30,
                  is_draw=True, device= conf.device, iou=0.3, conf=0.2, show=False,
-                 region = np.array([[50, 400], [50, 265], [370, 130], [600, 130], [600, 400]])):
-        """Hàm xử lý uần tự như một Script đơn giản áp dụng YOLO và cải tiến hơn là ở việc gói gọn trong 1 class
+                 region = np.array([[50, 400], [50, 265], [370, 130], [600, 130], [600, 400]]),
+                 max_buffer_size=900):  # ~30s at 30fps
+        """Hàm xử lý tuần tự như một Script đơn giản áp dụng YOLO và cải tiến hơn là ở việc gói gọn trong 1 class
 
         Args:
             path_video (str): Đường dẫn đến video
@@ -50,6 +52,7 @@ class AnalyzeOnRoadBase:
             conf (float): Ngưỡng tin cậy về nhãn được dự đoán. Defaults to 0.2.
             show (bool): Hiển thị video xử lý qua opencv, đặt là False khi tích hợp làm server tránh lãng phí tài nguyên.\
             Defaults to True.
+            max_buffer_size (int): Kích thước tối đa của buffer cho deque. Defaults to 900.
         """
         self.speed_tool = solutions.SpeedEstimator(
             model=model_path,
@@ -64,6 +67,8 @@ class AnalyzeOnRoadBase:
         )
         
         self.region = region
+        self.region_pts = region.reshape((-1, 1, 2))
+        
         self.show = show
         self.path_video = path_video
         self.name = path_video.split('/')[-1][:-4] 
@@ -85,6 +90,24 @@ class AnalyzeOnRoadBase:
         self.is_draw = is_draw
         self.delta_time = 0
         self.time_pre_for_fps = datetime.now()
+        
+        # ROI
+        self.roi_y_start = 130
+        self.roi_x_start = 50
+        
+        # Draw 
+        self.font = cv2.FONT_HERSHEY_SIMPLEX
+        self.font_scale = 0.5
+        self.font_thickness = 1    
+        self.color_motor = (0, 0, 255)  # Red for motorcycles
+        self.color_car = (255, 0, 0)    # Blue for cars
+        self.color_region = (0, 255, 255)  # Yellow for region
+        
+        # Tracking
+        self.ids = None
+        self.speeds = {}
+        self.boxes = None
+        self.classes = None
     
     @abstractmethod
     def update_for_frame(self):
@@ -99,24 +122,23 @@ class AnalyzeOnRoadBase:
             đã thiết lập là time_step"""
 
         # Gọi hàm này để cập nhật dữ liệu cho frame (luôn được cập nhật đảm bảo tính realtime)
-        # Cái này dành cho subclass để cập nhật frame_output 
         self.update_for_frame()
         
-        # Tính toán thời gian đã trôi qua kể từ lần cập nhật trước và cập nhật thông tin các phương tiện nếu đủ thời gian đã thiết lập
+        # Tính toán thời gian đã trôi qua kể từ lần cập nhật trước
         time_now = datetime.now()
         self.delta_time = (time_now - self.time_pre).total_seconds()
         
-        # Khi đủ thời gian đã thiết lập, cập nhật thông tin phương tiện và reset danh sách
+        # Khi đủ thời gian đã thiết lập, cập nhật thông tin phương tiện
         if self.delta_time >= self.time_step:
             self.time_pre = time_now
             
-            # Tính toán trung bình các giá trị trong danh sách
+            # Tính toán trung bình các giá trị - deque tự động giới hạn size
             self.count_car_display = safe_avg_np(self.list_count_car)
             self.speed_car_display = safe_avg_np(self.list_speed_car)
             self.count_motor_display = safe_avg_np(self.list_count_motor)
             self.speed_motor_display = safe_avg_np(self.list_speed_motor)
             
-            # Cập nhật thông tin phương tiện vào info_dict, cái này dành cho subclass ghi đè để cập nhật thông tin phương tiện
+            # Cập nhật thông tin phương tiện vào info_dict
             self.update_for_vehicle()
             
             # Reset danh sách để chuẩn bị cho lần cập nhật tiếp theo
@@ -129,115 +151,126 @@ class AnalyzeOnRoadBase:
         """Hàm này xử lý từng frame một 
         Args:
             frame_input (np.array): Ảnh được đọc từ opencv
-        
-        >>> self.speed_tool.track_data
-        Lệnh trên sẽ truy suất thông tin tracking được từ frame đầu vào
-        >>> self.speeds = self.speed_tool.spd
-        >>> self.ids = self.speed_tool.track_data.id.cpu().numpy().astype('int')
-        >>> self.boxes = self.speed_tool.track_data.xyxy.cpu().numpy().astype('int')
-        >>> self.classes = self.speed_tool.track_data.cls.cpu().numpy().astype('int')
-        speeds là một dict với key là id của phương tiện và value là tốc độ tương ứng
-        boxes là một numpy array chứa bounding boxes của các phương tiện
-        ids là một numpy array chứa id của các phương tiện tương ứng với boxes
-        classes là một numpy array chứa class của các phương tiện tương ứng với boxes (0: ô tô, 1: xe máy)
         """
         try:
-            # copy để tránh thay đổi ảnh gốc, cắt ảnh để chỉ predict vùng cần thiết
-            self.frame_output = frame_input.copy()
-            # Cắt ảnh kiểu này tránh lỗi
-            self.frame_predict = np.ascontiguousarray(frame_input[130:, 50:]) 
+            # Tránh copy toàn bộ frame, chỉ tạo view
+            self.frame_output = frame_input
             
-            # Xử lý ảnh để dự đoán tốc độ
-            # Sao chép frame_predict để tránh thay đổi ảnh gốc, sau đó xử lý
-            frame_predict_cp = self.frame_predict.copy()
-            self.speed_tool.process(frame_predict_cp)
+            # Sử dụng view thay vì copy - ascontiguousarray để đảm bảo memory layout
+            self.frame_predict = np.ascontiguousarray(
+                self.frame_output[self.roi_y_start:, self.roi_x_start:]
+            )
+            
+            # Xử lý prediction - speed_tool tự copy nội bộ nên không cần copy thêm
+            self.speed_tool.process(self.frame_predict.copy())
             
             if self.speed_tool.track_data is not None:
-                # Lấy dữ liệu từ speed_tool như tốc độ, id, bounding boxes và class 
+                # Batch convert to numpy một lần thay vì nhiều lần
+                track_data = self.speed_tool.track_data
                 self.speeds = self.speed_tool.spd
-                self.ids = self.speed_tool.track_data.id.cpu().numpy().astype(np.int32)
-                self.boxes = self.speed_tool.track_data.xyxy.cpu().numpy().astype(np.int32)
-                self.classes = self.speed_tool.track_data.cls.cpu().numpy().astype(np.int32)
+                self.ids = track_data.id.cpu().numpy().astype(np.int32)
+                self.classes = track_data.cls.cpu().numpy().astype(np.int32)
+                self.boxes = track_data.xyxy.cpu().numpy().astype(np.int32)
 
-                # Tính toán số lượng ô tô và xe máy, lưu vào danh sách            
-                count_car = np.count_nonzero(self.classes == 0)
-                count_motor = np.count_nonzero(self.classes == 1)
+                car_mask = (self.classes == 0)
+                motor_mask = (self.classes == 1)
+                
+                count_car = np.sum(car_mask)
+                count_motor = np.sum(motor_mask)
+                
                 self.list_count_car.append(count_car)
                 self.list_count_motor.append(count_motor)
             
-                # Lấy id của ô tô và xe máy, sau đó lấy tốc độ tương ứng từ speeds (speeds là một dict)
-                car_ids = self.ids[self.classes == 0]
-                motor_ids = self.ids[self.classes == 1]
-                self.list_speed_car.extend([self.speeds[tid] for tid in car_ids if tid in self.speeds])
-                self.list_speed_motor.extend([self.speeds[tid] for tid in motor_ids if tid in self.speeds])
+                car_ids = self.ids[car_mask]
+                motor_ids = self.ids[motor_mask]
+                
+                car_speeds = [self.speeds[tid] for tid in car_ids if tid in self.speeds]
+                motor_speeds = [self.speeds[tid] for tid in motor_ids if tid in self.speeds]
+                
+                if car_speeds:
+                    self.list_speed_car.extend(car_speeds)
+                if motor_speeds:
+                    self.list_speed_motor.extend(motor_speeds)
 
             # Vẽ đè lên hình các thông tin 
             if self.is_draw:
                 self.draw_info_to_frame_output()
             
-            # Tính toán xong xuôi sẽ gọi hàm update_data để cập nhật data ngay lập tức
+            # Cập nhật data
             self.update_data()
+            
         except Exception as e:
             print(f"Lỗi khi xử lý với file {self.name}: {e}")
             
     def draw_info_to_frame_output(self):
-        """Hàm này để vẽ các thông tin lên ảnh"""
+        """Hàm này để vẽ các thông tin lên ảnh - optimized version"""
         try:
-            # Đặt vùng cần chú ý
-            pts = self.region.reshape((-1, 1, 2))
-            
-            if self.ids is not None:
-                for i, box in enumerate(self.boxes):
-                    # Lấy tâm các box
-                    x1, y1, x2, y2 = box
-                    cx, cy = int((x1 + x2) / 2), int((y1 + y2) / 2)
+            if self.ids is not None and len(self.ids) > 0:
+                # Vectorized center calculation
+                x1 = self.boxes[:, 0]
+                y1 = self.boxes[:, 1]
+                x2 = self.boxes[:, 2]
+                y2 = self.boxes[:, 3]
+                
+                cx = ((x1 + x2) // 2).astype(np.int32)
+                cy = ((y1 + y2) // 2).astype(np.int32)
+                
+                # Batch ROI 
+                cx_adj = cx + self.roi_x_start
+                cy_adj = cy + self.roi_y_start
 
-                    # Kiểm tra nếu không thuộc vùng quan tâm thì không hiển thị
-                    result = cv2.pointPolygonTest(pts, (cx + 50, cy + 130), False)
-                    if result < 0:
-                        continue
-                    
-                    # Lấy thông tin về phương tiện
-                    track_id = self.ids[i]
-                    class_id = self.classes[i]
+                # Tìm các điểm nằm trong vùng ROI
+                valid_indices = []
+                for idx in range(len(cx_adj)):
+                    result = cv2.pointPolygonTest(
+                        self.region_pts, 
+                        (int(cx_adj[idx]), int(cy_adj[idx])), 
+                        False
+                    )
+                    if result >= 0:
+                        valid_indices.append(idx)
+                
+                valid_indices = np.array(valid_indices)
+                
+                for idx in valid_indices:
+                    track_id = self.ids[idx]
+                    class_id = self.classes[idx]
                     speed_id = self.speeds.get(track_id, 0)
                     
-                    # Thiết đặt label (tốc độ) và màu sắc
-                    label = f"{str(speed_id)} km/h"
-                    color = (0, 0, 255) if class_id == 1 else (255, 0, 0)
+                    # Pre-compute color and label
+                    color = self.color_motor if class_id == 1 else self.color_car
+                    label = f"{speed_id} km/h"
                     
-                    # Vẽ lên frame
-                    cv2.putText(self.frame_predict, label, (cx - 50, cy - 15),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
-                    cv2.circle(self.frame_predict, (cx, cy), 5, color, -1)
-
+                    # Draw on frame_predict (ROI)
+                    cx_local = cx[idx]
+                    cy_local = cy[idx]
+                    
+                    cv2.putText(self.frame_predict, label, 
+                               (cx_local - 50, cy_local - 15),
+                               self.font, self.font_scale, color, self.font_thickness)
+                    cv2.circle(self.frame_predict, (cx_local, cy_local), 5, color, -1)
+            
             # Gắn lại vùng được cắt để predict lại vào frame ban đầu
             self.frame_output[130:, 50:] = self.frame_predict
-            
-            # Cuối cùng vẽ các thông tin tổng quát
-            cv2.polylines(self.frame_output, [pts], isClosed=True, color=(0, 255, 255), thickness=4)
+            cv2.polylines(self.frame_output, [self.region_pts], 
+                         isClosed=True, color=self.color_region, thickness=4)
       
             info = [
                 f"Xe may: {self.count_motor_display} xe, Vtb = {self.speed_motor_display} km/h",
                 f"Oto: {self.count_car_display} xe, Vtb = {self.speed_car_display} km/h"
             ]
 
-            # Màu chữ riêng cho từng dòng
-            colors = [
-                (0, 0, 200),   # Xe máy: đỏ sẫm
-                (200, 0, 0)    # Ô tô: đỏ tươi
-            ]
+            colors = [(0, 0, 200), (200, 0, 0)]
 
             for i, t in enumerate(info):
                 cvzone.putTextRect(
-                    self.frame_output,
-                    t,
-                    (10, 25 + i * 35),    # vị trí hiển thị
+                    self.frame_output, t,
+                    (10, 25 + i * 35),
                     scale=1.5, thickness=2,
-                    colorT=colors[i],     # lấy màu theo dòng
-                    colorR=(50, 50, 50),  # nền xám
+                    colorT=colors[i],
+                    colorR=(50, 50, 50),
                     border=2,
-                    colorB=(255, 255, 255) # viền trắng
+                    colorB=(255, 255, 255)
                 )
 
         except Exception as e:
@@ -251,9 +284,10 @@ class AnalyzeOnRoadBase:
             print(f'Không thể mở video: {self.path_video}')
             return
         
+        target_size = (600, 400)
+        
         try:
             while True:
-                
                 check, cap = cam.read()
                 
                 if not check:
@@ -261,25 +295,24 @@ class AnalyzeOnRoadBase:
                     # Restart video để loop
                     cam.set(cv2.CAP_PROP_POS_FRAMES, 0)
                     continue
-                cap = cv2.resize(cap, (600, 400))
                 
+                cap = cv2.resize(cap, target_size)
                 
+                # FPS calculation - optimized
                 time_now = datetime.now()
                 delta_time = (time_now - self.time_pre_for_fps).total_seconds()
                 fps = round(1 / delta_time) if delta_time > 0 else 0
                 self.time_pre_for_fps = time_now
                 
-                # Vẽ FPS lên frame hiển thị
-                cvzone.putTextRect(cap,
-                                    f"FPS: {fps}",
-                                    (516, 20),             # vị trí
-                                    scale=1.1, thickness=2,
-                                    colorT=(0, 255, 100),  # màu chữ
-                                    colorR=(50, 50, 50),   # màu nền (xám)
-                                    border=2,
-                                    colorB=(255, 255, 255) # màu viền (trắng)
-                                )
-                # Xử lý từng frame một
+                cvzone.putTextRect(cap, f"FPS: {fps}",
+                                 (516, 20),
+                                 scale=1.1, thickness=2,
+                                 colorT=(0, 255, 100),
+                                 colorR=(50, 50, 50),
+                                 border=2,
+                                 colorB=(255, 255, 255))
+                
+                # Xử lý từng frame
                 self.process_single_frame(cap)
                 
                 # Hiển thị frame nếu show là True            
@@ -290,10 +323,6 @@ class AnalyzeOnRoadBase:
                 
         except KeyboardInterrupt:
             print(f"Đã dừng xử lý {self.name}")
-            # Giải phóng tài nguyên
-            cam.release()
-            if self.show:
-                cv2.destroyAllWindows()
         except Exception as e:
             print(f"Lỗi khi xử lý {self.name}: {e}")
         finally:

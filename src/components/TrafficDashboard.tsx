@@ -100,7 +100,7 @@ const TrafficDashboard = () => {
           </div>
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Hệ Thống Giao Thông Thông Minh
+              Hệ Thống Giám Sát Giao Thông Thông Minh
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
               Giám sát và phân tích giao thông thời gian thực

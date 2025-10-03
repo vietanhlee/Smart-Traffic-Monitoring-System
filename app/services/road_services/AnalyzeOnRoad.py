@@ -1,4 +1,5 @@
 import os
+from overrides import override
 from services.road_services.AnalyzeOnRoadBase import AnalyzeOnRoadBase
 from services.road_services import conf
 # Đặt như này để tránh trường hợp lỗi do dùng chung thư viện AI 
@@ -21,9 +22,8 @@ class AnalyzeOnRoad(AnalyzeOnRoadBase):
             info_dict (Manager().dict()): Một dict dùng để chia sẽ giữ liệu trung gian giữa các process với nhau,\
             mặc định là sẽ được truyền tham chiếu và nó sẽ được thay đỏi nếu các process con thay đổi nó cho nên\
             ta có thể truy cập dữ liệu kết quả xử lý ở bên ngoài dễ dàng nhưng phải đảm bảo truy cập an toàn
-            frame_dict (Manager().dict()): Tương tự info_dict nhưng dùng để chứa thông tin mã hoá base64 của ảnh.\
-            Lý do tại sao dùng dict mà không dùng Manager().Value(str, "") là do tính bất biến của str dễ bị lỗi.\
-            Dùng dict thay thế thì cấu trúc nó sẽ như sau {"frame": <base64 string>}
+            frame_dict (Manager().dict()): Tương tự info_dict nhưng dùng để chứa thông tin ảnh dạng bytecode đã được encode
+            do manager() không hỗ trợ kiểu này nên ta sẽ dùng dict trung gian để chưa mã bytecode đó ở value (key là "frame")
             model_path (str): Đường dẫn đến model. Defaults to "best.pt".
             time_step (int): Khoảng thời gian giữa 2 lần cập nhật thông tin các phương tiện. Defaults to 30.
             is_draw (bool): Biến chỉ định có vẽ các thông tin xử lý được lên frame hay không. Defaults to True.
@@ -48,22 +48,19 @@ class AnalyzeOnRoad(AnalyzeOnRoadBase):
                  is_draw, device, iou, conf, show, region)
         self.info_dict = info_dict
         self.frame_dict = frame_dict
-    
+
+    @override
     def update_for_frame(self):
-        """Hàm ghi đè hàm ở class cha cập nhật frame đang xử lý hiện tại, chuyển qua base64 và gán vào Manage.dict()\
-        để chia sẽ dữ liệu các process với nhau dễ dàng. 
-        
-        Thực hiện việc lấy khoá Manager().Lock() rồi mới cập nhật để tránh data hazard
-        >>> self.frame_dict["frame"] = self.convert_frame_to_base64(self.frame_output)
+        """Cập nhật frame đang xử lý hiện tại gán vào Manage.dict() để chia sẽ dữ liệu các process với nhau dễ dàng. 
         """
         try: 
            self.frame_dict["frame"] = self.frame_output
         except Exception as e:
-            print(f"Lỗi khi chuyển đổi frame sang base64 hoặc lỗi khoá lock của process của {self.name}: {e}")
-            
+            print(f"Lỗi khi cập nhật frame mới nhất của {self.name}: {e}")
+
+    @override
     def update_for_vehicle(self):
-        """Hàm ghi đè hàm ở class cha cập nhật thông tin về processing đang xử lý hiện tại và gán vào Manage.dict()
-        để chia sẽ với nhau. Thực hiện việc lấy khoá Manager().Lock() rồi mới cập nhật để tránh data hazard"""
+        """Hàm cập nhật thông tin về processing đang xử lý hiện tại và gán vào Manage.dict() để chia sẽ với nhau."""
         try:
             self.info_dict["count_car"] = self.count_car_display
             self.info_dict["count_motor"] = self.count_motor_display

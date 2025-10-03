@@ -4,6 +4,10 @@ from services.road_services.AnalyzeOnRoad import AnalyzeOnRoad
 from services.utils import *
 from services.road_services import conf
 from services.utils import convert_frame_to_byte
+import signal
+import sys
+import atexit
+
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 """ Trên Windows, Python multiprocessing sử dụng spawn method thay vì fork (như trên Linux/macOS)
@@ -47,12 +51,38 @@ class AnalyzeOnRoadForMultiprocessing():
         self.regions = regions
         self.manager = Manager()
         self.shared_data = self.manager.dict()  # Dùng để lưu trữ thông tin chung giữa các process
-        
         self.show_log = show_log
         self.show = show
         self.processes = []
         self.names = []
         self.is_join_processes = is_join_processes
+        
+        # Đăng ký signal handler để xử lý Ctrl+C
+        signal.signal(signal.SIGINT, self._signal_handler)
+        signal.signal(signal.SIGTERM, self._signal_handler)
+        
+        # Đăng ký cleanup khi exit
+        atexit.register(self.cleanup_processes)
+
+    def _signal_handler(self, signum, frame):
+        """Xử lý signal Ctrl+C và SIGTERM"""
+        print(f"\nNhận signal {signum}, đang dừng các process...")
+        self.cleanup_processes()
+        sys.exit(0)
+
+    def cleanup_processes(self):
+        """Dừng tất cả processes một cách an toàn"""
+        if hasattr(self, 'processes'):
+            for p in self.processes:
+                if p.is_alive():
+                    print(f"Đang terminate process {p.pid}...")
+                    p.terminate()
+                    p.join(timeout=5)  # Chờ tối đa 5 giây
+                    if p.is_alive():
+                        print(f"Force kill process {p.pid}...")
+                        p.kill()
+            print("Tất cả processes đã được dừng.")
+
     # hàm bình thường bỏ vào để tổ chức code Có thể gọi thông qua class hoặc instance, nhưng không thể truy cập 
     # trực tiếp vào thuộc tính của class hay instance, trừ khi được truyền vào.
     @staticmethod 
@@ -65,15 +95,16 @@ class AnalyzeOnRoadForMultiprocessing():
         Tất nhiên sẽ có nhưunxg thuộc tính khác trong self ko picke được nên ta để static cho an toàn dữ liệu
         Dùng @staticmethod để tránh pickle cả class instance. Chỉ truyền những tham số cần thiết, 
         không truyền toàn bộ self
+        
         Args:
             path_video (str): Đường dẫn đến video
             meter_per_pixel (float): Tỉ lệ 1 mét ngoài đời với 1 pixel
             info_dict (Manager().dict()): Một dict dùng để chia sẽ giữ liệu trung gian giữa các process với nhau,
             mặc định là sẽ được truyền tham chiếu và nó sẽ được thay đỏi nếu các process con thay đổi nó cho nên
             ta có thể truy cập dữ liệu kết quả xử lý ở bên ngoài dễ dàng nhưng phải đảm bảo truy cập an toàn
-            frame_dict (Manager().dict()): Tương tự info_dict nhưng dùng để chứa thông tin mã hoá base64 của ảnh.
-            Lý do tại sao dùng dict mà không dùng Manager().Value(str, "") là do tính bất biến của str dễ bị lỗi.
-            Dùng dict thay thế thì cấu trúc nó sẽ như sau {"frame": <base64 string>}
+            frame_dict (Manager().dict()): Tương tự info_dict nhưng dùng để chứa thông tin ảnh byte code đã được encode
+            do dữ liệu dạng bytecode mà manager không có kiểu này nên ta nó vào một dict trung gian
+            show (bool): Hiển thị video hay không
         """
         try:
             analyzer = AnalyzeOnRoad(
@@ -104,11 +135,6 @@ class AnalyzeOnRoadForMultiprocessing():
                 "speed_car": 0,
                 "speed_motor": 0,
             })
-            
-            # Do việc chia sẽ các biến kiểu str
-            # bị hạn chế trong multi processing nên ta lấy kiểu Manager.dict() chứa data str đó. Ví dụ như: 
-            # dict = {'frame': <str base64>} phải cầm được khoá thì mới được lấy dữ liệu
-            
             frame_dict = self.manager.dict({"frame": ""})
 
             # Lưu các khoá và các biến quản lý dữ liệu vào dict shared data để dễ quản lý. Việc láy data cũng 
@@ -140,10 +166,17 @@ class AnalyzeOnRoadForMultiprocessing():
             self.join_process()
     
     def join_process(self):   
-        """ Hàm để join các process """ 
+        """ Hàm để join các process với timeout""" 
         for p in self.processes:
-            p.join()
-        print("All self.processes stopped.")
+            if p.is_alive():
+                p.join(timeout=10)  # Timeout 10 giây
+                if p.is_alive():
+                    print(f"Process {p.pid} không thể dừng, đang force kill...")
+                    p.terminate()
+                    p.join(timeout=2)
+                    if p.is_alive():
+                        p.kill()
+        print("All processes stopped.")
     
     def get_frame_road(self, road_name : str):
         data = b""
@@ -156,8 +189,8 @@ class AnalyzeOnRoadForMultiprocessing():
         if road_name not in self.names:
             return {}
         return dict(self.shared_data[road_name]['info'])
-    
-#********************************************************************Script for testing************************************************************************
+
+#***********************************************************Script for testing************************************************************************
 if __name__ == '__main__':
     # freeze_support should be called immediately in the main block
     freeze_support()

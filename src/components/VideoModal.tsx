@@ -66,7 +66,7 @@ const VideoModal = ({
           className={`relative bg-white dark:bg-gray-900 rounded-xl shadow-2xl overflow-hidden ${
             isFullscreen
               ? "w-screen h-screen rounded-none"
-              : "w-[90vw] h-[90vh] max-w-5xl max-h-4xl"
+              : "w-[70vw] h-[90vh] max-w-4xl max-h-4xl"
           }`}
           onClick={(e) => e.stopPropagation()}
         >
@@ -100,10 +100,10 @@ const VideoModal = ({
           </div>
 
           {/* Video Content */}
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="flex-1 flex flex-row">
             {/* Video */}
-            <div className="relative bg-black p-4">
-              <div className="relative aspect-video rounded-lg overflow-hidden">
+            <div className="relative bg-gray-100 dark:bg-gray-700 p-4 flex-1 flex items-center justify-center">
+              <div className="relative aspect-video w-full h-full rounded-lg overflow-hidden">
                 {frameData ? (
                   <img
                     src={frameData}
@@ -123,13 +123,13 @@ const VideoModal = ({
               </div>
             </div>
 
-            {/* Traffic Info Right Panel on desktop, stacked on mobile */}
+            {/* Traffic Info Right Side */}
             {trafficData && (
-              <div className="p-6 bg-gray-50 dark:bg-gray-800 md:border-l border-gray-200 dark:border-gray-700 overflow-y-auto md:w-[380px]">
-                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center space-x-2">
-                  <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-white">
+              <div className="p-3 bg-gray-50 dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 overflow-y-auto w-64 max-h-[70vh]">
+                <h3 className="text-xs font-semibold mb-2 text-gray-900 dark:text-white flex items-center space-x-1">
+                  <div className="p-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded text-white">
                     <svg
-                      className="h-5 w-5"
+                      className="h-3 w-3"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -145,13 +145,13 @@ const VideoModal = ({
                   <span>Thông Tin Giao Thông</span>
                 </h3>
 
-                <div className="grid grid-cols-1 gap-6">
+                <div className="grid grid-cols-1 gap-2">
                   {/* Vehicle Count Card */}
-                  <div className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-                    <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center space-x-2">
+                  <div className="bg-white dark:bg-gray-900 rounded-lg p-2 shadow-sm border border-gray-200 dark:border-gray-700">
+                    <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center space-x-1 text-xs">
                       <div className="p-1.5 bg-blue-100 dark:bg-blue-900 rounded-lg">
                         <svg
-                          className="h-4 w-4 text-blue-600 dark:text-blue-400"
+                          className="h-3 w-3 text-blue-600 dark:text-blue-400"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -166,7 +166,7 @@ const VideoModal = ({
                       </div>
                       <span>Số Lượng Phương Tiện</span>
                     </h4>
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <div className="p-1.5 bg-blue-100 dark:bg-blue-900 rounded-lg">
@@ -183,7 +183,7 @@ const VideoModal = ({
                             Ô tô
                           </span>
                         </div>
-                        <span className="font-semibold text-blue-600 dark:text-blue-400 text-lg">
+                        <span className="font-semibold text-blue-600 dark:text-blue-400 text-sm">
                           {trafficData.count_car}
                         </span>
                       </div>
@@ -206,7 +206,7 @@ const VideoModal = ({
                             Xe máy
                           </span>
                         </div>
-                        <span className="font-semibold text-green-600 dark:text-green-400 text-lg">
+                        <span className="font-semibold text-green-600 dark:text-green-400 text-sm">
                           {trafficData.count_motor}
                         </span>
                       </div>
@@ -214,7 +214,7 @@ const VideoModal = ({
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                           Tổng cộng
                         </span>
-                        <span className="font-bold text-purple-600 dark:text-purple-400 text-xl">
+                        <span className="font-bold text-purple-600 dark:text-purple-400 text-sm">
                           {trafficData.count_car + trafficData.count_motor}
                         </span>
                       </div>
@@ -222,11 +222,11 @@ const VideoModal = ({
                   </div>
 
                   {/* Speed Card */}
-                  <div className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-                    <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center space-x-2">
+                  <div className="bg-white dark:bg-gray-900 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700">
+                    <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center space-x-2 text-sm">
                       <div className="p-1.5 bg-orange-100 dark:bg-orange-900 rounded-lg">
                         <svg
-                          className="h-4 w-4 text-orange-600 dark:text-orange-400"
+                          className="h-3 w-3 text-orange-600 dark:text-orange-400"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -241,7 +241,7 @@ const VideoModal = ({
                       </div>
                       <span>Tốc Độ Trung Bình</span>
                     </h4>
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <div className="p-1.5 bg-blue-100 dark:bg-blue-900 rounded-lg">
@@ -258,7 +258,7 @@ const VideoModal = ({
                             Ô tô
                           </span>
                         </div>
-                        <span className="font-semibold text-blue-600 dark:text-blue-400">
+                        <span className="font-semibold text-blue-600 dark:text-blue-400 text-sm">
                           {trafficData.speed_car.toFixed(1)} km/h
                         </span>
                       </div>
@@ -281,7 +281,7 @@ const VideoModal = ({
                             Xe máy
                           </span>
                         </div>
-                        <span className="font-semibold text-green-600 dark:text-green-400">
+                        <span className="font-semibold text-green-600 dark:text-green-400 text-sm">
                           {trafficData.speed_motor.toFixed(1)} km/h
                         </span>
                       </div>
@@ -289,11 +289,11 @@ const VideoModal = ({
                   </div>
 
                   {/* Status Card */}
-                  <div className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-                    <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center space-x-2">
+                  <div className="bg-white dark:bg-gray-900 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700">
+                    <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center space-x-2 text-sm">
                       <div className="p-1.5 bg-purple-100 dark:bg-purple-900 rounded-lg">
                         <svg
-                          className="h-4 w-4 text-purple-600 dark:text-purple-400"
+                          className="h-3 w-3 text-purple-600 dark:text-purple-400"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"

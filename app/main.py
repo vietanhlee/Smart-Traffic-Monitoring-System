@@ -1,9 +1,20 @@
+import os
+import sys
+import signal
 from api import veheicles_frames_api
 from fastapi import FastAPI
 from api import chat_api
 from api import state
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import RedirectResponse
+
+# Ưu tiên DirectShow, tắt MSMF để tránh kẹt Ctrl+C trên Windows
+os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
+os.environ["OPENCV_VIDEOIO_PRIORITY_DSHOW"] = "1"
+
+# Tránh xung đột OpenMP (NumPy/PyTorch/OpenCV)
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 
 app = FastAPI()
 app.add_middleware(
@@ -14,18 +25,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def signal_handler(signum, frame):
+    """Xử lý Ctrl+C"""
+    print("\nĐang shutdown server...")
+    if state.analyzer:
+        state.analyzer.cleanup_processes()
+    sys.exit(0)
+
+# Đăng ký signal handler
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
 
 @app.get(path= '/')
 def direct_home():
     return RedirectResponse(url= 'http://localhost:5173/')
-
 
 app.include_router(chat_api.router, prefix="", tags=["post chat"])
 app.include_router(veheicles_frames_api.router, prefix="", tags=["veheicles and frames of processes"])
 
 @app.on_event("shutdown")
 def shutdown():
-    state.analyzer.join_process()
+    print("Shutdown event triggered...")
+    if state.analyzer:
+        state.analyzer.cleanup_processes()
     
     
 """Lưu ý về luồng:

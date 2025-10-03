@@ -4,7 +4,7 @@ from langgraph.prebuilt import create_react_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.checkpoint.memory import InMemorySaver
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional
 
 class ChatResponse(BaseModel):
     text: str = Field(..., description="Phản hồi của trợ lý AI")
@@ -23,8 +23,7 @@ NGUYÊN TẮC PHÂN LOẠI:
    - Ít xe + vận tốc thấp → Chậm nhưng không tắc
 KHI TRẢ LỜI:
 - Luôn cung cấp thông tin chi tiết và chính xác
-- Nếu có hình ảnh từ camera, hãy mô tả tình hình giao thông dựa trên hình ảnh
-- Đưa ra lời khuyên cụ thể dựa trên dữ liệu thực tế
+- Đưa ra lời khuyên cụ thể dựa trên dữ liệu thực tế, có thể hỏi vài câu quan tâm như là đi ăn, đi chơi, đi làm ...
 """
 
 dotenv.load_dotenv()

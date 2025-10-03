@@ -24,7 +24,7 @@ async def get_road_names():
 @router.websocket("/ws/frames/{road_name}")
 async def websocket_frames(websocket: WebSocket, road_name: str):
     """
-    WebSocket endpoint truyền liên tục frame (base64) của tuyến đường road_name.
+    WebSocket endpoint truyền liên tục frame (byte code) của tuyến đường road_name.
     """
     await websocket.accept()
     try:
@@ -58,7 +58,7 @@ async def get_info_road(road_name: str):
     data = await asyncio.to_thread(state.analyzer.get_info_road, road_name)
     if data is None:
         return JSONResponse(content={
-            "Lỗi: Dữ liệu bị lỗi, kiểm tra core"
+            "Lỗi: Dữ liệu bị lỗi, kiểm tra road_services"
             }, status_code=500)
     return JSONResponse(content= data)
 

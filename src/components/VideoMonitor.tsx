@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Video,
@@ -11,8 +10,6 @@ import {
   CheckCircle,
   Clock,
   Gauge,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import VideoModal from "./VideoModal";
@@ -52,7 +49,6 @@ const VideoMonitor = ({
   loading,
   isFullscreen,
 }: VideoMonitorProps) => {
-  const [showFrames, setShowFrames] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalRoadName, setModalRoadName] = useState<string>("");
 
@@ -102,23 +98,23 @@ const VideoMonitor = ({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <Video className="h-5 w-5" />
-            <span>Giám Sát Video</span>
+            <Video className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="text-sm sm:text-base">Giám Sát Video</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div
-            className={`grid gap-4 ${
+            className={`grid gap-3 sm:gap-4 ${
               isFullscreen
-                ? "grid-cols-2 lg:grid-cols-3"
-                : "grid-cols-1 md:grid-cols-2"
+                ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
             }`}
           >
             {allowedRoads.map((road) => (
-              <div key={road} className="space-y-3">
-                <Skeleton className="h-48 w-full rounded-lg" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
+              <div key={road} className="space-y-2 sm:space-y-3">
+                <Skeleton className="aspect-[3/2] w-full max-w-sm mx-auto rounded-lg" />
+                <Skeleton className="h-3 sm:h-4 w-3/4" />
+                <Skeleton className="h-3 sm:h-4 w-1/2" />
               </div>
             ))}
           </div>
@@ -129,32 +125,20 @@ const VideoMonitor = ({
 
   return (
     <Card className="h-full">
-      <CardHeader>
+      <CardHeader className="px-3 sm:px-6">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center space-x-2">
-            <Video className="h-5 w-5" />
-            <span>Giám Sát Video</span>
+            <Video className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="text-sm sm:text-base">Camera Giao Thông</span>
           </CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowFrames(!showFrames)}
-          >
-            {showFrames ? (
-              <EyeOff className="h-4 w-4" />
-            ) : (
-              <Eye className="h-4 w-4" />
-            )}
-            <span className="ml-2">{showFrames ? "Ẩn" : "Hiện"} Video</span>
-          </Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-3 sm:px-6">
         <div
-          className={`grid gap-6 ${
+          className={`grid gap-4 sm:gap-6 ${
             isFullscreen
-              ? "grid-cols-1 lg:grid-cols-2 xl:grid-cols-3"
-              : "grid-cols-1 md:grid-cols-2"
+              ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+              : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
           }`}
         >
           <AnimatePresence>
@@ -175,7 +159,7 @@ const VideoMonitor = ({
                   }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   whileHover={{ scale: 1.02 }}
-                  className={`relative overflow-hidden rounded-xl border-2 transition-all duration-300 cursor-pointer inline-block w-fit mx-auto ${
+                  className={`relative overflow-hidden rounded-xl border-2 transition-all duration-300 cursor-pointer inline-block w-full max-w-sm mx-auto ${
                     isSelected
                       ? "border-blue-500 shadow-lg shadow-blue-500/25"
                       : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
@@ -186,8 +170,8 @@ const VideoMonitor = ({
                   }}
                 >
                   {/* Video Frame (responsive) */}
-                  <div className="relative w-full max-w-[480px] aspect-video bg-gray-100 dark:bg-gray-800 overflow-hidden mx-auto">
-                    {showFrames && frame?.frame ? (
+                  <div className="relative w-full max-w-sm mx-auto aspect-[3/2] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                    {frame?.frame ? (
                       <img
                         src={frame.frame}
                         alt={`Camera ${roadName}`}
@@ -195,50 +179,46 @@ const VideoMonitor = ({
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <Video className="h-12 w-12 text-gray-400" />
+                        <Video className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400" />
                       </div>
                     )}
 
-                    {/* Status Overlay removed per request */}
-
-                    {/* Live Indicator removed per request */}
-
                     {/* Click to expand hint */}
                     <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-200 flex items-center justify-center opacity-0 hover:opacity-100">
-                      <div className="bg-white/90 dark:bg-gray-900/90 text-gray-900 dark:text-white px-3 py-2 rounded-lg text-sm font-medium backdrop-blur-sm">
+                      <div className="bg-white/90 dark:bg-gray-900/90 text-gray-900 dark:text-white px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm font-medium backdrop-blur-sm">
                         Click để phóng to
                       </div>
                     </div>
                   </div>
 
                   {/* Info Panel (responsive) */}
-                  <div className="bg-white dark:bg-gray-900 box-border w-full max-w-[480px] mx-auto p-3">
-                    <h3 className="font-semibold text-lg mb-3 flex items-center space-x-2">
-                      <span>{roadName}</span>
+                  <div className="bg-white dark:bg-gray-900 p-2 sm:p-3">
+                    <h3 className="font-semibold text-sm sm:text-lg mb-2 sm:mb-3 flex items-center space-x-2">
+                      <span className="truncate">{roadName}</span>
                     </h3>
-                    {/* Status moved below video */}
-                    <div className="mb-3">
+                    {/* Status */}
+                    <div className="mb-2 sm:mb-3">
                       <Badge
                         variant={getStatusBadgeVariant(color)}
-                        className="flex items-center space-x-2"
+                        className="flex items-center space-x-1 sm:space-x-2 text-xs"
                       >
-                        <Icon className="h-4 w-4" />
+                        <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
                         <span className="text-xs">{text}</span>
                       </Badge>
                     </div>
 
                     {data ? (
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2 sm:gap-4">
                         {/* Car Stats */}
-                        <div className="flex items-center space-x-2">
-                          <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                            <Car className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <div className="flex items-center space-x-1 sm:space-x-2">
+                          <div className="p-1 sm:p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                            <Car className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 dark:text-blue-400" />
                           </div>
-                          <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                               Ô tô
                             </p>
-                            <p className="font-semibold">{data.count_car}</p>
+                            <p className="font-semibold text-xs sm:text-base">{data.count_car}</p>
                             <p className="text-xs text-gray-500">
                               {data.speed_car.toFixed(1)} km/h
                             </p>
@@ -246,15 +226,15 @@ const VideoMonitor = ({
                         </div>
 
                         {/* Motorbike Stats */}
-                        <div className="flex items-center space-x-2">
-                          <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                            <Bike className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        <div className="flex items-center space-x-1 sm:space-x-2">
+                          <div className="p-1 sm:p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                            <Bike className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 dark:text-green-400" />
                           </div>
-                          <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                               Xe máy
                             </p>
-                            <p className="font-semibold">{data.count_motor}</p>
+                            <p className="font-semibold text-xs sm:text-base">{data.count_motor}</p>
                             <p className="text-xs text-gray-500">
                               {data.speed_motor.toFixed(1)} km/h
                             </p>
@@ -262,10 +242,10 @@ const VideoMonitor = ({
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-center py-4">
+                      <div className="flex items-center justify-center py-2 sm:py-4">
                         <div className="text-center">
-                          <Gauge className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                          <p className="text-sm text-gray-500">
+                          <Gauge className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 mx-auto mb-1 sm:mb-2" />
+                          <p className="text-xs sm:text-sm text-gray-500">
                             Đang tải dữ liệu...
                           </p>
                         </div>
