@@ -7,7 +7,7 @@ from datetime import datetime
 from ultralytics import solutions
 from services.utils import *
 from services.road_services import conf
-
+from threading import Thread
 # Thêm cái này để tránh xung đột
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -162,43 +162,48 @@ class AnalyzeOnRoadBase:
             # Cần dùng bản copy để tránh công cụ ghi đè label lên ảnh đầu vào
             self.speed_tool.process(self.frame_predict.copy())
             
-            if self.speed_tool.track_data is not None:
-                # Batch convert to numpy một lần thay vì nhiều lần
-                track_data = self.speed_tool.track_data
-                self.speeds = self.speed_tool.spd
-                self.ids = track_data.id.cpu().numpy().astype(np.int32)
-                self.classes = track_data.cls.cpu().numpy().astype(np.int32)
-                self.boxes = track_data.xyxy.cpu().numpy().astype(np.int32)
-
-                car_mask = (self.classes == 0)
-                motor_mask = (self.classes == 1)
-                
-                count_car = np.sum(car_mask)
-                count_motor = np.sum(motor_mask)
-                
-                self.list_count_car.append(count_car)
-                self.list_count_motor.append(count_motor)
-            
-                car_ids = self.ids[car_mask]
-                motor_ids = self.ids[motor_mask]
-                
-                car_speeds = [self.speeds[tid] for tid in car_ids if tid in self.speeds]
-                motor_speeds = [self.speeds[tid] for tid in motor_ids if tid in self.speeds]
-                
-                if car_speeds:
-                    self.list_speed_car.extend(car_speeds)
-                if motor_speeds:
-                    self.list_speed_motor.extend(motor_speeds)
-
             # Vẽ đè lên hình các thông tin 
             if self.is_draw:
                 self.draw_info_to_frame_output()
+            # p = Thread(target= lambda : self.post_processing())
+            # p.start()
             
+            self.post_processing()
             # Cập nhật data
             self.update_data()
             
         except Exception as e:
             print(f"Lỗi khi xử lý với file {self.name}: {e}")
+
+    def post_processing(self):        
+        if self.speed_tool.track_data is not None:
+            # Batch convert to numpy một lần thay vì nhiều lần
+            track_data = self.speed_tool.track_data
+            self.speeds = self.speed_tool.spd
+            self.ids = track_data.id.cpu().numpy().astype(np.int32)
+            self.classes = track_data.cls.cpu().numpy().astype(np.int32)
+            self.boxes = track_data.xyxy.cpu().numpy().astype(np.int32)
+
+            car_mask = (self.classes == 0)
+            motor_mask = (self.classes == 1)
+            
+            count_car = np.sum(car_mask)
+            count_motor = np.sum(motor_mask)
+            
+            self.list_count_car.append(count_car)
+            self.list_count_motor.append(count_motor)
+        
+            car_ids = self.ids[car_mask]
+            motor_ids = self.ids[motor_mask]
+            
+            car_speeds = [self.speeds[tid] for tid in car_ids if tid in self.speeds]
+            motor_speeds = [self.speeds[tid] for tid in motor_ids if tid in self.speeds]
+            
+            if car_speeds:
+                self.list_speed_car.extend(car_speeds)
+            if motor_speeds:
+                self.list_speed_motor.extend(motor_speeds)
+
             
     def draw_info_to_frame_output(self):
         """Hàm này để vẽ các thông tin lên ảnh - optimized version"""
