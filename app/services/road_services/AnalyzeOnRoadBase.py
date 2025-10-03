@@ -247,7 +247,7 @@ class AnalyzeOnRoadBase:
                     cv2.circle(self.frame_predict, (cx_local, cy_local), 5, color, -1)
             
             # Gắn lại vùng được cắt để predict lại vào frame ban đầu
-            self.frame_output[130:, 50:] = self.frame_predict
+            self.frame_output[self.roi_y_start:, self.roi_x_start:] = self.frame_predict
             cv2.polylines(self.frame_output, [self.region_pts], 
                          isClosed=True, color=self.color_region, thickness=4)
       
