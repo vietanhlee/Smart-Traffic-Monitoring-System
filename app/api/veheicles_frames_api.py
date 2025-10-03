@@ -51,6 +51,7 @@ async def websocket_info(websocket: WebSocket, road_name: str):
     except WebSocketDisconnect:
         pass
     except Exception as e:
+        print(data)
         await websocket.close()
 
 @router.get(path= '/info/{road_name}')

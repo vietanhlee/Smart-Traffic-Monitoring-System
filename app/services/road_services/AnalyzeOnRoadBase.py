@@ -7,7 +7,7 @@ from datetime import datetime
 from ultralytics import solutions
 from services.utils import *
 from services.road_services import conf
-from threading import Thread
+
 # Thêm cái này để tránh xung đột
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -162,13 +162,15 @@ class AnalyzeOnRoadBase:
             # Cần dùng bản copy để tránh công cụ ghi đè label lên ảnh đầu vào
             self.speed_tool.process(self.frame_predict.copy())
             
+            self.post_processing()
+            
             # Vẽ đè lên hình các thông tin 
             if self.is_draw:
                 self.draw_info_to_frame_output()
             # p = Thread(target= lambda : self.post_processing())
             # p.start()
             
-            self.post_processing()
+            
             # Cập nhật data
             self.update_data()
             
@@ -190,8 +192,8 @@ class AnalyzeOnRoadBase:
             count_car = np.sum(car_mask)
             count_motor = np.sum(motor_mask)
             
-            self.list_count_car.append(count_car)
-            self.list_count_motor.append(count_motor)
+            self.list_count_car.append(int(count_car))
+            self.list_count_motor.append(int(count_motor))
         
             car_ids = self.ids[car_mask]
             motor_ids = self.ids[motor_mask]
@@ -252,7 +254,7 @@ class AnalyzeOnRoadBase:
                     cv2.circle(self.frame_predict, (cx_local, cy_local), 5, color, -1)
             
             # Gắn lại vùng được cắt để predict lại vào frame ban đầu
-            self.frame_output[self.roi_y_start:, self.roi_x_start:] = self.frame_predict
+            self.frame_output[130:, 50:] = self.frame_predict
             cv2.polylines(self.frame_output, [self.region_pts], 
                          isClosed=True, color=self.color_region, thickness=4)
       
