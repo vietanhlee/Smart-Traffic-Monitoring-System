@@ -131,10 +131,10 @@ class AnalyzeOnRoadBase:
             self.time_pre = time_now
             
             # Tính toán trung bình các giá trị - deque tự động giới hạn size
-            self.count_car_display = safe_avg_np(self.list_count_car)
-            self.speed_car_display = safe_avg_np(self.list_speed_car)
-            self.count_motor_display = safe_avg_np(self.list_count_motor)
-            self.speed_motor_display = safe_avg_np(self.list_speed_motor)
+            self.count_car_display = avg_none_zero(self.list_count_car)
+            self.speed_car_display = avg_none_zero(self.list_speed_car)
+            self.count_motor_display = avg_none_zero(self.list_count_motor)
+            self.speed_motor_display = avg_none_zero(self.list_speed_motor)
             
             # Cập nhật thông tin phương tiện vào info_dict
             self.update_for_vehicle()

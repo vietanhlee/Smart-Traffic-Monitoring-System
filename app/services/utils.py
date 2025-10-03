@@ -19,18 +19,9 @@ def convert_frame_to_byte(img: np.array) -> bytes:
             return None
     return None
 
-def safe_avg_np(lst: list) -> int:
-    """Hàm tính trung bình cộng các số dương
-
-    Args:
-        lst (list): list các số đầu vào (tốc độ tức thời các phương tiện)
-
-    Returns:
-        int: giá trị trung bình
-    """
-    arr = np.array(lst, dtype=np.int32)
-    non_zero = arr[arr != 0]
-    return int(non_zero.mean()) if non_zero.size > 0 else 0
+def avg_none_zero(lst: list) -> int:
+    non_zero = [x for x in lst if x != 0]
+    return sum(non_zero) // len(non_zero) if non_zero else 0
     
 def log(names : str, shared_data : dict) -> str:
     """Hàm in ra log thông tin các processing
