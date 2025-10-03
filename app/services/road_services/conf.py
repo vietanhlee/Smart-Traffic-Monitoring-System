@@ -25,3 +25,4 @@ meter_per_pixels = [0.03,
 models_path = r'./AI models/model N/openvino models/best_int8_openvino_model'
 
 device = 'cpu'
+
