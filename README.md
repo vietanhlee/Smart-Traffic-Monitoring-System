@@ -217,6 +217,16 @@ pnpm run dev
 ```
 > Vite dev server will be available at http://localhost:5173
 
+## Configuration
+
+### Frontend Configuration
+
+Base URLs and API endpoints are configured in `src/config.ts` and can be customized using Vite environment variables.
+
+### Backend Configuration
+
+Configured in `core/config.py` and can be customized environment variables.
+
 <details>
 <summary> <strong> Docker Deployment  </strong></summary>
 
@@ -285,7 +295,6 @@ To enable GPU acceleration:
    ```bash
    docker compose up --build --build-arg DEVICE=gpu
    ```
-</details>
 
 ### Troubleshooting Docker
 
@@ -301,12 +310,6 @@ To enable GPU acceleration:
   docker compose logs [service_name]
   ```
 </details>
-
-## Configuration
-
-### Frontend Configuration
-
-Base URLs and API endpoints are configured in `src/config.ts` and can be customized using Vite environment variables.
 
 ---
 
@@ -436,8 +439,7 @@ curl -X POST http://localhost:8000/chat \
 Note: For WebSocket endpoints, you'll need to use a WebSocket client or the provided React frontend components.
 
 ---
-
-## Troubleshooting Guide
+<details> <summary> <strong> Troubleshooting Guide </strong> </summary> 
 
 ### Common Issues
 
@@ -456,6 +458,7 @@ Note: For WebSocket endpoints, you'll need to use a WebSocket client or the prov
 3. **Environment Changes**
    - Requires Vite dev server restart
    - Check environment variable loading in `config.ts`
+</details>
 
 ### Best Practices
 
