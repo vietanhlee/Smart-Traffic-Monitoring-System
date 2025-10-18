@@ -4,7 +4,8 @@ from langgraph.prebuilt import create_react_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.checkpoint.memory import InMemorySaver
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List
+from utils.chatbot_utils import pre_model_hook
 
 class ChatResponse(BaseModel):
     text: str = Field(..., description="Phản hồi của trợ lý AI")
@@ -37,6 +38,7 @@ class ChatBotAgent:
                                         tools= [get_frame_road, get_info_road], 
                                         prompt= prompt,
                                         response_format= ChatResponse,
+                                        pre_model_hook= pre_model_hook,
                                         checkpointer= self.checkpointer)
         self.config = {"configurable": {"thread_id": "1"}}
 
