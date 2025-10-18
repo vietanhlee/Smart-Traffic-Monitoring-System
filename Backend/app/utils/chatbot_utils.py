@@ -3,13 +3,13 @@ from langchain_core.messages.utils import (
     count_tokens_approximately
 )
 
-# This function will be called every time before the node that calls LLM
 def pre_model_hook(state):
+    """ Gọi mỗi khi Agent được gọi"""
     trimmed_messages = trim_messages(
         state["messages"],
         strategy="last",
         token_counter=count_tokens_approximately,
-        max_tokens=384,
+        max_tokens=2000,
         start_on="human",
         end_on=("human", "tool"),
     )
