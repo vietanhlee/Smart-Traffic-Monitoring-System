@@ -423,7 +423,7 @@ Note: For WebSocket endpoints, you'll need to use a WebSocket client or the prov
 
 1. **API Endpoint Errors**
 
-   - 404 errors for `/veheicles` or legacy `/frames`
+   - 404 errors for `/vehicles` or legacy `/frames`
    - Solution: Use current endpoints (`/road_name` and WebSocket endpoints)
    - Close legacy tabs (e.g., `FRONTEND_for_testing/index.html`)
    - Hard-reload the Vite app
