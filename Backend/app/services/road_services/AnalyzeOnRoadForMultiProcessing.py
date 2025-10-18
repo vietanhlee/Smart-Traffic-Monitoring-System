@@ -3,7 +3,7 @@ import os
 from services.road_services.AnalyzeOnRoad import AnalyzeOnRoad
 from core.config import SettingMetricTransport
 conf = SettingMetricTransport()
-from utils.services_utils import convert_frame_to_byte
+from utils.services_utils import convert_frame_to_byte, log
 import signal
 import sys
 import atexit
