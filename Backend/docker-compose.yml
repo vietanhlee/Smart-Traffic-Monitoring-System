@@ -11,4 +11,4 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./video_test:/app/video_test
+      - .app/video_test:/app/video_test

@@ -5,7 +5,7 @@ FROM python:3.11
 ARG DEVICE=cpu
 
 # Chỉ định thư mục làm việc
-WORKDIR /app
+WORKDIR /Backend
 
 # Cài dependency hệ thống cần cho OpenCV & hiển thị ảnh
 RUN apt-get update && apt-get install -y --no-install-recommends \
