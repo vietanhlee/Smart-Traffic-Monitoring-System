@@ -1,0 +1,21 @@
+numpy
+overrides
+opencv-python
+cvzone
+langchain
+langchain_google_genai
+ultralytics
+fastapi
+uvicorn[standard]
+shapely
+python-dotenv
+lapx
+openvino
+langgraph
+pydantic
+gdown
+git+https://github.com/ultralytics/CLIP.git
+--extra-index-url https://download.pytorch.org/whl/cu126
+torch
+torchvision
+torchaudio

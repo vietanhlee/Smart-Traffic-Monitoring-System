@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        DEVICE: cpu
+    container_name: server
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./video_test:/app/video_test
