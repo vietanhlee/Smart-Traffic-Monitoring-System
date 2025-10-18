@@ -60,17 +60,82 @@ A modern transportation monitoring and analysis system with real-time traffic an
 ## Project Structure
 
 ```
-├── app/                    # Backend FastAPI application
-│   ├── api/               # API endpoints
-│   ├── schemas/           # Data models and schemas
-│   ├── services/          # Business logic and services
-│   ├── AI models/         # AI model files and benchmarks
-│   └── video_test/        # Test video files
-├── src/                   # Frontend React application
-│   ├── components/        # React components
-│   ├── hooks/            # Custom React hooks
-│   └── lib/              # Utility functions
-└── FRONTEND_for_testing/  # Static frontend test files
+smart-transportation-system
+├─ Backend
+│  ├─ .dockerignore
+│  ├─ .env
+│  ├─ app
+│  │  ├─ ai_models
+│  │  │  ├─ model N
+│  │  │  │   └─ bench marks
+│  │  │  └─ model S
+│  │  │     └─ bench marks
+│  │  ├─ api
+│  │  │  └─ v1
+│  │  │     ├─ api_vehicles_frames.py
+│  │  │     └─ state.py
+│  │  ├─ core
+│  │  │  ├─ config.py
+│  │  │  ├─ security.py
+│  │  │  └─ __init__.py
+│  │  ├─ db
+│  │  │  └─ database.py
+│  │  ├─ main.py
+│  │  ├─ models
+│  │  │  └─ user.py
+│  │  ├─ schemas
+│  │  │  └─ ChatResponse.py
+│  │  ├─ services
+│  │  │  ├─ chat_services
+│  │  │  │  └─ tool_func.py
+│  │  │  └─ road_services
+│  │  │     ├─ AnalyzeOnRoad.py
+│  │  │     ├─ AnalyzeOnRoadBase.py
+│  │  │     └─ AnalyzeOnRoadForMultiProcessing.py
+│  │  └─ utils
+│  │     ├─ jwt_handler.py
+│  │     └─ services_utils.py
+│  ├─ docker-compose.yml
+│  ├─ Dockerfile
+│  ├─ requirements_cpu.txt
+│  └─ requirements_gpu.txt
+├─ docker-compose.yml
+├─ Frontend
+│  ├─ .dockerignore
+│  ├─ components.json
+│  ├─ Dockerfile
+│  ├─ eslint.config.js
+│  ├─ package.json
+│  ├─ public
+│  │  └─ vite.svg
+│  ├─ src
+│  │  ├─ App.css
+│  │  ├─ App.tsx
+│  │  ├─ assets
+│  │  │  └─ react.svg
+│  │  ├─ components
+│  │  │  ├─ ChatInterface.tsx
+│  │  │  ├─ LoadingSpinner.tsx
+│  │  │  ├─ TrafficAnalytics.tsx
+│  │  │  ├─ TrafficDashboard.tsx
+│  │  │  ├─ ui
+│  │  │  ├─ VideoModal.tsx
+│  │  │  └─ VideoMonitor.tsx
+│  │  ├─ config.ts
+│  │  ├─ hooks
+│  │  │  ├─ use-mobile.ts
+│  │  │  └─ useWebSocket.ts
+│  │  ├─ index.css
+│  │  ├─ lib
+│  │  │  └─ utils.ts
+│  │  ├─ main.tsx
+│  │  └─ vite-env.d.ts
+│  ├─ tsconfig.app.json
+│  ├─ tsconfig.json
+│  ├─ tsconfig.node.json
+│  └─ vite.config.ts
+└─ README1.md
+
 ```
 
 ## Requirements
@@ -85,19 +150,20 @@ A modern transportation monitoring and analysis system with real-time traffic an
 
 ### Backend Setup
 
-1. Navigate to the backend directory:
+1. From project root, navigate to the Backend directory:
 
 ```bash
-cd app
+cd Backend/app
 ```
 
 2. Install Python dependencies:
 
+- For CPU-only installation
 ```bash
-# For CPU-only installation
 pip install -r requirements_cpu.txt
-
-# For GPU support
+```
+- For GPU support
+```
 pip install -r requirements_gpu.txt
 ```
 
@@ -116,80 +182,75 @@ gdown --folder https://drive.google.com/drive/folders/1gkac5U5jEs174p7V7VC3rCmgv
 
 5. Configure environment variables:
 
+Create .env file for ChatBot configuration (Optional)
 ```bash
-# Create .env file for ChatBot configuration (Optional)
 echo "GOOGLE_API_KEY=your_google_api_key_here" > .env
 ```
 
 ### Frontend Setup
 
-1. Install Node.js dependencies:
+1. From project root, navigate to the Frontend directory and install Node.js dependencies:
 
 ```bash
-# From project root
-npm install
+npm install pnpm
+```
+
+```bash
+pnpm install
 ```
 
 ### Running the Application
 
-1. Start the backend server:
+1. From Backend directory, start the backend server:
 
 ```bash
-# From app directory
-uvicorn main:app --reload
-# Server will be available at http://localhost:8000
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
+> Server will be available at http://localhost:8000
 
-2. Start the frontend development server:
+2. From Frontend directory, start the frontend development server:
 
 ```bash
-# From project root
-npm run dev
-# Vite dev server will be available at http://localhost:5173
+pnpm run dev
 ```
-
+> Vite dev server will be available at http://localhost:5173
 ## Docker Deployment
 
 ### Quick Start with Docker Compose
 
 1. Download test videos (if not already downloaded):
 
-```bash
-# Navigate to app directory where videos will be stored
-cd app
-```
+Navigate to Backend/app directory where `videos_test` will be stored
 
 ```bash
-# Install gdown tool for downloading from Google Drive
+cd app
+```
+Install gdown tool for downloading from Google Drive
+```bash
 pip install gdown
 ```
 
+Download test videos 
 ```bash
-# Download test videos (sẽ được lưu vào thư mục app/video_test)
-# Danh sách video:
-# - Đường Láng.mp4
-# - Ngã Tư Sở.mp4
-# - Nguyễn Trãi.mp4
-# - Văn Phú.mp4
-# - Văn Quán.mp4
 gdown --folder https://drive.google.com/drive/folders/1gkac5U5jEs174p7V7VC3rCmgvO_cVwxH
 ```
-
+Return to root directory for docker-compose
 ```bash
-# Return to root directory for docker-compose
 cd ..
 ```
 
 2. Run with Docker Compose:
 
+Build and start services
 ```bash
-# Build and start services
 docker compose up --build
-
-# Or run in background
+```
+Or run in background
+```bash
 docker compose up --build -d
-
-# Stop services
+```
+Stop services
+```
 docker compose down
 ```
 
@@ -229,6 +290,7 @@ To enable GPU acceleration:
   ```bash
   docker compose build --no-cache
   ```
+
 - **Debugging**: Check service logs:
   ```bash
   docker compose logs [service_name]
@@ -269,16 +331,6 @@ Base URLs and API endpoints are configured in `src/config.ts` and can be customi
     }
     ```
 
-- `GET /frames_base64/{road_name}`
-
-  - Returns latest frame for specified road in base64 format
-  - Response type: `application/json`
-  - Error Response (500):
-    ```json
-    {
-      "error": "Lỗi: Dữ liệu bị lỗi, kiểm tra core"
-    }
-    ```
 
 - `GET /info/{road_name}`
   - Returns latest traffic metrics for specified road
@@ -300,17 +352,6 @@ Base URLs and API endpoints are configured in `src/config.ts` and can be customi
 
 #### Chat API
 
-- `GET /test`
-
-  - Check chat service status
-  - Response:
-    ```json
-    {
-      "status": "OK",
-      "agent_ready": true
-    }
-    ```
-
 - `POST /chat`
   - Send message to AI assistant
   - Request:
@@ -319,11 +360,11 @@ Base URLs and API endpoints are configured in `src/config.ts` and can be customi
       "message": "string"
     }
     ```
-  - Response:
+  - Response format:
     ```json
     {
       "message": "string",
-      "image": "string | null"
+      "image": list(url to image (byte code))
     }
     ```
 
@@ -362,32 +403,10 @@ Base URLs and API endpoints are configured in `src/config.ts` and can be customi
     ```json
     {
       "message": "string",
-      "image": "string | null"
+      "image": list(url to image (byte code))
     }
     ```
 
-- `WS /chat1`
-  - Advanced AI agent chatbot endpoint
-  - Request format:
-    ```json
-    {
-      "message": "string"
-    }
-    ```
-  - Response format:
-    ```json
-    {
-      "text": "string",
-      "image": "string | null"
-    }
-    ```
-  - Error response:
-    ```json
-    {
-      "text": "Lỗi: <error message>",
-      "image": null
-    }
-    ```
 
 ### Example Usage
 
@@ -401,11 +420,6 @@ curl http://localhost:8000/info/"Nguyễn Trãi"
 # Get raw JPEG frame
 curl http://localhost:8000/frames/"Nguyễn Trãi" --output frame.jpg
 
-# Get base64 encoded frame
-curl http://localhost:8000/frames_base64/"Nguyễn Trãi"
-
-# Test chat service status
-curl http://localhost:8000/test
 
 # Send chat message
 curl -X POST http://localhost:8000/chat \
@@ -439,7 +453,7 @@ Note: For WebSocket endpoints, you'll need to use a WebSocket client or the prov
 
 ### Best Practices
 
-- Keep test videos in `app/video_test/` directory
+- Keep `videos_test` in `Backend/app/` directory
 - Monitor system resources during video processing
 - Use appropriate hardware acceleration (CPU/GPU) based on needs
 - Regular cleanup of processed video data
