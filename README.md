@@ -57,7 +57,8 @@ A modern transportation monitoring and analysis system with real-time traffic an
 ![Chatbot 2](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/.github/chatbot2.png)
 ![Chatbot3](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/.github/chatbot3.png)
 
-## Project Structure
+<details>
+<summary> <strong>Project Structure</strong></summary>
 
 ```
 smart-transportation-system
@@ -137,6 +138,7 @@ smart-transportation-system
 └─ README1.md
 
 ```
+</details>
 
 ## Requirements
 
@@ -214,7 +216,9 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 pnpm run dev
 ```
 > Vite dev server will be available at http://localhost:5173
-## Docker Deployment
+
+<details>
+<summary> <strong> Docker Deployment  </strong></summary>
 
 ### Quick Start with Docker Compose
 
@@ -281,6 +285,7 @@ To enable GPU acceleration:
    ```bash
    docker compose up --build --build-arg DEVICE=gpu
    ```
+</details>
 
 ### Troubleshooting Docker
 
@@ -295,6 +300,7 @@ To enable GPU acceleration:
   ```bash
   docker compose logs [service_name]
   ```
+</details>
 
 ## Configuration
 
