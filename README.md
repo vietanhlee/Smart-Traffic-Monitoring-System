@@ -419,24 +419,29 @@ To enable GPU acceleration:
 
 ### Example Usage
 
+- Get list of roads
+
 ```bash
-# Get list of roads
 curl http://localhost:8000/roads_name
+```
 
-# Get traffic info for specific road
+- Get traffic info for specific road
+```bash
 curl http://localhost:8000/info/"Nguyễn Trãi"
+```
 
-# Get raw JPEG frame
+- Get raw JPEG frame
+```bash 
 curl http://localhost:8000/frames/"Nguyễn Trãi" --output frame.jpg
-
-
-# Send chat message
+```
+- Send chat message
+```bash
 curl -X POST http://localhost:8000/chat \
   -H "Content-Type: application/json" \
   -d '{"message":"Traffic on Nguyen Trai?"}'
 ```
 
-Note: For WebSocket endpoints, you'll need to use a WebSocket client or the provided React frontend components.
+> Note: For WebSocket endpoints, you'll need to use a WebSocket client or the provided React frontend components.
 
 ---
 <details> <summary> <strong> Troubleshooting Guide </strong> </summary> 
