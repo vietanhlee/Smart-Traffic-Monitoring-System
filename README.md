@@ -419,8 +419,9 @@ To enable GPU acceleration:
     ```
 
 
-### Example Usage
 
+<details> <summary> <strong> Example Usage </strong> </summary> 
+  
 - Get list of roads
 
 ```bash
@@ -444,6 +445,8 @@ curl -X POST http://localhost:8000/chat \
 ```
 
 > Note: For WebSocket endpoints, you'll need to use a WebSocket client or the provided React frontend components.
+
+</details>
 
 ---
 <details> <summary> <strong> Troubleshooting Guide </strong> </summary> 
