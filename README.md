@@ -57,7 +57,7 @@ A modern transportation monitoring and analysis system with real-time traffic an
 ![Chatbot 2](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/.github/chatbot2.png)
 ![Chatbot3](https://raw.githubusercontent.com/vietanhlee/Smart-Transportation-System/refs/heads/main/.github/chatbot3.png) -->
 
-![video](https://github-production-user-asset-6210df.s3.amazonaws.com/192244549/502966264-43444e24-b3ec-4792-bc23-8d104bf0de7f.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20251019%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251019T105345Z&X-Amz-Expires=300&X-Amz-Signature=ac967febc31665f486d57e477ca399014484634df4cf4a5472082458fcc9981f&X-Amz-SignedHeaders=host)
+https://github-production-user-asset-6210df.s3.amazonaws.com/192244549/502966264-43444e24-b3ec-4792-bc23-8d104bf0de7f.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20251019%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251019T105345Z&X-Amz-Expires=300&X-Amz-Signature=ac967febc31665f486d57e477ca399014484634df4cf4a5472082458fcc9981f&X-Amz-SignedHeaders=host
 
 <details>
 <summary> <strong>Project Structure</strong></summary>
