@@ -1,20 +1,37 @@
+# Core ML/AI libraries
 numpy
-overrides
 opencv-python
 cvzone
 torch
 torchvision
 torchaudio
-langchain
-langchain_google_genai
 ultralytics
-fastapi
-uvicorn[standard]
-shapely
-python-dotenv
-lap
 openvino
-pydantic
-langgraph
+shapely
+lap
 gdown
 git+https://github.com/ultralytics/CLIP.git
+
+# FastAPI and web framework
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+
+# Database and authentication
+sqlalchemy[asyncio]
+asyncpg
+alembic
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+python-jose[cryptography]
+python-multipart
+
+# LangChain and AI
+langchain
+langchain_google_genai
+langgraph
+
+# Utilities
+overrides
+email-validator

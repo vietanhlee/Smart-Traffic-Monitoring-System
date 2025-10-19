@@ -35,17 +35,9 @@ def get_frame_road(road_name: Annotated[str, "Tên tuyến đường"]) -> str:
     Trả về url của ảnh JPEG.
     """
     try:
-        response = requests.get(f"{BASE_URL}/frames/{road_name}")
-        if response.status_code == 200:
-            return f"{BASE_URL}/frames/{road_name}"
-        elif response.status_code == 500:
-            return "Lỗi: Dữ liệu bị lỗi, kiểm tra core"
-        else:
-            return f"Lỗi API: {response.status_code} - {response.text}"
-    except requests.exceptions.ConnectionError:
-        return "Không thể kết nối đến API server. Kiểm tra xem server có đang chạy không."
-    except requests.exceptions.RequestException as e:
-        return f"Lỗi khi gọi API: {str(e)}"
+        # Chỉ trả về URL, không gọi HTTP request để tránh lỗi 401
+        # Frontend sẽ xử lý authentication khi load ảnh
+        return f"{BASE_URL}/frames/{road_name}"
     except Exception as e:
         return f"Lỗi không xác định: {str(e)}"
 

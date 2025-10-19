@@ -4,9 +4,11 @@ import signal
 from api.v1 import api_vehicles_frames
 from fastapi import FastAPI
 from api.v1 import api_chatbot
+from api.v1 import api_auth
 from api.v1 import state
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import RedirectResponse
+from db.base import create_tables
 
 # Ưu tiên DirectShow, tắt MSMF để tránh kẹt Ctrl+C trên Windows
 os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
@@ -42,6 +44,18 @@ def direct_home():
 
 app.include_router(api_chatbot.router, prefix="", tags=["post chat"])
 app.include_router(api_vehicles_frames.router, prefix="", tags=["vehicles and frames of processes"])
+app.include_router(api_auth.router, prefix="", tags=["auth"])
+
+@app.on_event("startup")
+async def startup_event():
+    """Tạo bảng database khi khởi động"""
+    print("Creating database tables...")
+    try:
+        await create_tables()
+        print("Database tables created successfully!")
+    except Exception as e:
+        print(f"Error creating tables: {e}")
+        raise e
 
 @app.on_event("shutdown")
 def shutdown():

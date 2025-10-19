@@ -4,6 +4,16 @@ from schemas.ChatRequest import ChatRequest
 from schemas.ChatResponse import ChatResponse
 import asyncio
 from services.chat_services.ChatBotAgent import ChatBotAgent
+from schemas.user import UserCreate, UserLogin
+from core.security import hash_password, verify_password
+from utils.jwt_handler import create_access_token, get_current_user, decode_access_token
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.future import select
+from db.base import get_db
+from models.user import User
+from fastapi import Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+import re
 
 router = APIRouter()
 
@@ -21,7 +31,7 @@ def start_up():
 
 
 @router.post(path='/chat', response_model=ChatResponse)
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest, current_user=Depends(get_current_user)):
     data = await asyncio.to_thread(lambda : state.agent.chat(user_input= request.message))
     return ChatResponse(
         message=data["text"],
@@ -36,6 +46,18 @@ async def websocket_chat(websocket: WebSocket):
     - Server trả JSON {"text": "...", "image": "..."}
     """
     await websocket.accept()
+    # Try get token from query 'token', header 'authorization', or cookie 'access_token'
+    token = (
+        websocket.query_params.get("token")
+        or websocket.cookies.get("access_token")
+        or websocket.headers.get("authorization")
+    )
+    if token and token.lower().startswith("bearer "):
+        token = token.split(" ", 1)[1]
+    if not token or decode_access_token(token) is None:
+        await websocket.send_json({"detail": "Unauthorized — missing or invalid token"})
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
     try:
 
         while True:
