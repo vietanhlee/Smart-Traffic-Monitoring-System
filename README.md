@@ -418,7 +418,80 @@ To enable GPU acceleration:
     }
     ```
 
+## API Authentication & Usage
 
+### User Registration
+`POST /register`
+
+**Request:**
+```json
+{
+  "username": "string",
+  "password": "string",
+  "email": "user@email.com",
+  "phone_number": "string"
+}
+```
+**Response:**
+```json
+{"msg": "Register successful"}
+// or 400 if duplicate username/email/phone
+```
+
+### User Login
+`POST /login`
+
+**Request:**
+```json
+{
+  "username": "string", // or use "email"
+  "password": "string"
+}
+```
+**Response:**
+```json
+{"access_token": "<JWT token>", "token_type": "bearer"}
+```
+
+### Token Requirement (VERY IMPORTANT)
+**All other API (including /chat, /info, /frames, etc.) require Bearer JWT token.**
+  - Add `Authorization: Bearer <access_token>` header to EVERY request.
+
+**Example error if token missing/invalid:**
+```json
+{"detail": "Token không hợp lệ hoặc đã hết hạn."}
+```
+
+---
+
+### Example: Authenticated Chat Request
+```bash
+# Login to get token:
+curl -X POST http://localhost:8000/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "xxx", "password": "xxx"}'
+
+# Save the token, then call:
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <access_token>" \
+  -d '{"message": "Traffic info"}'
+```
+
+---
+
+> **Lưu ý:** Tất cả API trừ /register, /login đều bắt buộc truyền Header `Authorization: Bearer <access_token>`. Thiếu hoặc sai sẽ trả lỗi 401 (Token không hợp lệ).
+
+---
+
+## Protected REST Endpoints (require token)
+- `GET /roads_name`
+- `GET /frames/{road_name}`
+- `GET /info/{road_name}`
+- `POST /chat`
+- WebSocket endpoints: `ws/frames/{road_name}`, `ws/info/{road_name}`, `ws/chat` –> pass token in the header or via cookie if client supports
+
+---
 
 <details> <summary> <strong> Example Usage </strong> </summary> 
   
