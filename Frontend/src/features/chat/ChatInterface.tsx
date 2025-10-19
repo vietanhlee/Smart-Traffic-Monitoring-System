@@ -1,10 +1,46 @@
 import { useState, useRef, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+// Component fetch và hiển thị ảnh từ URL API (có token)
+const ChatImageFromUrl = ({ url }: { url: string }) => {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchImg() {
+      setError(false);
+      try {
+        const authUrl = addTokenToImageUrl(url);
+        const res = await fetch(authUrl);
+        if (!res.ok) throw new Error("fetch error");
+        const blob = await res.blob();
+        if (!cancelled) setBlobUrl(URL.createObjectURL(blob));
+      } catch {
+        if (!cancelled) setError(true);
+      }
+    }
+    fetchImg();
+    return () => {
+      cancelled = true;
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+    // eslint-disable-next-line
+  }, [url]);
+  if (error) return <div className="text-xs text-red-500">Không thể tải ảnh</div>;
+  if (!blobUrl) return <div className="w-32 h-24 bg-gray-200 animate-pulse rounded" />;
+  return (
+    <img
+      src={blobUrl}
+      alt="Ảnh chat"
+      className="w-full h-full rounded shadow border border-gray-200 dark:border-gray-700 object-contain"
+      style={{ width: '100%', height: '100%' }}
+    />
+  );
+};
+import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+import { Button } from "@/ui/button";
+import { Input } from "@/ui/input";
+import { ScrollArea } from "@/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@/ui/avatar";
+import { Badge } from "@/ui/badge";
 import {
   MessageCircle,
   Send,
@@ -21,8 +57,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import type { Components } from "react-markdown";
-import { useWebSocket } from "@/hooks/useWebSocket";
-import { endpoints } from "@/config";
+import { useWebSocket } from "../../hooks/useWebSocket";
+import { endpoints } from "../../config";
 
 interface VehicleData {
   count_car: number;
@@ -48,6 +84,49 @@ interface ChatInterfaceProps {
   trafficData: TrafficData;
 }
 const STORAGE_KEY = "chat_history";
+
+// Helper to extract image links from text
+function extractImageLinks(text: string): string[] {
+  const imgRegex =
+    /(https?:\/\/[\w\-./%?=&@]+\.(?:jpg|jpeg|png|webp|gif|bmp))(?!\S)/gi;
+  return Array.from(new Set([...text.matchAll(imgRegex)].map((m) => m[1])));
+}
+function removeImageLinksFromText(text: string): string {
+  const imgRegex =
+    /(https?:\/\/[\w\-./%?=&@]+\.(?:jpg|jpeg|png|webp|gif|bmp))(?!\S)/gi;
+  return text.replace(imgRegex, "").replace(/ +/g, " ").trim();
+}
+
+// Helper to add authentication token to image URLs
+function addTokenToImageUrl(url: string): string {
+  if (!url) return url;
+
+  // Remove any existing token param
+  url = url.replace(/([?&])token=[^&]+(&)?/, (m, p1, p2) => (p2 ? p1 : ""));
+
+  // Check if URL is from our backend (localhost:8000 or 127.0.0.1:8000)
+  if (url.includes("localhost:8000") || url.includes("127.0.0.1:8000")) {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      const separator = url.includes("?") ? "&" : "?";
+      return `${url}${separator}token=${encodeURIComponent(token)}`;
+    }
+  }
+  return url;
+}
+
+// Helper to process all image URLs in text and add authentication
+function processImageUrlsInText(text: string): string {
+  if (!text) return text;
+
+  // Find all image URLs in text and add authentication token
+  const imgRegex =
+    /(https?:\/\/[\w\-./%?=&@]+\.(?:jpg|jpeg|png|webp|gif|bmp))(?!\S)/gi;
+
+  return text.replace(imgRegex, (match) => {
+    return addTokenToImageUrl(match);
+  });
+}
 
 const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
   const [messages, setMessages] = useState<Message[]>(() => {
@@ -310,24 +389,48 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
     }
   };
 
-  // Chat WebSocket
+  // Chat WebSocket with authentication
+  const token = localStorage.getItem("access_token");
+  const chatWsUrl = token
+    ? `${endpoints.chatWs}?token=${encodeURIComponent(token)}`
+    : null;
+
+  // Show message if no token
+  useEffect(() => {
+    if (!token) {
+      toast.error("Vui lòng đăng nhập để sử dụng chat AI");
+    }
+  }, [token]);
+
   const {
     data: chatData,
     send: chatSocketSend,
     isConnected: isWsConnected,
     error: wsError,
-  } = useWebSocket(endpoints.chatWs);
+  } = useWebSocket(chatWsUrl, {
+    reconnectInterval: 3000,
+    maxReconnectAttempts: 5,
+  });
 
   useEffect(() => {
     if (wsError) {
       console.error("WebSocket Error:", wsError);
-      toast.error(`Lỗi kết nối: ${wsError}`);
+      // Only show error toast if it's a final error, not retry messages
+      if (
+        wsError.includes("Không thể kết nối với server") ||
+        wsError.includes("Lỗi kết nối WebSocket")
+      ) {
+        toast.error(`Lỗi kết nối chat: ${wsError}`);
+      }
     }
   }, [wsError]);
 
   // Monitor connection status
   useEffect(() => {
     console.log("WebSocket Connection Status:", isWsConnected);
+    if (isWsConnected) {
+      toast.success("Đã kết nối với AI thành công!");
+    }
   }, [isWsConnected]);
 
   useEffect(() => {
@@ -351,15 +454,20 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
         return;
       }
 
-      // Use the image URLs directly as they are already properly formatted
-      const imageUrls = responseImage || [];
+      // Process image URLs to add authentication token
+      const imageUrls = (responseImage || []).map((url) =>
+        addTokenToImageUrl(url)
+      );
+
+      // Process text to add authentication token to any image URLs in text
+      const processedText = processImageUrlsInText(responseText ?? "");
 
       setMessages((prev) => {
         const filtered = prev.filter((msg) => msg.id !== "typing");
         const newMessage = {
           id: (Date.now() + 1).toString(),
-          text: responseText ?? "", // cho phép text rỗng nếu chỉ có ảnh
-          image: imageUrls, // Use URLs directly
+          text: processedText, // Use processed text with authenticated URLs
+          image: imageUrls, // Use authenticated URLs
           user: false,
           time: new Date().toLocaleTimeString("vi-VN"),
         };
@@ -424,18 +532,28 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
 
   // Custom markdown components for styling
   const markdownComponents: Components = {
-    p: ({ children }) => <p className="mb-1 sm:mb-2 last:mb-0 text-xs sm:text-sm break-words">{children}</p>,
+    p: ({ children }) => (
+      <p className="mb-1 sm:mb-2 last:mb-0 text-xs sm:text-sm break-words">
+        {children}
+      </p>
+    ),
     strong: ({ children }) => (
       <strong className="font-semibold break-words">{children}</strong>
     ),
     em: ({ children }) => <em className="italic break-words">{children}</em>,
     ul: ({ children }) => (
-      <ul className="list-disc list-inside mb-1 sm:mb-2 space-y-0.5 sm:space-y-1 text-xs sm:text-sm break-words">{children}</ul>
+      <ul className="list-disc list-inside mb-1 sm:mb-2 space-y-0.5 sm:space-y-1 text-xs sm:text-sm break-words">
+        {children}
+      </ul>
     ),
     ol: ({ children }) => (
-      <ol className="list-decimal list-inside mb-1 sm:mb-2 space-y-0.5 sm:space-y-1 text-xs sm:text-sm break-words">{children}</ol>
+      <ol className="list-decimal list-inside mb-1 sm:mb-2 space-y-0.5 sm:space-y-1 text-xs sm:text-sm break-words">
+        {children}
+      </ol>
     ),
-    li: ({ children }) => <li className="ml-1 sm:ml-2 break-words">{children}</li>,
+    li: ({ children }) => (
+      <li className="ml-1 sm:ml-2 break-words">{children}</li>
+    ),
     code: ({ children, className }) => {
       const isInline = !className;
       return isInline ? (
@@ -454,12 +572,16 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
     img: ({ src, alt }) => {
       if (!src) return null;
 
+      // Add authentication token to image URL
+      const authenticatedSrc = addTokenToImageUrl(src);
+
       // Log để debug src
       console.log("Markdown Image src:", src);
+      console.log("Authenticated Image src:", authenticatedSrc);
 
       return (
         <img
-          src={src} // Use URL directly as it's already properly formatted
+          src={authenticatedSrc}
           alt={alt || "AI generated image"}
           className="max-w-full h-auto rounded-lg shadow-lg mb-1 sm:mb-2"
           onError={(e) => {
@@ -475,13 +597,19 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
       </blockquote>
     ),
     h1: ({ children }) => (
-      <h1 className="text-sm sm:text-lg font-bold mb-1 sm:mb-2 break-words">{children}</h1>
+      <h1 className="text-sm sm:text-lg font-bold mb-1 sm:mb-2 break-words">
+        {children}
+      </h1>
     ),
     h2: ({ children }) => (
-      <h2 className="text-xs sm:text-base font-bold mb-1 sm:mb-2 break-words">{children}</h2>
+      <h2 className="text-xs sm:text-base font-bold mb-1 sm:mb-2 break-words">
+        {children}
+      </h2>
     ),
     h3: ({ children }) => (
-      <h3 className="text-xs sm:text-sm font-bold mb-0.5 sm:mb-1 break-words">{children}</h3>
+      <h3 className="text-xs sm:text-sm font-bold mb-0.5 sm:mb-1 break-words">
+        {children}
+      </h3>
     ),
     a: ({ children, href }) => (
       <a
@@ -495,6 +623,25 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
     ),
   };
 
+  const ChatImage = ({ src, alt }: { src: string; alt?: string }) => {
+    const [imgError, setImgError] = useState(false);
+    if (imgError) {
+      return (
+        <div className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg p-2 text-xs flex items-center justify-center mb-2 h-24">
+          Không thể tải ảnh
+        </div>
+      );
+    }
+    return (
+      <img
+        src={addTokenToImageUrl(src)}
+        alt={alt || "chat image"}
+        className="max-w-full h-auto rounded-lg shadow-lg mb-2"
+        onError={() => setImgError(true)}
+      />
+    );
+  };
+
   return (
     <Card className="h-[600px] sm:h-[500px] md:h-[600px] flex flex-col">
       <CardHeader className="flex-shrink-0 px-3 sm:px-6">
@@ -502,6 +649,23 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
           <CardTitle className="flex items-center space-x-2 text-sm sm:text-base">
             <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />
             <span className="truncate">Trợ Lý AI Giao Thông</span>
+            {isWsConnected ? (
+              <Badge
+                variant="default"
+                className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs"
+              >
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></div>
+                Kết nối
+              </Badge>
+            ) : (
+              <Badge
+                variant="secondary"
+                className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs"
+              >
+                <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-1 animate-pulse"></div>
+                Đang kết nối...
+              </Badge>
+            )}
           </CardTitle>
           <div className="flex items-center space-x-1 sm:space-x-2">
             <Badge variant="outline" className="text-xs hidden sm:inline-flex">
@@ -527,130 +691,60 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
           <ScrollArea className="h-full pr-2 sm:pr-4" ref={scrollAreaRef}>
             <div className="space-y-3 sm:space-y-4">
               <AnimatePresence>
-                {messages.map((message) => (
-                  <motion.div
-                    key={message.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className={`flex ${
-                      message.user ? "justify-end" : "justify-start"
-                    }`}
-                  >
-                    <div
-                      className={`flex items-start space-x-2 sm:space-x-3 max-w-[90%] sm:max-w-[85%] ${
-                        message.user ? "flex-row-reverse space-x-reverse" : ""
-                      }`}
+                {messages.map((message) => {
+                  // Tách link ảnh trong text
+                  const extraImages = message.text ? extractImageLinks(message.text) : [];
+                  const allImages = Array.from(new Set([...(message.image || []), ...extraImages]));
+                  // Tách text không có link ảnh
+                  const cleanText = removeImageLinksFromText(message.text || "");
+                  return (
+                    <motion.div
+                      key={message.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      className={`flex ${message.user ? "justify-end" : "justify-start"}`}
                     >
-                      <Avatar className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0">
-                        <AvatarFallback
-                          className={
-                            message.user
-                              ? "bg-blue-500 text-white text-xs"
-                              : "bg-purple-500 text-white text-xs"
-                          }
-                        >
-                          {message.user ? (
-                            <User className="h-3 w-3 sm:h-4 sm:w-4" />
-                          ) : (
-                            <Bot className="h-3 w-3 sm:h-4 sm:w-4" />
-                          )}
-                        </AvatarFallback>
-                      </Avatar>
-
                       <div
-                        className={`rounded-lg p-2 sm:p-3 min-w-0 flex-1 ${
-                          message.user
-                            ? "bg-blue-500 text-white"
-                            : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                        }`}
+                        className={`flex items-start space-x-2 sm:space-x-3 max-w-[50%] sm:max-w-[40%] ${message.user ? "flex-row-reverse space-x-reverse" : ""}`}
                       >
-                        {message.image && message.image.length > 0 && (
-                          <div className="mb-2">
-                            {message.image.map((imgSrc, index) => (
-                              <img
-                                key={index}
-                                src={imgSrc}
-                                alt={`AI generated image ${index + 1}`}
-                                className="max-w-full h-auto rounded-lg shadow-lg mb-2"
-                                onError={(e) => {
-                                  console.error(
-                                    `Image ${index + 1} load error:`,
-                                    e
-                                  );
-                                  e.currentTarget.style.display = "none";
-                                  const errorDiv = document.createElement("div");
-                                  errorDiv.textContent = "Không thể tải ảnh";
-                                  errorDiv.className = "text-red-500 text-xs sm:text-sm";
-                                  if (e.currentTarget.parentNode) {
-                                    e.currentTarget.parentNode.appendChild(errorDiv);
-                                  }
-                                }}
-                              />
-                            ))}
-                          </div>
-                        )}
-                        {message.typing ? (
-                          <div className="flex items-center space-x-1">
-                            <div className="flex space-x-1">
-                              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                              <div
-                                className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce"
-                                style={{ animationDelay: "0.1s" }}
-                              ></div>
-                              <div
-                                className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce"
-                                style={{ animationDelay: "0.2s" }}
-                              ></div>
+                        <Avatar className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0">
+                          <AvatarFallback
+                            className={message.user ? "bg-blue-500 text-white text-xs" : "bg-purple-500 text-white text-xs"}
+                          >
+                            {message.user ? (
+                              <User className="h-3 w-3 sm:h-4 sm:w-4" />
+                            ) : (
+                              <Bot className="h-3 w-3 sm:h-4 sm:w-4" />
+                            )}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div
+                          className={`rounded-2xl p-3 sm:p-5 min-w-0 flex-1 shadow-lg border border-gray-200 dark:border-gray-700 ${message.user ? "bg-blue-500 text-white" : "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"}`}
+                          style={{ fontSize: '1.1rem', lineHeight: 1.7 }}
+                        >
+                          {/* Hiển thị ảnh từ link trong text (fetch blob) */}
+                          {allImages.length > 0 && (
+                            <div className="mb-2 flex flex-wrap gap-2">
+                              {allImages.map((imgSrc, idx) => (
+                                <ChatImageFromUrl url={imgSrc} key={idx} />
+                              ))}
                             </div>
-                            <span className="text-xs sm:text-sm text-gray-500 ml-2">
-                              Đang trả lời...
-                            </span>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="text-xs sm:text-sm leading-relaxed break-words overflow-wrap-anywhere">
-                              <ReactMarkdown
-                                remarkPlugins={[remarkGfm]}
-                                rehypePlugins={[rehypeHighlight]}
-                                components={markdownComponents}
-                              >
-                                {message.text}
-                              </ReactMarkdown>
-                            </div>
-                            <div className="flex items-center justify-between mt-1 sm:mt-2">
-                              <span
-                                className={`text-xs ${
-                                  message.user
-                                    ? "text-blue-100"
-                                    : "text-gray-500"
-                                }`}
-                              >
-                                {message.time}
-                              </span>
-                              {!message.user && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-5 w-5 sm:h-6 sm:w-6 p-0"
-                                  onClick={() =>
-                                    copyMessage(message.text, message.id)
-                                  }
-                                >
-                                  {copiedMessageId === message.id ? (
-                                    <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                                  ) : (
-                                    <Copy className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                                  )}
-                                </Button>
-                              )}
-                            </div>
-                          </>
-                        )}
+                          )}
+                          {/* Hiển thị text (markdown) */}
+                          {cleanText && (
+                            <ReactMarkdown
+                              components={markdownComponents}
+                              remarkPlugins={[remarkGfm]}
+                            >
+                              {cleanText}
+                            </ReactMarkdown>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
             </div>
           </ScrollArea>
@@ -663,14 +757,17 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Hỏi về tình trạng giao thông..."
+            placeholder={
+              isWsConnected
+                ? "Hỏi về tình trạng giao thông..."
+                : "Đang kết nối với AI..."
+            }
             disabled={isLoading}
             className="flex-1 text-sm sm:text-base"
           />
           <Button
             onClick={handleSendMessage}
-            disabled={!input.trim() || isLoading}
-            size="icon"
+            disabled={!input.trim() || isLoading || !isWsConnected}
             className="h-9 w-9 sm:h-10 sm:w-10"
           >
             {isLoading ? (

@@ -318,7 +318,8 @@ export const useMultipleTrafficInfo = (roadNames: string[]) => {
     // Open sockets for new roads
     roadNames.forEach((road) => {
       if (currentSockets[road]) return;
-      const wsUrl = endpoints.infoWs(road);
+      const token = localStorage.getItem("access_token");
+      const wsUrl = token ? `${endpoints.infoWs(road)}?token=${encodeURIComponent(token)}` : endpoints.infoWs(road);
       const ws = new WebSocket(wsUrl);
       currentSockets[road] = ws;
 
@@ -412,7 +413,8 @@ export const useMultipleFrameStreams = (roadNames: string[]) => {
     // Open sockets for new roads
     roadNames.forEach((road) => {
       if (currentSockets[road]) return;
-      const wsUrl = endpoints.framesWs(road);
+      const token = localStorage.getItem("access_token");
+      const wsUrl = token ? `${endpoints.framesWs(road)}?token=${encodeURIComponent(token)}` : endpoints.framesWs(road);
       const ws = new WebSocket(wsUrl);
       ws.binaryType = "arraybuffer"; // Set to handle binary data
       currentSockets[road] = ws;

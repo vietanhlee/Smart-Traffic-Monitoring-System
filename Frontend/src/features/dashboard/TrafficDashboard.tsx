@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+import { Badge } from "@/ui/badge";
 import {
   MapPin,
   Car,
@@ -11,19 +9,18 @@ import {
   CheckCircle,
   Clock,
   Settings,
-  Moon,
-  Sun,
-  Maximize2,
-  Minimize2,
   MessageCircle,
 } from "lucide-react";
-import { useTheme } from "next-themes";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
 import VideoMonitor from "./VideoMonitor";
-import ChatInterface from "./ChatInterface";
+import ChatInterface from "../chat/ChatInterface";
 import TrafficAnalytics from "./TrafficAnalytics";
 import { motion, AnimatePresence } from "framer-motion";
-import { useMultipleTrafficInfo, useMultipleFrameStreams } from "../hooks/useWebSocket";
-import { endpoints } from "../config";
+import {
+  useMultipleTrafficInfo,
+  useMultipleFrameStreams,
+} from "../../hooks/useWebSocket";
+import { endpoints } from "../../config";
 
 // Import types from the WebSocket hook
 type VehicleData = {
@@ -35,21 +32,38 @@ type VehicleData = {
 
 const TrafficDashboard = () => {
   const [selectedRoad, setSelectedRoad] = useState<string | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const { theme, setTheme } = useTheme();
+  const [localFullscreen] = useState(false);
 
   const [allowedRoads, setAllowedRoads] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchRoads = async () => {
       try {
-        const res = await fetch(endpoints.roadNames);
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          setAllowedRoads([]);
+          alert("Bạn cần đăng nhập để sử dụng chức năng này!");
+          return;
+        }
+        const res = await fetch(endpoints.roadNames, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.status === 401) {
+          setAllowedRoads([]);
+          alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!");
+          return;
+        }
         const json = await res.json();
         const names: string[] = json?.road_names ?? [];
         setAllowedRoads(names);
       } catch {
-        // fallback to known demo names if API not ready
-        setAllowedRoads(["Văn Phú", "Nguyễn Trãi", "Ngã Tư Sở", "Đường Láng", "Văn Quán"]);
+        setAllowedRoads([
+          "Văn Phú",
+          "Nguyễn Trãi",
+          "Ngã Tư Sở",
+          "Đường Láng",
+          "Văn Quán",
+        ]);
       }
     };
     fetchRoads();
@@ -87,52 +101,13 @@ const TrafficDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen p-4 space-y-6">
-      {/* Header */}
+    <div className="min-h-screen pt-2 px-4 space-y-4">
+      {/* Header: removed all controls */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between"
-      >
-        <div className="flex items-center space-x-4">
-          <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl text-white">
-            <MapPin className="h-8 w-8" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Hệ Thống Giám Sát Giao Thông Thông Minh
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Giám sát và phân tích giao thông thời gian thực
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          >
-            {theme === "dark" ? (
-              <Sun className="h-4 w-4" />
-            ) : (
-              <Moon className="h-4 w-4" />
-            )}
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setIsFullscreen(!isFullscreen)}
-          >
-            {isFullscreen ? (
-              <Minimize2 className="h-4 w-4" />
-            ) : (
-              <Maximize2 className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
-      </motion.div>
+        className="h-2" // reduced spacing
+      />
 
       {/* Main Content */}
       <Tabs defaultValue="monitor" className="space-y-6">
@@ -166,11 +141,11 @@ const TrafficDashboard = () => {
         <TabsContent value="monitor" className="space-y-6">
           <div
             className={`grid gap-6 ${
-              isFullscreen ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-4"
+              localFullscreen ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-4"
             }`}
           >
             {/* Video Monitoring */}
-            <div className={isFullscreen ? "col-span-1" : "col-span-3"}>
+            <div className={localFullscreen ? "col-span-1" : "col-span-3"}>
               <VideoMonitor
                 frameData={frames}
                 trafficData={trafficData}
@@ -178,12 +153,12 @@ const TrafficDashboard = () => {
                 selectedRoad={selectedRoad}
                 setSelectedRoad={setSelectedRoad}
                 loading={loading}
-                isFullscreen={isFullscreen}
+                isFullscreen={localFullscreen}
               />
             </div>
 
             {/* Traffic Status Cards */}
-            {!isFullscreen && (
+            {!localFullscreen && (
               <div className="space-y-4">
                 <Card>
                   <CardHeader>
