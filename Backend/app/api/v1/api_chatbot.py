@@ -4,29 +4,22 @@ from schemas.ChatRequest import ChatRequest
 from schemas.ChatResponse import ChatResponse
 import asyncio
 from services.chat_services.ChatBotAgent import ChatBotAgent
-from schemas.user import UserCreate, UserLogin
-from core.security import hash_password, verify_password
-from utils.jwt_handler import create_access_token, get_current_user, decode_access_token
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.future import select
-from db.base import get_db
-from models.user import User
-from fastapi import Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-import re
+from utils.jwt_handler import get_current_user, decode_access_token
+from fastapi import Depends, status
+
 
 router = APIRouter()
 
 @router.on_event("startup")
 def start_up():
-    print("Starting up chat API...")
+    print("Đã khởi tạo Agent")
     if not hasattr(state, 'agent') or state.agent is None:
-        print("Initializing Agent...")
+        print("Đang khởi tạo Agent...")
         try:
             state.agent = ChatBotAgent()
-            print("Agent initialized successfully")
+            print("Khởi tạo Agent thành công")
         except Exception as e:
-            print(f"Failed to initialize Agent: {e}")
+            print(f"Không thể khởi tạo Agent: {e}")
             state.agent = None
 
 
@@ -34,7 +27,7 @@ def start_up():
 async def chat(request: ChatRequest, current_user=Depends(get_current_user)):
     data = await asyncio.to_thread(lambda : state.agent.chat(user_input= request.message))
     return ChatResponse(
-        message=data["text"],
+        message=data["message"],
         image=data["image"]
     )
 
@@ -43,7 +36,7 @@ async def websocket_chat(websocket: WebSocket):
     """
     WebSocket endpoint cho Agent (ChatBotAgent):
     - Client gửi JSON {"message": "..."}
-    - Server trả JSON {"text": "...", "image": "..."}
+    - Server trả JSON {"message": "...", "image": "..."}
     """
     await websocket.accept()
     # Try get token from query 'token', header 'authorization', or cookie 'access_token'
@@ -66,13 +59,13 @@ async def websocket_chat(websocket: WebSocket):
             data = await websocket.receive_json()
             user_message = data.get("message", "")
             if not user_message:
-                await websocket.send_json({"text": "Bạn chưa nhập tin nhắn.", "image": None})
+                await websocket.send_json({"message": "Bạn chưa nhập tin nhắn.", "image": None})
                 continue
 
 
             response = await asyncio.to_thread(lambda: state.agent.get_response(user_message, id = user.id))
             await websocket.send_json({
-                "text": response["text"], 
+                "message": response["message"], 
                 "image": response["image"]
             })
 
@@ -82,7 +75,7 @@ async def websocket_chat(websocket: WebSocket):
         print(f"WebSocket error: {e}")
         try:
             await websocket.send_json({
-                "text": f"Lỗi: {str(e)}",
+                "message": f"Lỗi: {str(e)}",
                 "image": None
             })
         except:

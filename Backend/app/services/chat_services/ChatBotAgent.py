@@ -3,13 +3,9 @@ from services.chat_services.tool_func import get_frame_road, get_info_road
 from langgraph.prebuilt import create_react_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.checkpoint.memory import InMemorySaver
-from pydantic import BaseModel, Field
-from typing import List
+from schemas.ChatResponse import ChatResponse
 from utils.chatbot_utils import pre_model_hook
 
-class ChatResponse(BaseModel):
-    text: str = Field(..., description="Phản hồi của trợ lý AI")
-    image: List[str] = Field(default_factory=list, description="Danh sách URL hình ảnh")
 
 prompt = """BẠN LÀ TRỢ LÝ AI TƯ VẤN GIAO THÔNG THÔNG MINH.
 NHIỆM VỤ CHÍNH:
@@ -60,8 +56,10 @@ class ChatBotAgent:
         )
         return response['structured_response'].model_dump()
 
+
+# ************ TESTING ************
 if __name__ == "__main__":
     chat = ChatBotAgent()
     res = chat.get_response("cho tôi xin thông tin về Văn Phú và Văn Quán, cả ảnh nữa nhé", id= 1)
     print(len(res['image']))
-    print(res['text'])
+    print(res['message'])

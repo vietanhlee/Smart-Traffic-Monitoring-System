@@ -43,15 +43,7 @@ import { Input } from "@/ui/input";
 import { ScrollArea } from "@/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/ui/avatar";
 import { Badge } from "@/ui/badge";
-import {
-  Send,
-  Bot,
-  User,
-  Loader2,
-  Trash2,
-  Copy,
-  Check,
-} from "lucide-react";
+import { Send, Bot, User, Loader2, Trash2, Copy, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -474,7 +466,7 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
       // Log toàn bộ dữ liệu nhận được từ WebSocket
       console.log("WebSocket Raw Response:", chatData);
 
-      const responseText = chatData?.text as string | undefined;
+      const responseText = chatData?.message as string | undefined;
       const responseImage = chatData?.image as string[] | undefined;
 
       // Log chi tiết từng phần của response

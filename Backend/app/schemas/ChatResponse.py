@@ -1,6 +1,6 @@
-from pydantic import BaseModel
-from typing import Optional, Annotated
+from pydantic import BaseModel, Field
+from typing import List
 
 class ChatResponse(BaseModel):
-    message: Annotated[str, "Phản hồi từ ChatBotAgent"]
-    image: Optional[str] = None 
+    message: str = Field(..., description="Phản hồi của Agent dưới dạng văn bản (không gồm link của hình ảnh)")
+    image: List[str] = Field(default_factory=list, description="Danh sách URL hình ảnh")
