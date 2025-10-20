@@ -40,10 +40,9 @@ class ChatBotAgent:
                                         response_format= ChatResponse,
                                         pre_model_hook= pre_model_hook,
                                         checkpointer= self.checkpointer)
-        self.config = {"configurable": {"thread_id": "1"}}
 
     
-    def get_response(self, user_input: str) -> dict:
+    def get_response(self, user_input: str, id: int) -> dict:
         """Lấy phản hồi từ Agent dựa trên đầu vào của người dùng.
 
         Args:
@@ -52,14 +51,17 @@ class ChatBotAgent:
         Returns:
             dict: Phản hồi từ Agent, bao gồm hình ảnh và văn bản.
         """
+        
+        
+        config = {"configurable": {"thread_id": f"{id}"}}
         response = self.agent.invoke(
             {"messages": [{"role": "user", "content": user_input}]},
-            self.config
+            config
         )
         return response['structured_response'].model_dump()
 
 if __name__ == "__main__":
     chat = ChatBotAgent()
-    res = chat.get_response("cho tôi xin thông tin về Văn Phú và Văn Quán, cả ảnh nữa nhé")
+    res = chat.get_response("cho tôi xin thông tin về Văn Phú và Văn Quán, cả ảnh nữa nhé", id= 1)
     print(len(res['image']))
     print(res['text'])
