@@ -54,12 +54,14 @@ async def websocket_chat(websocket: WebSocket):
     )
     if token and token.lower().startswith("bearer "):
         token = token.split(" ", 1)[1]
+        
     if not token or decode_access_token(token) is None:
         await websocket.send_json({"detail": "Unauthorized — missing or invalid token"})
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
+    user = await get_current_user(token=token)
+    
     try:
-
         while True:
             data = await websocket.receive_json()
             user_message = data.get("message", "")
@@ -68,7 +70,7 @@ async def websocket_chat(websocket: WebSocket):
                 continue
 
 
-            response = await asyncio.to_thread(lambda: state.agent.get_response(user_message))
+            response = await asyncio.to_thread(lambda: state.agent.get_response(user_message, id = user.id))
             await websocket.send_json({
                 "text": response["text"], 
                 "image": response["image"]
