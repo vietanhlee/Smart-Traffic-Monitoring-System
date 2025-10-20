@@ -84,14 +84,28 @@ async def websocket_info(websocket: WebSocket, road_name: str):
         print(data)
         await websocket.close()
 
-@router.get(path= '/info/{road_name}')
-async def get_info_road(road_name: str, current_user=Depends(get_current_user)):
+
+@router.get(path='/info/{road_name}')
+async def get_info_road(road_name: str, request: Request):
+    # Chấp nhận token qua query string, cookie, hoặc header
+    token = (
+        request.query_params.get("token")
+        or request.cookies.get("access_token")
+        or request.headers.get("authorization")
+    )
+    if token and token.lower().startswith("bearer "):
+        token = token.split(" ", 1)[1]
+    if not token or decode_access_token(token) is None:
+        return JSONResponse(
+            content={"error": "Unauthorized — missing or invalid token"},
+            status_code=401
+        )
     data = await asyncio.to_thread(state.analyzer.get_info_road, road_name)
     if data is None:
         return JSONResponse(content={
             "Lỗi: Dữ liệu bị lỗi, kiểm tra road_services"
             }, status_code=500)
-    return JSONResponse(content= data)
+    return JSONResponse(content=data)
 
 
 
