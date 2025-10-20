@@ -6,12 +6,18 @@ from typing import Annotated
 BASE_URL = "http://localhost:8000"
 
 @tool
-def get_roads() -> str:
+def get_roads(token: str = None) -> str:
     """Lấy danh sách các tuyến đường hiện có từ API.
     Trả về chuỗi JSON chứa danh sách tên các tuyến đường.
     """
     try:
-        response = requests.get(f"{BASE_URL}/roads_name")
+        headers = {}
+        url = f"{BASE_URL}/roads_name"
+        if token:
+            # Chèn token vào query string hoặc header
+            url += f"?token={token}"
+            headers["Authorization"] = f"Bearer {token}"
+        response = requests.get(url, headers=headers)
         if response.status_code == 200:
             data = response.json()
             if data and data != []:
@@ -30,24 +36,32 @@ def get_roads() -> str:
         return f"Lỗi không xác định: {str(e)}"
     
 @tool
-def get_frame_road(road_name: Annotated[str, "Tên tuyến đường"]) -> str:
+def get_frame_road(road_name: Annotated[str, "Tên tuyến đường"], token: str = None) -> str:
     """Lấy url bytecode cho frame (ảnh) hiện tại của tuyến đường theo tên (road_name).
     Trả về url của ảnh JPEG.
     """
     try:
         # Chỉ trả về URL, không gọi HTTP request để tránh lỗi 401
-        # Frontend sẽ xử lý authentication khi load ảnh
-        return f"{BASE_URL}/frames/{road_name}"
+        # Nếu có token thì chèn vào query string
+        url = f"{BASE_URL}/frames/{road_name}"
+        if token:
+            url += f"?token={token}"
+        return url
     except Exception as e:
         return f"Lỗi không xác định: {str(e)}"
 
 @tool
-def get_info_road(road_name: Annotated[str, "Tên tuyến đường"]) -> str:
+def get_info_road(road_name: Annotated[str, "Tên tuyến đường"], token: str = None) -> str:
     """Lấy thông tin (info) hiện tại của tuyến đường theo tên (road_name).
     Trả về chuỗi JSON chứa số lượng xe, tốc độ, v.v.
     """
     try:
-        response = requests.get(f"{BASE_URL}/info/{road_name}")
+        headers = {}
+        url = f"{BASE_URL}/info/{road_name}"
+        if token:
+            url += f"?token={token}"
+            headers["Authorization"] = f"Bearer {token}"
+        response = requests.get(url, headers=headers)
         if response.status_code == 200:
             data = response.json()
             if data and data != {}:
