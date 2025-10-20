@@ -12,8 +12,8 @@ import { Button } from "@/ui/button";
 import { Car, LogOut, Settings, UserCircle, Sun, Moon } from "lucide-react";
 import LoginPage from "./pages/LoginPage";
 import TrafficDashboard from "@/modules/dashboard/components/TrafficDashboard";
-import TrafficAnalytics from "@/modules/dashboard/components/TrafficAnalytics";
-import ChatInterface from "@/modules/chat/components/ChatInterface";
+import AnalyticsPage from "./pages/AnalyticsPage";
+import ChatPage from "./pages/ChatPage";
 import ProfilePage from "./pages/ProfilePage";
 import ProtectedRoute from "@/modules/auth/components/ProtectedRoute";
 import "./App.css";
@@ -72,27 +72,69 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-900 dark:to-blue-900">
       {/* Banner */}
-      <div className="w-full flex flex-wrap items-center justify-between px-2 sm:px-4 py-2 bg-white/80 dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-4 min-w-0">
+      <div className="w-full flex flex-wrap items-center justify-between px-2 sm:px-4 py-1 bg-white/80 dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 min-h-0">
+        <div className="flex items-center min-w-0 gap-2">
           <a
             href="/home"
-            className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-white flex-shrink-0"
+            className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-white flex-shrink-0 flex items-center justify-center"
             title="Trang chủ"
           >
-            <Car className="h-6 w-6 sm:h-7 sm:w-7" />
+            <Car className="h-7 w-7 sm:h-8 sm:w-8" />
           </a>
-          <div className="min-w-0">
-            <h1 className="text-base sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate max-w-[320px] sm:max-w-[520px] md:max-w-[900px] lg:max-w-[1200px]">
+          <div className="flex flex-col justify-center">
+            <h1 className="text-base sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate max-w-[220px] sm:max-w-[400px] md:max-w-[700px] lg:max-w-[1000px] leading-tight flex items-center">
               Smart Traffic Monitoring System
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm truncate max-w-[320px] sm:max-w-[520px] md:max-w-[900px] lg:max-w-[1200px]">
+            <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mt-0.5 text-left max-w-[90vw] leading-tight">
               Real-time traffic monitoring and analysis
             </p>
           </div>
         </div>
+        <div className="flex-1 flex flex-col items-center justify-center">
+          {/* Centered Navigation Tabs below title */}
+          <nav className="flex items-center gap-2 sm:gap-4">
+            <Button
+              variant="ghost"
+              className={`flex items-center gap-2 px-5 py-2 rounded-xl font-bold transition-colors text-sm sm:text-base focus:outline-none ${
+                window.location.pathname === "/home"
+                  ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 shadow"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-800"
+              }`}
+              onClick={() => (window.location.href = "/home")}
+            >
+              <Car className="h-7 w-7 sm:h-8 sm:w-8" />
+              <span className="font-semibold">Giám Sát</span>
+            </Button>
+            <Button
+              variant="ghost"
+              className={`flex items-center gap-2 px-5 py-2 rounded-xl font-bold transition-colors text-sm sm:text-base focus:outline-none ${
+                window.location.pathname.startsWith("/analys")
+                  ? "bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 shadow"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-800"
+              }`}
+              onClick={() => (window.location.href = "/analys")}
+            >
+              <Settings className="h-7 w-7 sm:h-8 sm:w-8" />
+              <span className="font-semibold">Phân Tích</span>
+            </Button>
+            <Button
+              variant="ghost"
+              className={`flex items-center gap-2 px-5 py-2 rounded-xl font-bold transition-colors text-sm sm:text-base focus:outline-none ${
+                window.location.pathname.startsWith("/chat")
+                  ? "bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 shadow"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-800"
+              }`}
+              onClick={() => (window.location.href = "/chat")}
+            >
+              <UserCircle className="h-7 w-7 sm:h-8 sm:w-8" />
+              <span className="font-semibold">Trợ Lý AI</span>
+            </Button>
+          </nav>
+        </div>
         <div
-          className="flex items-center space-x-2 sm:space-x-3 relative flex-shrink-0"
+          className="flex items-center space-x-3 relative flex-shrink-0 ml-auto"
           ref={dropdownRef}
+          style={{ minWidth: 180, justifyContent: "flex-end" }}
         >
           {authed && (
             <>
@@ -185,11 +227,8 @@ function AppContent() {
         />
         <Route element={<ProtectedRoute />}>
           <Route path="/home" element={<TrafficDashboard />} />
-          <Route
-            path="/analys"
-            element={<TrafficAnalytics trafficData={{}} allowedRoads={[]} />}
-          />
-          <Route path="/chat" element={<ChatInterface trafficData={{}} />} />
+          <Route path="/analys" element={<AnalyticsPage />} />
+          <Route path="/chat" element={<ChatPage />} />
           <Route
             path="/profile"
             element={
