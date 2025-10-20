@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
-// ...existing code...
 import {
   Eye,
   EyeOff,
@@ -25,7 +24,13 @@ interface UserInfo {
   role_id: number;
 }
 
-function UserProfile({ onLogout, onBackHome }: { onLogout: () => void; onBackHome?: () => void }) {
+function UserProfile({
+  onLogout,
+  onBackHome,
+}: {
+  onLogout: () => void;
+  onBackHome?: () => void;
+}) {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -121,7 +126,7 @@ function UserProfile({ onLogout, onBackHome }: { onLogout: () => void; onBackHom
   }
 
   return (
-  <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-900 dark:to-blue-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-900 dark:to-blue-900">
       {/* Header */}
       <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-b border-gray-200/50 dark:border-gray-700/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -165,8 +170,8 @@ function UserProfile({ onLogout, onBackHome }: { onLogout: () => void; onBackHom
         </div>
       </div>
 
-  <div className="max-w-4xl mx-auto px-2 sm:px-6 lg:px-8 py-8">
-  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-4xl mx-auto px-2 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6">

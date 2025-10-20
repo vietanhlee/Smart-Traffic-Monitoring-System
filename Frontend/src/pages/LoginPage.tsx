@@ -1,18 +1,30 @@
-import Login from "../features/auth/Login";
-import Register from "../features/auth/Register";
+import Login from "@/modules/auth/components/Login";
+import Register from "@/modules/auth/components/Register";
+import { useNavigate } from "react-router-dom";
 
-export default function LoginPage({ onLoginSuccess, onRegisterSuccess, showRegister, setShowRegister }: {
+export default function LoginPage({
+  onLoginSuccess,
+  onRegisterSuccess,
+  showRegister,
+  setShowRegister,
+}: {
   onLoginSuccess: () => void;
   onRegisterSuccess: () => void;
   showRegister: boolean;
   setShowRegister: (v: boolean) => void;
 }) {
+  const navigate = useNavigate();
   return (
     <div>
       {showRegister ? (
         <Register onRegisterSuccess={onRegisterSuccess} />
       ) : (
-        <Login onLoginSuccess={onLoginSuccess} />
+        <Login
+          onLoginSuccess={() => {
+            onLoginSuccess();
+            navigate("/");
+          }}
+        />
       )}
       <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2">
         <button

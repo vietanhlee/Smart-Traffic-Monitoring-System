@@ -2,7 +2,16 @@ import { useState } from "react";
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
-import { Eye, EyeOff, User, Lock, Mail, Phone, Car, CheckCircle } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  User,
+  Lock,
+  Mail,
+  Phone,
+  Car,
+  CheckCircle,
+} from "lucide-react";
 
 function Register({ onRegisterSuccess }: { onRegisterSuccess?: () => void }) {
   const [username, setUsername] = useState("");
@@ -23,7 +32,12 @@ function Register({ onRegisterSuccess }: { onRegisterSuccess?: () => void }) {
       const res = await fetch("http://localhost:8000/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, email, phone_number: phone })
+        body: JSON.stringify({
+          username,
+          password,
+          email,
+          phone_number: phone,
+        }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -49,7 +63,9 @@ function Register({ onRegisterSuccess }: { onRegisterSuccess?: () => void }) {
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Đăng ký tài khoản
           </CardTitle>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">Tạo tài khoản mới để sử dụng hệ thống</p>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Tạo tài khoản mới để sử dụng hệ thống
+          </p>
         </CardHeader>
         <CardContent className="px-8 pb-8">
           <form onSubmit={handleRegister} className="space-y-6">
@@ -61,36 +77,33 @@ function Register({ onRegisterSuccess }: { onRegisterSuccess?: () => void }) {
                   type="email"
                   placeholder="Email"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
-              
               {/* Username */}
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <Input
                   placeholder="Tên đăng nhập"
                   value={username}
-                  onChange={e => setUsername(e.target.value)}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
                   className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
-              
               {/* Phone */}
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <Input
                   placeholder="Số điện thoại"
                   value={phone}
-                  onChange={e => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(e.target.value)}
                   required
                   className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
-              
               {/* Password */}
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -98,7 +111,7 @@ function Register({ onRegisterSuccess }: { onRegisterSuccess?: () => void }) {
                   type={showPassword ? "text" : "password"}
                   placeholder="Mật khẩu"
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   className="pl-10 pr-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                 />
@@ -107,25 +120,26 @@ function Register({ onRegisterSuccess }: { onRegisterSuccess?: () => void }) {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
-            
             {success && (
               <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg text-sm flex items-center">
                 <CheckCircle className="w-5 h-5 mr-2" />
                 Đăng ký thành công. Vui lòng đăng nhập.
               </div>
             )}
-            
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center">
                 <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
                 {error}
               </div>
             )}
-            
             <Button
               type="submit"
               disabled={loading}

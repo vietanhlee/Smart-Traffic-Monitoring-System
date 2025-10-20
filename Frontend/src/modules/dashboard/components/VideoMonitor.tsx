@@ -46,6 +46,7 @@ const VideoMonitor = ({
   trafficData,
   allowedRoads,
   selectedRoad,
+  setSelectedRoad,
   loading,
   isFullscreen,
 }: VideoMonitorProps) => {
@@ -167,6 +168,7 @@ const VideoMonitor = ({
                   onClick={() => {
                     setModalRoadName(roadName);
                     setModalOpen(true);
+                    if (setSelectedRoad) setSelectedRoad(roadName);
                   }}
                 >
                   {/* Video Frame (responsive) */}
@@ -218,7 +220,9 @@ const VideoMonitor = ({
                             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                               Ô tô
                             </p>
-                            <p className="font-semibold text-xs sm:text-base">{data.count_car}</p>
+                            <p className="font-semibold text-xs sm:text-base">
+                              {data.count_car}
+                            </p>
                             <p className="text-xs text-gray-500">
                               {data.speed_car.toFixed(1)} km/h
                             </p>
@@ -234,7 +238,9 @@ const VideoMonitor = ({
                             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                               Xe máy
                             </p>
-                            <p className="font-semibold text-xs sm:text-base">{data.count_motor}</p>
+                            <p className="font-semibold text-xs sm:text-base">
+                              {data.count_motor}
+                            </p>
                             <p className="text-xs text-gray-500">
                               {data.speed_motor.toFixed(1)} km/h
                             </p>

@@ -8,9 +8,8 @@ import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import ProfilePage from "./pages/ProfilePage";
 import ChatPage from "./pages/ChatPage";
-import ProtectedRoute from "./features/auth/ProtectedRoute";
+import ProtectedRoute from "@/modules/auth/components/ProtectedRoute";
 import "./App.css";
-
 
 export default function App() {
   const [showRegister, setShowRegister] = useState(false);
@@ -59,14 +58,18 @@ export default function App() {
           {/* Banner */}
           <div className="w-full flex flex-wrap items-center justify-between px-2 sm:px-4 py-2 bg-white/80 dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800">
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 min-w-0">
-              <a href="/" className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-white flex-shrink-0" title="Trang chủ">
+              <a
+                href="/"
+                className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-white flex-shrink-0"
+                title="Trang chủ"
+              >
                 <Car className="h-6 w-6 sm:h-7 sm:w-7" />
               </a>
               <div className="min-w-0">
-                <h1 className="text-base sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate max-w-[180px] sm:max-w-[320px] md:max-w-[480px]">
+                <h1 className="text-base sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate max-w-[320px] sm:max-w-[520px] md:max-w-[900px] lg:max-w-[1200px]">
                   Hệ Thống Giám Sát Giao Thông Thông Minh
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm truncate max-w-[180px] sm:max-w-[320px] md:max-w-[480px]">
+                <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm truncate max-w-[320px] sm:max-w-[520px] md:max-w-[900px] lg:max-w-[1200px]">
                   Giám sát và phân tích giao thông thời gian thực
                 </p>
               </div>
@@ -153,20 +156,36 @@ export default function App() {
           </div>
           {/* Main Content */}
           <Routes>
-            <Route path="/login" element={
-              <LoginPage
-                onLoginSuccess={handleLoginSuccess}
-                onRegisterSuccess={handleRegisterSuccess}
-                showRegister={showRegister}
-                setShowRegister={setShowRegister}
-              />
-            } />
-            <Route element={<ProtectedRoute authed={authed} />}>
+            <Route
+              path="/login"
+              element={
+                <LoginPage
+                  onLoginSuccess={handleLoginSuccess}
+                  onRegisterSuccess={handleRegisterSuccess}
+                  showRegister={showRegister}
+                  setShowRegister={setShowRegister}
+                />
+              }
+            />
+            <Route element={<ProtectedRoute />}>
               <Route path="/" element={<HomePage />} />
-              <Route path="/profile" element={<ProfilePage onLogout={handleLogout} onBackHome={() => { window.location.href = "/"; }} />} />
+              <Route
+                path="/profile"
+                element={
+                  <ProfilePage
+                    onLogout={handleLogout}
+                    onBackHome={() => {
+                      window.location.href = "/";
+                    }}
+                  />
+                }
+              />
               <Route path="/chat" element={<ChatPage />} />
             </Route>
-            <Route path="*" element={<Navigate to={authed ? "/" : "/login"} replace />} />
+            <Route
+              path="*"
+              element={<Navigate to={authed ? "/" : "/login"} replace />}
+            />
           </Routes>
           <Toaster position="top-right" richColors />
         </div>
@@ -174,5 +193,3 @@ export default function App() {
     </ThemeProvider>
   );
 }
-
-

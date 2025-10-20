@@ -1,4 +1,4 @@
-import UserProfile from "../features/auth/UserProfile";
+import UserProfile from "@/modules/auth/components/UserProfile";
 
 export default function ProfilePage({
   onLogout,

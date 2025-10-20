@@ -19,7 +19,7 @@ function Login({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
       const res = await fetch("http://localhost:8000/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
       if (res.ok && data.access_token) {
@@ -45,7 +45,9 @@ function Login({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Smart Transport
           </CardTitle>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">Đăng nhập để tiếp tục</p>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Đăng nhập để tiếp tục
+          </p>
         </CardHeader>
         <CardContent className="px-8 pb-8">
           <form onSubmit={handleLogin} className="space-y-6">
@@ -56,7 +58,7 @@ function Login({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
                   type="email"
                   placeholder="Email"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                 />
@@ -67,7 +69,7 @@ function Login({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
                   type={showPassword ? "text" : "password"}
                   placeholder="Mật khẩu"
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   className="pl-10 pr-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                 />
@@ -76,17 +78,19 @@ function Login({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
-            
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
                 {error}
               </div>
             )}
-            
             <Button
               type="submit"
               disabled={loading}

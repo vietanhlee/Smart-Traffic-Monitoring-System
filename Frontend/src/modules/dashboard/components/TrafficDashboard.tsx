@@ -12,15 +12,16 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
+// VideoMonitor and TrafficAnalytics do not have default exports, so import as named
 import VideoMonitor from "./VideoMonitor";
-import ChatInterface from "../chat/ChatInterface";
 import TrafficAnalytics from "./TrafficAnalytics";
+import ChatInterface from "../../chat/components/ChatInterface";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   useMultipleTrafficInfo,
   useMultipleFrameStreams,
-} from "../../hooks/useWebSocket";
-import { endpoints } from "../../config";
+} from "../../../hooks/useWebSocket";
+import { endpoints } from "../../../config";
 
 // Import types from the WebSocket hook
 type VehicleData = {

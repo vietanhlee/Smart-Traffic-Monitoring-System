@@ -53,11 +53,7 @@ const TrafficAnalytics = ({
   allowedRoads,
 }: TrafficAnalyticsProps) => {
   const [historicalData, setHistoricalData] = useState<HistoricalData[]>([]);
-  // const [selectedMetric, setSelectedMetric] = useState<"vehicles" | "speed">(
-  //   "vehicles"
-  // );
 
-  // Store historical data
   useEffect(() => {
     if (Object.keys(trafficData).length > 0) {
       const now = new Date();

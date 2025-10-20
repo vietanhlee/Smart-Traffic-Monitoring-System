@@ -1,4 +1,4 @@
-import ChatInterface from "../features/chat/ChatInterface";
+import ChatInterface from "@/modules/chat/components/ChatInterface";
 import { useMultipleTrafficInfo } from "../hooks/useWebSocket";
 import { useEffect, useState } from "react";
 
