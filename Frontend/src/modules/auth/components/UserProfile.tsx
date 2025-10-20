@@ -8,9 +8,7 @@ import {
   Lock,
   Mail,
   Phone,
-  Car,
   Save,
-  LogOut,
   Settings,
   Shield,
   Bell,
@@ -24,13 +22,7 @@ interface UserInfo {
   role_id: number;
 }
 
-function UserProfile({
-  onLogout,
-  onBackHome,
-}: {
-  onLogout: () => void;
-  onBackHome?: () => void;
-}) {
+function UserProfile() {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -127,49 +119,6 @@ function UserProfile({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-900 dark:to-blue-900">
-      {/* Header */}
-      <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-b border-gray-200/50 dark:border-gray-700/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <button
-                className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center focus:outline-none"
-                onClick={onBackHome}
-                title="Quay về trang chủ"
-              >
-                <Car className="w-6 h-6 text-white" />
-              </button>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Smart Transport
-                </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Quản lý tài khoản
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={onBackHome}
-                variant="outline"
-                className="flex items-center space-x-2 text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300"
-              >
-                <Car className="w-4 h-4" />
-                <span>Trang chủ</span>
-              </Button>
-              <Button
-                onClick={onLogout}
-                variant="outline"
-                className="flex items-center space-x-2 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Đăng xuất</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-4xl mx-auto px-2 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Sidebar */}
