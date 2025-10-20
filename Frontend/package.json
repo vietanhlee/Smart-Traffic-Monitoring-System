@@ -10,7 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react-router-dom": "^6.23.1",
+    "react-router-dom": "^7.9.4",
+    "@types/react-router-dom": "^5.3.3",
     "@hookform/resolvers": "^5.1.1",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",

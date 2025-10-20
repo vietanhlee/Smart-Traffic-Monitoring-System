@@ -67,10 +67,10 @@ export default function App() {
               </a>
               <div className="min-w-0">
                 <h1 className="text-base sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate max-w-[320px] sm:max-w-[520px] md:max-w-[900px] lg:max-w-[1200px]">
-                  Hệ Thống Giám Sát Giao Thông Thông Minh
+                  Smart Traffic Monitoring System
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm truncate max-w-[320px] sm:max-w-[520px] md:max-w-[900px] lg:max-w-[1200px]">
-                  Giám sát và phân tích giao thông thời gian thực
+                  Real-time traffic monitoring and analysis
                 </p>
               </div>
             </div>
