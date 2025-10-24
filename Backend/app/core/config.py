@@ -38,6 +38,7 @@ class SettingMetricTransport:
     MODELS_PATH = r'./ai_models/model N/openvino models/best_int8_openvino_model'
 
     DEVICE = 'cpu'
-
+class SettingChatBot:
+    MODELNAME = ""
 
 settings = SettingServer()

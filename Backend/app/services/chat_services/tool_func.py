@@ -41,8 +41,6 @@ def get_frame_road(road_name: Annotated[str, "Tên tuyến đường"], token: s
     Trả về url của ảnh JPEG.
     """
     try:
-        # Chỉ trả về URL, không gọi HTTP request để tránh lỗi 401
-        # Nếu có token thì chèn vào query string
         url = f"{BASE_URL}/frames/{road_name}"
         if token:
             url += f"?token={token}"

@@ -1,12 +1,14 @@
 from datetime import datetime, timedelta
 from jose import jwt
 from core.config import settings
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from models.user import User
 from db.base import get_db
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Optional
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
@@ -40,28 +42,21 @@ def decode_access_token(token: str) -> dict|None:
         return None
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)) -> User|None:
-    """ Lấy thông tin user hiện tại 
 
-    Args:
-        token (str, optional): token JWT đầu vào. Defaults to Depends(oauth2_scheme).
-        db (AsyncSession, optional): phiên làm việc với cơ sở dữ liệu. Defaults to Depends(get_db).
+    user = await get_user_by_token(token, db)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token không hợp lệ hoặc user không tồn tại.")
+    return user
 
-    Raises:
-        HTTPException: Token không hợp lệ hoặc đã hết hạn.
-        HTTPException: Token payload không hợp lệ.
-        HTTPException: User không tồn tại..
 
-    Returns:
-        User|None: trả về đối tượng User hoặc None nếu không tìm thấy.
-    """
+# Hàm dùng cho websocket hoặc các trường hợp cần truyền token/db trực tiếp
+async def get_user_by_token(token: str, db: AsyncSession) -> Optional[User]:
     payload = decode_access_token(token)
     if payload is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token không hợp lệ hoặc đã hết hạn.")
+        return None
     username = payload.get("sub")
     if username is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token payload không hợp lệ.")
+        return None
     result = await db.execute(select(User).where(User.username == username))
     user = result.scalar()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User không tồn tại.")
     return user

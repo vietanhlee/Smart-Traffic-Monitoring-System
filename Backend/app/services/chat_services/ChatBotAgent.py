@@ -28,7 +28,8 @@ dotenv.load_dotenv()
 class ChatBotAgent:
     def __init__(self):
         self.prompt = prompt
-        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.6)
+        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash",
+                                          temperature=0.6)
         self.checkpointer = InMemorySaver()
         self.agent = create_react_agent(model= self.llm, 
                                         tools= [get_frame_road, get_info_road], 
@@ -37,8 +38,8 @@ class ChatBotAgent:
                                         pre_model_hook= pre_model_hook,
                                         checkpointer= self.checkpointer)
 
-    
-    def get_response(self, user_input: str, id: int) -> dict:
+
+    async def get_response(self, user_input: str, id: int) -> dict:
         """Lấy phản hồi từ Agent dựa trên đầu vào của người dùng.
 
         Args:
@@ -50,7 +51,7 @@ class ChatBotAgent:
         
         
         config = {"configurable": {"thread_id": f"{id}"}}
-        response = self.agent.invoke(
+        response = await self.agent.ainvoke(
             {"messages": [{"role": "user", "content": user_input}]},
             config
         )
