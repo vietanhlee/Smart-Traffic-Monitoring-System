@@ -4,9 +4,8 @@ from schemas.ChatRequest import ChatRequest
 from schemas.ChatResponse import ChatResponse
 import asyncio
 from services.chat_services.ChatBotAgent import ChatBotAgent
-from utils.jwt_handler import get_current_user, decode_access_token, get_user_by_token
+from utils.jwt_handler import get_current_user, decode_access_token
 from fastapi import Depends, status
-from db.base import AsyncSessionLocal
 
 
 router = APIRouter()
@@ -40,7 +39,7 @@ async def websocket_chat(websocket: WebSocket):
     - Server trả JSON {"message": "...", "image": "..."}
     """
     await websocket.accept()
-    # Lấy token thủ công cho WebSocket
+    # Try get token from query 'token', header 'authorization', or cookie 'access_token'
     token = (
         websocket.query_params.get("token")
         or websocket.cookies.get("access_token")
@@ -48,16 +47,12 @@ async def websocket_chat(websocket: WebSocket):
     )
     if token and token.lower().startswith("bearer "):
         token = token.split(" ", 1)[1]
-    if not token:
+        
+    if not token or decode_access_token(token) is None:
         await websocket.send_json({"detail": "Unauthorized — missing or invalid token"})
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
-    async with AsyncSessionLocal() as db:
-        user = await get_user_by_token(token, db)
-        if not user:
-            await websocket.send_json({"detail": "Unauthorized — missing or invalid token"})
-            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-            return
+    user = await get_current_user(token=token)
     
     try:
         while True:
@@ -67,10 +62,10 @@ async def websocket_chat(websocket: WebSocket):
                 await websocket.send_json({"message": "Bạn chưa nhập tin nhắn.", "image": None})
                 continue
 
-            # get_response is async, must be awaited directly
-            response = await state.agent.get_response(user_message, id=user.id)
+
+            response = await asyncio.to_thread(lambda: state.agent.get_response(user_message, id = user.id))
             await websocket.send_json({
-                "message": response["message"],
+                "message": response["message"], 
                 "image": response["image"]
             })
 
