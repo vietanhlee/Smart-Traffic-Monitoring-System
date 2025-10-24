@@ -17,15 +17,10 @@ import {
   Legend,
 } from "recharts";
 import {
-  TrendingUp,
-  Activity,
-  Car,
-  Bike,
   BarChart3,
   PieChart as PieChartIcon,
   LineChart as LineChartIcon,
 } from "lucide-react";
-import { motion } from "framer-motion";
 
 interface VehicleData {
   count_car: number;
@@ -120,140 +115,14 @@ const TrafficAnalytics = ({
 
   const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"];
 
-  const getTotalVehicles = () => {
-    return Object.values(trafficData).reduce(
-      (sum, data) => sum + data.count_car + data.count_motor,
-      0
-    );
-  };
+  // Removed unused summary helpers
 
-  const getAverageSpeed = () => {
-    const roads = Object.values(trafficData);
-    if (roads.length === 0) return { car: 0, motor: 0 };
-
-    const avgCarSpeed =
-      roads.reduce((sum, data) => sum + data.speed_car, 0) / roads.length;
-    const avgMotorSpeed =
-      roads.reduce((sum, data) => sum + data.speed_motor, 0) / roads.length;
-
-    return { car: avgCarSpeed, motor: avgMotorSpeed };
-  };
-
-  const getBusiestRoad = () => {
-    let maxVehicles = 0;
-    let busiestRoad = "";
-
-    Object.entries(trafficData).forEach(([road, data]) => {
-      const total = data.count_car + data.count_motor;
-      if (total > maxVehicles) {
-        maxVehicles = total;
-        busiestRoad = road;
-      }
-    });
-
-    return { road: busiestRoad, vehicles: maxVehicles };
-  };
-
-  const totalVehicles = getTotalVehicles();
-  const averageSpeed = getAverageSpeed();
-  const busiestRoad = getBusiestRoad();
+  // Removed summary card variables
 
   return (
-    <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-2">
-                <Activity className="h-8 w-8 text-blue-500" />
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Tổng xe
-                  </p>
-                  <p className="text-2xl font-bold">{totalVehicles}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-2">
-                <Car className="h-8 w-8 text-green-500" />
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Tốc độ TB ô tô
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {averageSpeed.car.toFixed(1)} km/h
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-2">
-                <Bike className="h-8 w-8 text-purple-500" />
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Tốc độ TB xe máy
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {averageSpeed.motor.toFixed(1)} km/h
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-2">
-                <TrendingUp className="h-8 w-8 text-red-500" />
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Đông nhất
-                  </p>
-                  <p className="text-lg font-bold">
-                    {busiestRoad.road || "N/A"}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {busiestRoad.vehicles} xe
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* Charts */}
-      <Tabs defaultValue="overview" className="space-y-4">
+    <div className="space-y-4">
+      {/* Charts Only - summary cards removed, layout rebalanced */}
+      <Tabs defaultValue="overview" className="space-y-10 pt-8">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview" className="flex items-center space-x-2">
             <BarChart3 className="h-4 w-4" />
@@ -279,8 +148,8 @@ const TrafficAnalytics = ({
               <CardHeader>
                 <CardTitle>Số lượng xe theo tuyến đường</CardTitle>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
+              <CardContent className="flex justify-center">
+                <ResponsiveContainer width="100%" height={400}>
                   <BarChart data={vehicleCountData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="road" />
@@ -309,8 +178,8 @@ const TrafficAnalytics = ({
               <CardHeader>
                 <CardTitle>Tốc độ trung bình (km/h)</CardTitle>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
+              <CardContent className="flex justify-center">
+                <ResponsiveContainer width="100%" height={400}>
                   <BarChart data={speedData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="road" />

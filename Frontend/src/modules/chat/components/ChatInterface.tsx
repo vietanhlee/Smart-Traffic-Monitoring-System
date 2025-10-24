@@ -549,7 +549,7 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
 
   // --- COMPONENT RETURN ---
   return (
-    <Card className="h-[600px] sm:h-[500px] md:h-[600px] flex flex-col relative">
+    <Card className="h-[600px] sm:h-[500px] md:h-[600px] flex flex-col relative mt-8">
       {/* Floating delete button */}
       <Button
         variant="ghost"

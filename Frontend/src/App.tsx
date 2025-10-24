@@ -74,12 +74,19 @@ function AppContent() {
       {/* Banner */}
       <div className="w-full flex flex-wrap items-center justify-between px-2 sm:px-4 py-1 bg-white/80 dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 min-h-0">
         <div className="flex items-center min-w-0 gap-2">
-          <a
-            href="/home"
-            className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-white flex-shrink-0 flex items-center justify-center"
-            title="Trang chủ"
-          >
-            <Car className="h-7 w-7 sm:h-8 sm:w-8" />
+          <a href="/home" className="flex items-center" title="Trang chủ">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 32 32"
+              fill="currentColor"
+              className="w-10 h-10 text-blue-600 hover:text-purple-600 transition-colors"
+            >
+              <circle cx="16" cy="16" r="16" fill="#3B82F6" />
+              <rect x="8" y="14" width="16" height="6" rx="2" fill="#fff" />
+              <rect x="13" y="10" width="6" height="8" rx="2" fill="#fff" />
+              <circle cx="12" cy="20" r="1.5" fill="#3B82F6" />
+              <circle cx="20" cy="20" r="1.5" fill="#3B82F6" />
+            </svg>
           </a>
           <div className="flex flex-col justify-center">
             <h1 className="text-base sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate max-w-[220px] sm:max-w-[400px] md:max-w-[700px] lg:max-w-[1000px] leading-tight flex items-center">

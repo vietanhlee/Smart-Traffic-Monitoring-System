@@ -22,7 +22,7 @@ interface UserInfo {
   role_id: number;
 }
 
-function UserProfile() {
+function UserProfile({ onBackHome }: { onBackHome?: () => void }) {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -119,190 +119,165 @@ function UserProfile() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-900 dark:to-blue-900">
-      <div className="max-w-4xl mx-auto px-2 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6">
-              <div className="text-center">
-                <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <User className="w-10 h-10 text-white" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                  {userInfo?.username || "Người dùng"}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                  {userInfo?.email || "email@example.com"}
-                </p>
-              </div>
-
+      <div className="max-w-2xl mx-auto px-2 sm:px-6 lg:px-8 py-8">
+        {onBackHome && (
+          <Button variant="outline" className="mb-4" onClick={onBackHome}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-5 h-5 mr-2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15.75 19.5V15a2.25 2.25 0 00-2.25-2.25h-3A2.25 2.25 0 008.25 15v4.5m-6-10.5l9-7.5 9 7.5m-1.5 1.5V19.5A2.25 2.25 0 0118 21.75H6A2.25 2.25 0 013.75 19.5V10.5"
+              />
+            </svg>
+            Quay lại trang chủ
+          </Button>
+        )}
+        <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-8">
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              Thông tin cá nhân
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Cập nhật thông tin tài khoản của bạn
+            </p>
+          </div>
+          <form onSubmit={handleSave} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <div className="flex items-center space-x-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300">
-                  <Settings className="w-5 h-5" />
-                  <span className="text-sm font-medium">Cài đặt tài khoản</span>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Tên đăng nhập
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Input
+                    placeholder="Tên đăng nhập"
+                    value={formData.username}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        username: e.target.value,
+                      }))
+                    }
+                    required
+                    className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                  />
                 </div>
-                <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300">
-                  <Shield className="w-5 h-5" />
-                  <span className="text-sm">Bảo mật</span>
-                </div>
-                <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300">
-                  <Bell className="w-5 h-5" />
-                  <span className="text-sm">Thông báo</span>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Email
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Input
+                    type="email"
+                    placeholder="Email"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }))
+                    }
+                    required
+                    className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                  />
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-8">
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                  Thông tin cá nhân
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Cập nhật thông tin tài khoản của bạn
-                </p>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Số điện thoại
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  placeholder="Số điện thoại"
+                  value={formData.phone_number}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      phone_number: e.target.value,
+                    }))
+                  }
+                  required
+                  className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                />
               </div>
-
-              <form onSubmit={handleSave} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Tên đăng nhập
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                      <Input
-                        placeholder="Tên đăng nhập"
-                        value={formData.username}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            username: e.target.value,
-                          }))
-                        }
-                        required
-                        className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Email
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                      <Input
-                        type="email"
-                        placeholder="Email"
-                        value={formData.email}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            email: e.target.value,
-                          }))
-                        }
-                        required
-                        className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Số điện thoại
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <Input
-                      placeholder="Số điện thoại"
-                      value={formData.phone_number}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          phone_number: e.target.value,
-                        }))
-                      }
-                      required
-                      className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Mật khẩu mới
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Mật khẩu mới (để trống nếu không đổi)"
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          password: e.target.value,
-                        }))
-                      }
-                      className="pl-10 pr-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Để trống nếu bạn không muốn thay đổi mật khẩu
-                  </p>
-                </div>
-
-                {success && (
-                  <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg text-sm flex items-center">
-                    <div className="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
-                    {success}
-                  </div>
-                )}
-
-                {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center">
-                    <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
-                    {error}
-                  </div>
-                )}
-
-                <div className="flex justify-end space-x-4 pt-6">
-                  <Button
-                    type="submit"
-                    disabled={saving}
-                    className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {saving ? (
-                      <div className="flex items-center">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                        Đang lưu...
-                      </div>
-                    ) : (
-                      <div className="flex items-center">
-                        <Save className="w-4 h-4 mr-2" />
-                        Lưu thay đổi
-                      </div>
-                    )}
-                  </Button>
-                </div>
-              </form>
             </div>
-          </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Mật khẩu mới
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Mật khẩu mới (để trống nếu không đổi)"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      password: e.target.value,
+                    }))
+                  }
+                  className="pl-10 pr-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Để trống nếu bạn không muốn thay đổi mật khẩu
+              </p>
+            </div>
+            {success && (
+              <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg text-sm flex items-center">
+                <div className="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
+                {success}
+              </div>
+            )}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center">
+                <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
+                {error}
+              </div>
+            )}
+            <div className="flex justify-end space-x-4 pt-6">
+              <Button
+                type="submit"
+                disabled={saving}
+                className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? (
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Đang lưu...
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    <Save className="w-4 h-4 mr-2" />
+                    Lưu thay đổi
+                  </div>
+                )}
+              </Button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

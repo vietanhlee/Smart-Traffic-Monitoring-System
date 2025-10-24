@@ -267,11 +267,16 @@ const VideoMonitor = ({
 
       {/* Video Modal */}
       <VideoModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        isOpen={modalOpen && !!modalRoadName}
+        onClose={() => {
+          setModalOpen(false);
+          setModalRoadName("");
+        }}
         roadName={modalRoadName}
-        frameData={frameData[modalRoadName]?.frame || null}
-        trafficData={trafficData[modalRoadName]}
+        frameData={
+          modalRoadName ? frameData[modalRoadName]?.frame || null : null
+        }
+        trafficData={modalRoadName ? trafficData[modalRoadName] : undefined}
       />
     </Card>
   );

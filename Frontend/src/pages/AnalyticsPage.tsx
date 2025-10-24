@@ -1,28 +1,34 @@
 import TrafficAnalytics from "../modules/dashboard/components/TrafficAnalytics";
 import { useMultipleTrafficInfo } from "../hooks/useWebSocket";
 import { useEffect, useState } from "react";
+import { endpoints } from "../config";
 
 const AnalyticsPage = () => {
   const [allowedRoads, setAllowedRoads] = useState<string[]>([]);
 
   useEffect(() => {
-    // You may want to fetch allowedRoads from API or context
-    // For demo, use static or localStorage fallback
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      setAllowedRoads([]);
-      return;
-    }
-    // Example: fetch from API if needed
-    // setAllowedRoads(["Văn Phú", "Nguyễn Trãi", ...]);
-    // For now, just use a fallback
-    setAllowedRoads([
-      "Văn Phú",
-      "Nguyễn Trãi",
-      "Ngã Tư Sở",
-      "Đường Láng",
-      "Văn Quán",
-    ]);
+    const fetchRoads = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          setAllowedRoads([]);
+          return;
+        }
+        const res = await fetch(endpoints.roadNames, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.status === 401) {
+          setAllowedRoads([]);
+          return;
+        }
+        const json = await res.json();
+        const names: string[] = json?.road_names ?? [];
+        setAllowedRoads(names);
+      } catch {
+        setAllowedRoads([]);
+      }
+    };
+    fetchRoads();
   }, []);
 
   const { trafficData } = useMultipleTrafficInfo(allowedRoads);
