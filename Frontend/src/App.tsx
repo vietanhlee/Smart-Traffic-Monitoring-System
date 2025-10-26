@@ -16,8 +16,6 @@ import {
   UserCircle,
   Sun,
   Moon,
-  Navigation,
-  RotateCw,
 } from "lucide-react";
 import LoginPage from "./pages/LoginPage";
 import TrafficDashboard from "@/modules/dashboard/components/TrafficDashboard";

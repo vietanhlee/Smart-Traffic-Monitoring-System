@@ -336,13 +336,13 @@ class AnalyzeOnRoadBase:
 #************************************************************************ Script for testing *******************************************************
 if __name__ == "__main__":
     # Example usage
-    path_video = conf.path_videos[1]
-    meter_per_pixel = conf.meter_per_pixels[1]
+    path_video = settings_metric_transport.path_videos[1]
+    meter_per_pixel = settings_metric_transport.meter_per_pixels[1]
 
     analyzer = AnalyzeOnRoadBase(
         path_video=path_video,
         meter_per_pixel=meter_per_pixel,
-        region=conf.regions[1],
+        region=settings_metric_transport.regions[1],
         show=True
     )
 
