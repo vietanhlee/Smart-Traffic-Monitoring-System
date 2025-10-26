@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.core.security import hash_password, verify_password
-from app.db.base import get_db
-from app.models.user import User
-from app.utils.jwt_handler import JWTBearer, get_current_user
+from core.security import hash_password, verify_password
+from db.base import get_db
+from models.user import User
+from utils.jwt_handler import get_current_user
 from typing import Optional
 from pydantic import BaseModel
 
