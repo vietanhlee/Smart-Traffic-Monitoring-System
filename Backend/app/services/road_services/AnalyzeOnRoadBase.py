@@ -6,9 +6,7 @@ import numpy as np
 from datetime import datetime
 from ultralytics import solutions
 from utils.transport_utils import *
-from core.config import SettingMetricTransport
-conf = SettingMetricTransport()
-
+from core.config import settings_server_metric_transport
 # Thêm cái này để tránh xung đột
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -35,8 +33,8 @@ class AnalyzeOnRoadBase:
             >>> analyzer.process_on_single_video()
     """
     def __init__(self, path_video = "./video_test/Đường Láng.mp4", meter_per_pixel = 0.06,
-                 model_path= conf.MODELS_PATH, time_step=30,
-                 is_draw=True, device= conf.DEVICE, iou=0.3, conf=0.2, show=False,
+                 model_path= settings_server_metric_transport.MODELS_PATH, time_step=30,
+                 is_draw=True, device= settings_server_metric_transport.DEVICE, iou=0.3, conf=0.2, show=False,
                  region = np.array([[50, 400], [50, 265], [370, 130], [600, 130], [600, 400]])):
         """Hàm xử lý tuần tự như một Script đơn giản áp dụng YOLO và cải tiến hơn là ở việc gói gọn trong 1 class
 

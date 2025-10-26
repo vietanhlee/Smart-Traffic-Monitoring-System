@@ -1,8 +1,7 @@
 import os
 from overrides import override
 from services.road_services.AnalyzeOnRoadBase import AnalyzeOnRoadBase
-from core.config import SettingMetricTransport
-conf = SettingMetricTransport()
+from core.config import settings_server_metric_transport
 # Đặt như này để tránh trường hợp lỗi do dùng chung thư viện AI 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -11,8 +10,8 @@ class AnalyzeOnRoad(AnalyzeOnRoadBase):
     mà chỉ là một chút cải tiến từ code base (class Base) để có thể vừa xử lý video đầu vào ở một process\
     khác vừa có thể truy xuất thông tin về kết quả mà không bị hiện tượng tranh chấp dữ liệu    
     """    
-    def __init__(self, path_video, meter_per_pixel, info_dict, frame_dict, region, model_path = conf.MODELS_PATH, time_step=30,
-                 is_draw=True, device= conf.DEVICE, iou=0.3, conf=0.2, show=True):
+    def __init__(self, path_video, meter_per_pixel, info_dict, frame_dict, region, model_path = settings_server_metric_transport.MODELS_PATH, time_step=30,
+                 is_draw=True, device= settings_server_metric_transport.DEVICE, iou=0.3, conf=0.2, show=True):
         """Class này kế thừa từ class Base (xử lý tuần tự). Class con này chưa phải là code để multiprocessing\
         mà chỉ là một chút cải tiến từ code base (class Base) để có thể vừa xử lý video đầu vào ở một process\
         khác vừa có thể truy xuất thông tin về kết quả mà không bị hiện tượng tranh chấp dữ liệu

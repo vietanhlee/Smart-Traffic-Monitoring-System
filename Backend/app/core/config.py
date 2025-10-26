@@ -11,7 +11,6 @@ class SettingServer:
     JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
     ACCESS_TOKEN_EXPIRE_DAYS = int(os.getenv("ACCESS_TOKEN_EXPIRE_DAYS"))
 
-
 class SettingMetricTransport:
     REGIONS = [
         np.array([[50, 400], [50, 265], [370, 130], [540, 130], [490, 400]]),
@@ -41,4 +40,5 @@ class SettingMetricTransport:
 class SettingChatBot:
     MODELNAME = ""
 
-settings = SettingServer()
+settings_server = SettingServer()
+settings_metric_transport = SettingMetricTransport()

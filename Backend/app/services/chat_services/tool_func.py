@@ -3,7 +3,7 @@ import json
 from langchain_core.tools import tool
 from typing import Annotated
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:8000/api/v2"
 
 @tool
 def get_roads(token: str = None) -> str:

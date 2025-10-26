@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 from jose import jwt
-from core.config import settings
-
+from core.config import settings_server
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from models.user import User
@@ -22,9 +21,9 @@ def create_access_token(data: dict):
         str: JWT access token.
     """
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(days=settings.ACCESS_TOKEN_EXPIRE_DAYS)
+    expire = datetime.utcnow() + timedelta(days=settings_server.ACCESS_TOKEN_EXPIRE_DAYS)
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+    return jwt.encode(to_encode, settings_server.JWT_SECRET, algorithm=settings_server.JWT_ALGORITHM)
 
 def decode_access_token(token: str) -> dict|None:
     """Giải mã token JWT.
@@ -36,7 +35,7 @@ def decode_access_token(token: str) -> dict|None:
         dict|None: thông tin của token nếu hợp lệ, ngược lại trả về None.
     """
     try:
-        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+        payload = jwt.decode(token, settings_server.JWT_SECRET, algorithms=[settings_server.JWT_ALGORITHM])
         return payload
     except Exception:
         return None

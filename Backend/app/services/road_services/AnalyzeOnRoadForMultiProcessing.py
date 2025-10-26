@@ -1,8 +1,7 @@
 from multiprocessing import Process, Manager, freeze_support
 import os
 from services.road_services.AnalyzeOnRoad import AnalyzeOnRoad
-from core.config import SettingMetricTransport
-conf = SettingMetricTransport()
+from core.config import settings_server_metric_transport
 from utils.transport_utils import convert_frame_to_byte, log
 import signal
 import sys
@@ -25,8 +24,8 @@ class AnalyzeOnRoadForMultiprocessing():
         của các process với nhau chặt chẽ hơn
         processes (list): các process con đang chạy 
     """
-    def __init__(self, regions = conf.REGIONS, path_videos = conf.PATH_VIDEOS,
-        meter_per_pixels = conf.METER_PER_PIXELS, show_log = False, show = False, is_join_processes = False):
+    def __init__(self, regions = settings_server_metric_transport.REGIONS, path_videos = settings_server_metric_transport.PATH_VIDEOS,
+        meter_per_pixels = settings_server_metric_transport.METER_PER_PIXELS, show_log = False, show = False, is_join_processes = False):
         """Khi tích hợp API vào thiết kế do cơ chế envent loop vòng lặp bất tận nên không cần join
         các process lại để tránh bị kill. Do đó phải đặt is_join_processes = False nếu không nó sẽ chặn
         envent loop của api khiến server nghẽn
