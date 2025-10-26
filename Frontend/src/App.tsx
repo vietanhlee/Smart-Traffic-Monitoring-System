@@ -9,7 +9,16 @@ import {
 import { ThemeProvider, useTheme } from "next-themes";
 import { Toaster } from "sonner";
 import { Button } from "@/ui/button";
-import { Car, LogOut, Settings, UserCircle, Sun, Moon } from "lucide-react";
+import {
+  Car,
+  LogOut,
+  Settings,
+  UserCircle,
+  Sun,
+  Moon,
+  Navigation,
+  RotateCw,
+} from "lucide-react";
 import LoginPage from "./pages/LoginPage";
 import TrafficDashboard from "@/modules/dashboard/components/TrafficDashboard";
 import AnalyticsPage from "./pages/AnalyticsPage";
@@ -75,18 +84,23 @@ function AppContent() {
       <div className="w-full flex flex-wrap items-center justify-between px-2 sm:px-4 py-1 bg-white/80 dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 min-h-0">
         <div className="flex items-center min-w-0 gap-2">
           <a href="/home" className="flex items-center" title="Trang chủ">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 32 32"
-              fill="currentColor"
-              className="w-10 h-10 text-blue-600 hover:text-purple-600 transition-colors"
-            >
-              <circle cx="16" cy="16" r="16" fill="#3B82F6" />
-              <rect x="8" y="14" width="16" height="6" rx="2" fill="#fff" />
-              <rect x="13" y="10" width="6" height="8" rx="2" fill="#fff" />
-              <circle cx="12" cy="20" r="1.5" fill="#3B82F6" />
-              <circle cx="20" cy="20" r="1.5" fill="#3B82F6" />
-            </svg>
+            <div className="relative w-11 h-11">
+              {/* Animated background gradient */}
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 animate-gradient-x"></div>
+
+              {/* Icon container with glassmorphism effect */}
+              <div className="absolute inset-0.5 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                <Car
+                  className="w-6 h-6 text-white/90 drop-shadow-lg"
+                  strokeWidth={2}
+                />
+                <div className="absolute -right-1 -top-1">
+                  <div className="relative w-4 h-4 bg-green-500 rounded-full animate-pulse">
+                    <div className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </a>
           <div className="flex flex-col justify-center">
             <h1 className="text-base sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate max-w-[220px] sm:max-w-[400px] md:max-w-[700px] lg:max-w-[1000px] leading-tight flex items-center">

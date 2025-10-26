@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Maximize2, Minimize2 } from "lucide-react";
+import { X, Maximize2, Minimize2, Video, Car, Bike, Timer } from "lucide-react";
 import { Button } from "@/ui/button";
 
 interface VideoModalProps {
@@ -66,13 +66,14 @@ const VideoModal = ({
           className={`relative bg-white dark:bg-gray-900 rounded-xl shadow-2xl overflow-hidden ${
             isFullscreen
               ? "w-screen h-screen rounded-none"
-              : "w-[70vw] h-[90vh] max-w-4xl max-h-4xl"
+              : "w-auto h-auto max-w-5xl"
           }`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Video className="h-6 w-6 text-blue-500" />
               Camera: {roadName}
             </h2>
             <div className="flex items-center space-x-2">
@@ -100,15 +101,15 @@ const VideoModal = ({
           </div>
 
           {/* Video Content */}
-          <div className="flex-1 flex flex-row">
+          <div className="flex flex-row max-h-[80vh]">
             {/* Video */}
-            <div className="relative bg-gray-100 dark:bg-gray-700 p-4 flex-1 flex items-center justify-center">
-              <div className="relative aspect-video w-full h-full rounded-lg overflow-hidden">
+            <div className="relative bg-gray-100 dark:bg-gray-700 p-6 flex-1 flex items-center justify-center">
+              <div className="relative w-full h-full flex items-center justify-center">
                 {frameData ? (
                   <img
                     src={frameData}
                     alt={`Camera ${roadName}`}
-                    className="w-full h-full object-contain"
+                    className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-white">
@@ -123,26 +124,112 @@ const VideoModal = ({
 
             {/* Traffic Info Right Side */}
             {trafficData && (
-              <div className="p-3 bg-gray-50 dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 overflow-y-auto w-64 max-h-[70vh]">
-                <h3 className="text-xs font-semibold mb-2 text-gray-900 dark:text-white flex items-center space-x-1">
-                  <div className="p-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded text-white">
-                    <svg
-                      className="h-3 w-3"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                      />
-                    </svg>
-                  </div>
+              <div className="p-4 bg-gray-50 dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 overflow-y-auto w-72 max-h-[80vh]">
+                <h3 className="text-base font-semibold mb-4 text-gray-900 dark:text-white flex items-center space-x-2">
+                  <Timer className="h-5 w-5 text-blue-500" />
                   <span>Thông Tin Giao Thông</span>
                 </h3>
-                {/* ...rest of the right side traffic info... */}
+
+                {/* Traffic Status Section */}
+                <div className="mb-4 bg-white dark:bg-gray-900 p-3 rounded-lg shadow-sm">
+                  <h4 className="text-sm font-medium mb-3 text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                    <Timer className="h-4 w-4 text-blue-500" />
+                    Tình Trạng
+                  </h4>
+                  <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                    {(() => {
+                      const totalVehicles =
+                        (trafficData?.count_car || 0) +
+                        (trafficData?.count_motor || 0);
+                      if (totalVehicles > 20) {
+                        return (
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">
+                              Trạng thái:
+                            </span>
+                            <span className="font-medium text-sm bg-red-100 dark:bg-red-900 px-2 py-1 rounded text-red-700 dark:text-red-300">
+                              Tắc nghẽn
+                            </span>
+                          </div>
+                        );
+                      } else if (totalVehicles > 8) {
+                        return (
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">
+                              Trạng thái:
+                            </span>
+                            <span className="font-medium text-sm bg-yellow-100 dark:bg-yellow-900 px-2 py-1 rounded text-yellow-700 dark:text-yellow-300">
+                              Đông đúc
+                            </span>
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">
+                              Trạng thái:
+                            </span>
+                            <span className="font-medium text-sm bg-green-100 dark:bg-green-900 px-2 py-1 rounded text-green-700 dark:text-green-300">
+                              Thông thoáng
+                            </span>
+                          </div>
+                        );
+                      }
+                    })()}
+                  </div>
+                </div>
+
+                {/* Car Section */}
+                <div className="mb-2 bg-white dark:bg-gray-900 p-3 rounded-lg shadow-sm">
+                  <h4 className="text-sm font-medium mb-2 text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                    <Car className="h-4 w-4 text-blue-500" />
+                    Thông Tin Ô Tô
+                  </h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                      <span className="text-xs text-gray-600 dark:text-gray-400">
+                        Số lượng:
+                      </span>
+                      <span className="font-medium text-sm bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded text-blue-700 dark:text-blue-300">
+                        {trafficData?.count_car || 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                      <span className="text-xs text-gray-600 dark:text-gray-400">
+                        Vận tốc:
+                      </span>
+                      <span className="font-medium text-sm bg-green-100 dark:bg-green-900 px-2 py-1 rounded text-green-700 dark:text-green-300">
+                        {trafficData?.speed_car || 0} km/h
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Motorcycle Section */}
+                <div className="mb-2 bg-white dark:bg-gray-900 p-3 rounded-lg shadow-sm">
+                  <h4 className="text-sm font-medium mb-2 text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                    <Bike className="h-4 w-4 text-purple-500" />
+                    Thông Tin Xe Máy
+                  </h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                      <span className="text-xs text-gray-600 dark:text-gray-400">
+                        Số lượng:
+                      </span>
+                      <span className="font-medium text-sm bg-purple-100 dark:bg-purple-900 px-2 py-1 rounded text-purple-700 dark:text-purple-300">
+                        {trafficData?.count_motor || 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                      <span className="text-xs text-gray-600 dark:text-gray-400">
+                        Vận tốc:
+                      </span>
+                      <span className="font-medium text-sm bg-green-100 dark:bg-green-900 px-2 py-1 rounded text-green-700 dark:text-green-300">
+                        {trafficData?.speed_motor || 0} km/h
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
