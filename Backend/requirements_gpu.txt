@@ -38,3 +38,7 @@ langgraph
 # Utilities
 overrides
 email-validator
+
+
+# telegram_bot
+python-telegram-bot
