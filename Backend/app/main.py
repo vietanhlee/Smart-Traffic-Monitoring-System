@@ -1,11 +1,8 @@
 import os
 import sys
 import signal
-from api.v1 import api_vehicles_frames
 from fastapi import FastAPI
-from api.v1 import api_chatbot
-from api.v1 import api_auth
-from api.v1 import state
+from api import v1, v2
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import RedirectResponse
 from db.base import create_tables
@@ -30,8 +27,8 @@ app.add_middleware(
 def signal_handler(signum, frame):
     """Xử lý Ctrl+C"""
     print("\nĐang shutdown server...")
-    if state.analyzer:
-        state.analyzer.cleanup_processes()
+    if v1.state.analyzer:
+        v1.state.analyzer.cleanup_processes()
     sys.exit(0)
 
 # Đăng ký signal handler
@@ -42,13 +39,13 @@ signal.signal(signal.SIGTERM, signal_handler)
 def direct_home():
     return RedirectResponse(url= 'http://localhost:5173/')
 
-app.include_router(api_chatbot.router, prefix="", tags=["post chat"])
-app.include_router(api_vehicles_frames.router, prefix="", tags=["vehicles and frames of processes"])
-app.include_router(api_auth.router, prefix="", tags=["auth"])
+app.include_router(v1.api_chatbot.router, prefix="/api/v1", tags=["post chat"])
+app.include_router(v1.api_vehicles_frames.router, prefix="/api/v1", tags=["vehicles and frames of processes"])
+app.include_router(v1.api_auth.router, prefix="/api/v1", tags=["auth"])
+app.include_router(v1.api_user.router, prefix="/api/v1/users", tags=["users"])
 
-# Import and include router for user management APIs
-from api.v1 import api_user
-app.include_router(api_user.router, prefix="/users", tags=["users"])
+app.include_router(v2.api_chatbot.router, prefix="/api/v2", tags=["post chat"])
+app.include_router(v2.api_vehicles_frames.router, prefix="/api/v2", tags=["vehicles and frames of processes"])
 
 @app.on_event("startup")
 async def startup_event():
@@ -64,10 +61,12 @@ async def startup_event():
 @app.on_event("shutdown")
 def shutdown():
     print("Shutdown event triggered...")
-    if state.analyzer:
-        state.analyzer.cleanup_processes()
-    
-    
+    if v1.state.analyzer:
+        v1.state.analyzer.cleanup_processes()
+    if v2.state.analyzer:
+        v2.state.analyzer.cleanup_processes()
+
+
 """Lưu ý về luồng:
 - Khi chạy FastAPI (bằng uvicorn/gunicorn), server sẽ giữ tiến trình chạy liên tục để lắng nghe request
  HTTP.
