@@ -46,6 +46,10 @@ app.include_router(api_chatbot.router, prefix="", tags=["post chat"])
 app.include_router(api_vehicles_frames.router, prefix="", tags=["vehicles and frames of processes"])
 app.include_router(api_auth.router, prefix="", tags=["auth"])
 
+# Import and include router for user management APIs
+from api.v1 import api_user
+app.include_router(api_user.router, prefix="/users", tags=["users"])
+
 @app.on_event("startup")
 async def startup_event():
     """Tạo bảng database khi khởi động"""
