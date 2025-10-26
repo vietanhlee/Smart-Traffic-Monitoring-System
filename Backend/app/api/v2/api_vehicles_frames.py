@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from api.v1 import state
+from api.v2 import state
 import asyncio
 from services.road_services.AnalyzeOnRoadForMultiProcessing import AnalyzeOnRoadForMultiprocessing
 from fastapi.responses import Response
@@ -17,7 +17,7 @@ def start_up():
         state.analyzer.run_multiprocessing()
 
 @router.get(path= '/roads_name')
-async def get_road_names(current_user=Depends(get_current_user)):
+async def get_road_names():
     """
     API endpoint trả về danh sách tên các tuyến đường (road_name) mà analyzer đang xử lý.
     """
@@ -86,20 +86,8 @@ async def websocket_info(websocket: WebSocket, road_name: str):
 
 
 @router.get(path='/info/{road_name}')
-async def get_info_road(road_name: str, request: Request):
-    # Chấp nhận token qua query string, cookie, hoặc header
-    token = (
-        request.query_params.get("token")
-        or request.cookies.get("access_token")
-        or request.headers.get("authorization")
-    )
-    if token and token.lower().startswith("bearer "):
-        token = token.split(" ", 1)[1]
-    if not token or decode_access_token(token) is None:
-        return JSONResponse(
-            content={"error": "Unauthorized — missing or invalid token"},
-            status_code=401
-        )
+async def get_info_road(road_name: str):
+    """API endpoint trả về thông tin phương tiện của tuyến đường road_name dưới dạng JSON."""
     data = await asyncio.to_thread(state.analyzer.get_info_road, road_name)
     if data is None:
         return JSONResponse(content={
@@ -110,20 +98,8 @@ async def get_info_road(road_name: str, request: Request):
 
 
 @router.get(path='/frames/{road_name}')
-async def get_frame_road(road_name: str, request: Request):
-    # Chấp nhận token qua query string, cookie, hoặc header
-    token = (
-        request.query_params.get("token")
-        or request.cookies.get("access_token")
-        or request.headers.get("authorization")
-    )
-    if token and token.lower().startswith("bearer "):
-        token = token.split(" ", 1)[1]
-    if not token or decode_access_token(token) is None:
-        return JSONResponse(
-            content={"error": "Unauthorized — missing or invalid token"},
-            status_code=401
-        )
+async def get_frame_road(road_name: str):
+    """API endpoint trả về frame (byte code) của tuyến đường road_name dưới dạng image/jpeg."""
     frame_bytes = await asyncio.to_thread(state.analyzer.get_frame_road, road_name)
     if frame_bytes is None:
         return JSONResponse(

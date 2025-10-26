@@ -1,11 +1,11 @@
-from api.v1 import state
+from api.v2 import state
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from schemas.ChatRequest import ChatRequest 
 from schemas.ChatResponse import ChatResponse
 import asyncio
 from services.chat_services.ChatBotAgent import ChatBotAgent
 from utils.jwt_handler import get_current_user, decode_access_token
-from fastapi import Depends, status
+from fastapi import status
 
 
 router = APIRouter()
@@ -24,8 +24,8 @@ def start_up():
 
 
 @router.post(path='/chat', response_model=ChatResponse)
-async def chat(request: ChatRequest, current_user=Depends(get_current_user)):
-    data = await asyncio.to_thread(lambda : state.agent.chat(user_input= request.message))
+async def chat(request: ChatRequest):
+    data = await state.agent.get_response(user_input=request.message, id = 1)
     return ChatResponse(
         message=data["message"],
         image=data["image"]
