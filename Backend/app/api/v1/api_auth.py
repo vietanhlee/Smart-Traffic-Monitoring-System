@@ -8,7 +8,7 @@ from db.base import get_db
 from utils.jwt_handler import create_access_token, get_current_user
 from sqlalchemy.exc import IntegrityError
 
-router = APIRouter()
+router = APIRouter(prefix="/auth")
 
 @router.post("/register")
 async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
@@ -28,13 +28,7 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
 
 @router.post("/login")
 async def login(user: UserLogin, db: AsyncSession = Depends(get_db)):
-    q = select(User)
-    if user.email:
-        q = q.where(User.email == user.email)
-    elif user.username:
-        q = q.where(User.username == user.username)
-    else:
-        raise HTTPException(status_code=400, detail="Cần email hoặc username để đăng nhập")
+    q = select(User).where(User.email == user.email)
     result = await db.execute(q)
     user_db = result.scalar()
     if not user_db or not verify_password(user.password, user_db.password):

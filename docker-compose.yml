@@ -3,15 +3,15 @@ version: "3.9"
 services:
   fastapi:
     build:
-      context: ./Backend/app
-      dockerfile: ../Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
       args:
         DEVICE: cpu
     container_name: backend
     ports:
       - "8000:8000"
     volumes:
-      - ./Backend/app/video_test:/app/video_test
+      - ./backend/app/video_test:/app/app/video_test
     networks:
       - mynet
 
