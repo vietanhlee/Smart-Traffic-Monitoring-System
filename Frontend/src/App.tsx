@@ -168,7 +168,7 @@ function AppContent() {
           {authed && (
             <>
               <button
-                className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-gradient-to-r from-purple-100 via-pink-100 to-blue-100 dark:from-gray-800 dark:to-gray-800 hover:from-purple-200 hover:via-pink-200 hover:to-blue-200 dark:hover:from-gray-700 dark:hover:to-gray-700 focus:outline-none group transition-all border border-purple-300/50 dark:border-gray-700 shadow-sm"
+                className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-gradient-to-r from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-800 hover:from-slate-100 hover:to-gray-100 dark:hover:from-gray-700 dark:hover:to-gray-700 focus:outline-none group transition-all border border-gray-300/50 dark:border-gray-700 shadow-sm"
                 onClick={() => setShowUserDropdown((v) => !v)}
                 onMouseEnter={() => {
                   if (hideDropdownTimeout.current)
@@ -183,8 +183,8 @@ function AppContent() {
                 }}
                 type="button"
               >
-                <UserCircle className="h-6 w-6 sm:h-7 sm:w-7 text-purple-600 dark:text-blue-400" />
-                <span className="font-medium text-gray-800 dark:text-gray-600 hidden sm:inline text-sm">
+                <UserCircle className="h-6 w-6 sm:h-7 sm:w-7 text-gray-700 dark:text-blue-400" />
+                <span className="font-bold text-gray-800 dark:text-gray-200 hidden sm:inline text-sm">
                   Tài khoản
                 </span>
               </button>
@@ -208,7 +208,7 @@ function AppContent() {
               >
                 <a
                   href="/profile"
-                  className="w-full flex items-center px-4 py-2.5 text-gray-800 dark:text-gray-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 dark:hover:from-gray-700 dark:hover:to-gray-700 text-sm transition-all"
+                  className="w-full flex items-center px-4 py-2.5 text-gray-800 dark:text-gray-200 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 dark:hover:from-gray-700 dark:hover:to-gray-700 text-sm font-semibold transition-all"
                   onClick={() => setShowUserDropdown(false)}
                 >
                   <Settings className="h-4 w-4 mr-3 text-purple-600 dark:text-blue-400" />{" "}

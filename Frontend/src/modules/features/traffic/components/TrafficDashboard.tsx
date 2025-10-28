@@ -9,8 +9,6 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  Wifi,
-  WifiOff,
 } from "lucide-react";
 import VideoMonitor from "../../video/components/VideoMonitor";
 import { motion, AnimatePresence } from "framer-motion";
@@ -100,35 +98,7 @@ const TrafficDashboard = () => {
 
   return (
     <div className="min-h-screen pt-4 px-2 sm:px-4 space-y-4 sm:space-y-6">
-      {/* Connection Status Banner */}
-      {!loading && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg ${
-            isAnyConnected
-              ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-              : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
-          }`}
-        >
-          {isAnyConnected ? (
-            <>
-              <Wifi className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="text-xs sm:text-sm font-medium">
-                Đang kết nối với {Object.keys(trafficData).length}/
-                {allowedRoads.length} camera
-              </span>
-            </>
-          ) : (
-            <>
-              <WifiOff className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="text-xs sm:text-sm font-medium">
-                Đang kết nối tới hệ thống...
-              </span>
-            </>
-          )}
-        </motion.div>
-      )}
+      {/* Connection Status Banner - REMOVED, now inside VideoMonitor */}
 
       {/* Main Content */}
       <div className="space-y-4 sm:space-y-6">

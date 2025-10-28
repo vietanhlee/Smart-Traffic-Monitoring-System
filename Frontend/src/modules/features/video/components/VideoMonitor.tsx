@@ -10,6 +10,8 @@ import {
   CheckCircle,
   Clock,
   Gauge,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import VideoModal from "./VideoModal";
@@ -127,11 +129,36 @@ const VideoMonitor = ({
   return (
     <Card className="h-full">
       <CardHeader className="px-3 sm:px-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="flex items-center space-x-2">
             <Video className="h-4 w-4 sm:h-5 sm:w-5" />
             <span className="text-sm sm:text-base">Camera Giao Thông</span>
           </CardTitle>
+          {/* Connection Status */}
+          {Object.keys(frameData).length > 0 && (
+            <div
+              className={`flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium ${
+                Object.keys(trafficData).length > 0
+                  ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                  : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
+              }`}
+            >
+              {Object.keys(trafficData).length > 0 ? (
+                <>
+                  <Wifi className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span>
+                    Đang kết nối với {Object.keys(trafficData).length}/
+                    {allowedRoads.length} camera
+                  </span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span>Đang kết nối...</span>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent className="px-3 sm:px-6">
