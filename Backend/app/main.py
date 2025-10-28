@@ -43,9 +43,10 @@ app.include_router(v1.api_chatbot.router, prefix="/api/v1", tags=["post chat"])
 app.include_router(v1.api_vehicles_frames.router, prefix="/api/v1", tags=["vehicles and frames of processes"])
 app.include_router(v1.api_auth.router, prefix="/api/v1", tags=["auth"])
 app.include_router(v1.api_user.router, prefix="/api/v1/users", tags=["users"])
+app.include_router(v1.api_admin.router, prefix="/api/v1", tags=["admin"])
 
-app.include_router(v2.api_chatbot.router, prefix="/api/v2", tags=["post chat"])
-app.include_router(v2.api_vehicles_frames.router, prefix="/api/v2", tags=["vehicles and frames of processes"])
+# app.include_router(v2.api_chatbot.router, prefix="/api/v2", tags=["post chat"])
+# app.include_router(v2.api_vehicles_frames.router, prefix="/api/v2", tags=["vehicles and frames of processes"])
 
 @app.on_event("startup")
 async def startup_event():
@@ -63,8 +64,8 @@ def shutdown():
     print("Shutdown event triggered...")
     if v1.state.analyzer:
         v1.state.analyzer.cleanup_processes()
-    if v2.state.analyzer:
-        v2.state.analyzer.cleanup_processes()
+    # if v2.state.analyzer:
+    #     v2.state.analyzer.cleanup_processes()
 
 
 """Lưu ý về luồng:

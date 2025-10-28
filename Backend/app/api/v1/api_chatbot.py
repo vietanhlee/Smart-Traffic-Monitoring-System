@@ -1,3 +1,4 @@
+from streamlit import user
 from api.v1 import state
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from schemas.ChatRequest import ChatRequest 
@@ -26,11 +27,21 @@ def start_up():
 
 @router.post(path='/chat', response_model=ChatResponse)
 async def chat(request: ChatRequest, current_user=Depends(get_current_user)):
-    data = await asyncio.to_thread(lambda : state.agent.chat(user_input= request.message))
+    data = await state.agent.get_response(request.message, id= current_user.id)
     return ChatResponse(
         message=data["message"],
         image=data["image"]
     )
+    
+@router.post(path='/chat_no_auth', response_model=ChatResponse)
+async def chat_no_auth(request: ChatRequest):
+    data = await state.agent.get_response(request.message, id= 1)
+    return ChatResponse(
+        message=data["message"],
+        image=data["image"]
+    )
+    
+    
 
 @router.websocket("/ws/chat")
 async def websocket_chat(websocket: WebSocket):
