@@ -42,3 +42,7 @@ email-validator
 
 # telegram_bot
 python-telegram-bot
+
+# System metrics and testing
+psutil
+pytest
