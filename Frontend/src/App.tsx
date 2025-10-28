@@ -5,6 +5,7 @@ import {
   Route,
   Navigate,
   useNavigate,
+  NavLink,
 } from "react-router-dom";
 import { ThemeProvider, useTheme } from "next-themes";
 import { Toaster } from "sonner";
@@ -16,13 +17,16 @@ import {
   UserCircle,
   Sun,
   Moon,
+  Home,
+  BarChart3,
+  Bot,
 } from "lucide-react";
 import LoginPage from "./pages/LoginPage";
-import TrafficDashboard from "@/modules/dashboard/components/TrafficDashboard";
+import TrafficDashboard from "@/modules/features/traffic/components/TrafficDashboard";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import ChatPage from "./pages/ChatPage";
 import ProfilePage from "./pages/ProfilePage";
-import ProtectedRoute from "@/modules/auth/components/ProtectedRoute";
+import ProtectedRoute from "@/modules/features/auth/guards/ProtectedRoute";
 import "./App.css";
 export default function App() {
   return (
@@ -77,19 +81,23 @@ function AppContent() {
   }, [showUserDropdown]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-900 dark:to-blue-900">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-slate-900 dark:to-blue-900">
       {/* Banner */}
-      <div className="w-full flex flex-wrap items-center justify-between px-2 sm:px-4 py-1 bg-white/80 dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 min-h-0">
-        <div className="flex items-center min-w-0 gap-2">
-          <a href="/home" className="flex items-center" title="Trang chủ">
-            <div className="relative w-11 h-11">
+      <div className="w-full flex flex-wrap items-center justify-between px-3 sm:px-6 py-3 bg-white/80 dark:bg-gray-900/90 shadow-xl border-b border-purple-200/50 dark:border-gray-800 backdrop-blur-xl sticky top-0 z-50">
+        <div className="flex items-center min-w-0 gap-3">
+          <a
+            href="/home"
+            className="flex items-center flex-shrink-0"
+            title="Trang chủ"
+          >
+            <div className="relative w-12 h-12">
               {/* Animated background gradient */}
               <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 animate-gradient-x"></div>
 
               {/* Icon container with glassmorphism effect */}
               <div className="absolute inset-0.5 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center">
                 <Car
-                  className="w-6 h-6 text-white/90 drop-shadow-lg"
+                  className="w-7 h-7 text-white/90 drop-shadow-lg"
                   strokeWidth={2}
                 />
                 <div className="absolute -right-1 -top-1">
@@ -100,65 +108,67 @@ function AppContent() {
               </div>
             </div>
           </a>
-          <div className="flex flex-col justify-center">
-            <h1 className="text-base sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate max-w-[220px] sm:max-w-[400px] md:max-w-[700px] lg:max-w-[1000px] leading-tight flex items-center">
-              Smart Traffic Monitoring System
+          <div className="flex flex-col justify-center min-w-0">
+            <h1 className="text-base sm:text-xl lg:text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent truncate leading-tight">
+              Smart Traffic System
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mt-0.5 text-left max-w-[90vw] leading-tight">
-              Real-time traffic monitoring and analysis
+            <p className="text-gray-600 dark:text-gray-600 text-xs sm:text-sm hidden sm:block leading-tight">
+              Real-time monitoring & analysis
             </p>
           </div>
         </div>
-        <div className="flex-1 flex flex-col items-center justify-center">
-          {/* Centered Navigation Tabs below title */}
-          <nav className="flex items-center gap-2 sm:gap-4">
-            <Button
-              variant="ghost"
-              className={`flex items-center gap-2 px-5 py-2 rounded-xl font-bold transition-colors text-sm sm:text-base focus:outline-none ${
-                window.location.pathname === "/home"
-                  ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 shadow"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-800"
-              }`}
-              onClick={() => (window.location.href = "/home")}
+        <div className="flex-1 flex flex-col items-center justify-center max-w-md mx-auto">
+          {/* Centered Navigation Tabs */}
+          <nav className="flex items-center gap-1 sm:gap-3">
+            <NavLink
+              to="/home"
+              className={({ isActive }) =>
+                `flex items-center gap-1 sm:gap-2 px-3 sm:px-5 py-2 rounded-xl font-bold transition-all text-sm focus:outline-none ${
+                  isActive
+                    ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-400/40"
+                    : "bg-gradient-to-r from-blue-50 to-cyan-50 dark:bg-gray-800 text-blue-800 dark:text-gray-600 hover:from-blue-100 hover:to-cyan-100 dark:hover:bg-blue-900/50"
+                }`
+              }
             >
-              <Car className="h-7 w-7 sm:h-8 sm:w-8" />
-              <span className="font-semibold">Giám Sát</span>
-            </Button>
-            <Button
-              variant="ghost"
-              className={`flex items-center gap-2 px-5 py-2 rounded-xl font-bold transition-colors text-sm sm:text-base focus:outline-none ${
-                window.location.pathname.startsWith("/analys")
-                  ? "bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 shadow"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-800"
-              }`}
-              onClick={() => (window.location.href = "/analys")}
+              <Home className="h-5 w-5 sm:h-6 sm:w-6" />
+              <span className="hidden sm:inline">Trang Chủ</span>
+            </NavLink>
+            <NavLink
+              to="/analys"
+              className={({ isActive }) =>
+                `flex items-center gap-1 sm:gap-2 px-3 sm:px-5 py-2 rounded-xl font-bold transition-all text-sm focus:outline-none ${
+                  isActive
+                    ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-400/40"
+                    : "bg-gradient-to-r from-purple-50 to-pink-50 dark:bg-gray-800 text-purple-800 dark:text-gray-600 hover:from-purple-100 hover:to-pink-100 dark:hover:bg-purple-900/50"
+                }`
+              }
             >
-              <Settings className="h-7 w-7 sm:h-8 sm:w-8" />
-              <span className="font-semibold">Phân Tích</span>
-            </Button>
-            <Button
-              variant="ghost"
-              className={`flex items-center gap-2 px-5 py-2 rounded-xl font-bold transition-colors text-sm sm:text-base focus:outline-none ${
-                window.location.pathname.startsWith("/chat")
-                  ? "bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 shadow"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-800"
-              }`}
-              onClick={() => (window.location.href = "/chat")}
+              <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6" />
+              <span className="hidden sm:inline">Phân Tích</span>
+            </NavLink>
+            <NavLink
+              to="/chat"
+              className={({ isActive }) =>
+                `flex items-center gap-1 sm:gap-2 px-3 sm:px-5 py-2 rounded-xl font-bold transition-all text-sm focus:outline-none ${
+                  isActive
+                    ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-400/40"
+                    : "bg-gradient-to-r from-indigo-50 to-violet-50 dark:bg-gray-800 text-indigo-800 dark:text-gray-600 hover:from-indigo-100 hover:to-violet-100 dark:hover:bg-indigo-900/50"
+                }`
+              }
             >
-              <UserCircle className="h-7 w-7 sm:h-8 sm:w-8" />
-              <span className="font-semibold">Trợ Lý AI</span>
-            </Button>
+              <Bot className="h-5 w-5 sm:h-6 sm:w-6" />
+              <span className="hidden sm:inline">Trợ Lý AI</span>
+            </NavLink>
           </nav>
         </div>
         <div
-          className="flex items-center space-x-3 relative flex-shrink-0 ml-auto"
+          className="flex items-center space-x-2 sm:space-x-3 relative flex-shrink-0"
           ref={dropdownRef}
-          style={{ minWidth: 180, justifyContent: "flex-end" }}
         >
           {authed && (
             <>
               <button
-                className="flex items-center space-x-2 focus:outline-none group"
+                className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-gradient-to-r from-purple-100 via-pink-100 to-blue-100 dark:from-gray-800 dark:to-gray-800 hover:from-purple-200 hover:via-pink-200 hover:to-blue-200 dark:hover:from-gray-700 dark:hover:to-gray-700 focus:outline-none group transition-all border border-purple-300/50 dark:border-gray-700 shadow-sm"
                 onClick={() => setShowUserDropdown((v) => !v)}
                 onMouseEnter={() => {
                   if (hideDropdownTimeout.current)
@@ -168,18 +178,18 @@ function AppContent() {
                 onMouseLeave={() => {
                   hideDropdownTimeout.current = setTimeout(
                     () => setShowUserDropdown(false),
-                    180
+                    200
                   );
                 }}
                 type="button"
               >
-                <UserCircle className="h-7 w-7 text-blue-600 dark:text-blue-300" />
-                <span className="font-medium text-gray-800 dark:text-gray-200">
+                <UserCircle className="h-6 w-6 sm:h-7 sm:w-7 text-purple-600 dark:text-blue-400" />
+                <span className="font-medium text-gray-800 dark:text-gray-600 hidden sm:inline text-sm">
                   Tài khoản
                 </span>
               </button>
               <div
-                className={`absolute right-0 top-12 min-w-[160px] bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 py-2 transition-all duration-200 ease-in-out ${
+                className={`absolute right-0 top-full mt-2 min-w-[180px] bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-2xl border border-purple-200/50 dark:border-gray-700 z-50 py-2 transition-all duration-200 backdrop-blur-xl ${
                   showUserDropdown
                     ? "opacity-100 scale-100 pointer-events-auto"
                     : "opacity-0 scale-95 pointer-events-none"
@@ -192,27 +202,27 @@ function AppContent() {
                 onMouseLeave={() => {
                   hideDropdownTimeout.current = setTimeout(
                     () => setShowUserDropdown(false),
-                    180
+                    200
                   );
                 }}
-                style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.08)" }}
               >
                 <a
                   href="/profile"
-                  className="w-full flex items-center px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm transition-colors"
+                  className="w-full flex items-center px-4 py-2.5 text-gray-800 dark:text-gray-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 dark:hover:from-gray-700 dark:hover:to-gray-700 text-sm transition-all"
                   onClick={() => setShowUserDropdown(false)}
                 >
-                  <Settings className="h-4 w-4 mr-2" /> Quản lý
+                  <Settings className="h-4 w-4 mr-3 text-purple-600 dark:text-blue-400" />{" "}
+                  Quản lý tài khoản
                 </a>
                 <button
-                  className="w-full flex items-center px-4 py-2 text-red-600 hover:bg-red-50 text-sm transition-colors"
+                  className="w-full flex items-center px-4 py-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm transition-all"
                   onClick={() => {
                     handleLogout();
                     setShowUserDropdown(false);
                   }}
                   type="button"
                 >
-                  <LogOut className="h-4 w-4 mr-2" /> Đăng xuất
+                  <LogOut className="h-4 w-4 mr-3" /> Đăng xuất
                 </button>
               </div>
             </>
@@ -222,11 +232,13 @@ function AppContent() {
             variant="outline"
             size="icon"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="h-10 w-10 rounded-lg bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-gray-800 dark:to-gray-700 border-amber-300 dark:border-gray-700 hover:from-amber-200 hover:to-yellow-200 dark:hover:from-gray-700 dark:hover:to-gray-600 shadow-sm"
+            title={theme === "dark" ? "Chế độ sáng" : "Chế độ tối"}
           >
             {theme === "dark" ? (
-              <Sun className="h-4 w-4" />
+              <Sun className="h-4 w-4 text-amber-600" />
             ) : (
-              <Moon className="h-4 w-4" />
+              <Moon className="h-4 w-4 text-indigo-700" />
             )}
           </Button>
         </div>
@@ -248,17 +260,7 @@ function AppContent() {
           <Route path="/home" element={<TrafficDashboard />} />
           <Route path="/analys" element={<AnalyticsPage />} />
           <Route path="/chat" element={<ChatPage />} />
-          <Route
-            path="/profile"
-            element={
-              <ProfilePage
-                onLogout={handleLogout}
-                onBackHome={() => {
-                  window.location.href = "/home";
-                }}
-              />
-            }
-          />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
         <Route
           path="*"

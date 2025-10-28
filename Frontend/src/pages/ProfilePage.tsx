@@ -1,11 +1,5 @@
-import UserProfile from "@/modules/auth/components/UserProfile";
+import UserProfile from "@/modules/features/auth/components/UserProfileForm";
 
-export default function ProfilePage({
-  onLogout,
-  onBackHome,
-}: {
-  onLogout: () => void;
-  onBackHome: () => void;
-}) {
-  return <UserProfile onLogout={onLogout} onBackHome={onBackHome} />;
+export default function ProfilePage() {
+  return <UserProfile />;
 }

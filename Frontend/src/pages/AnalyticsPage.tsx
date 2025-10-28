@@ -1,4 +1,4 @@
-import TrafficAnalytics from "../modules/dashboard/components/TrafficAnalytics";
+import TrafficAnalytics from "../modules/features/traffic/components/TrafficAnalytics";
 import { useMultipleTrafficInfo } from "../hooks/useWebSocket";
 import { useEffect, useState } from "react";
 import { endpoints } from "../config";
@@ -34,7 +34,14 @@ const AnalyticsPage = () => {
   const { trafficData } = useMultipleTrafficInfo(allowedRoads);
 
   return (
-    <TrafficAnalytics trafficData={trafficData} allowedRoads={allowedRoads} />
+    <div className="min-h-screen px-2 sm:px-4 py-4 sm:py-6">
+      <div className="max-w-7xl mx-auto">
+        <TrafficAnalytics
+          trafficData={trafficData}
+          allowedRoads={allowedRoads}
+        />
+      </div>
+    </div>
   );
 };
 
