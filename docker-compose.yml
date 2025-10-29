@@ -11,13 +11,13 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./backend/app/video_test:/app/app/video_test
+      - ./backend/app/video_test:/backend/app/video_test
     networks:
       - mynet
 
   frontend:
     build:
-      context: ./Frontend
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: frontend
     ports:

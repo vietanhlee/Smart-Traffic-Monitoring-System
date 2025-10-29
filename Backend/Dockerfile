@@ -1,11 +1,10 @@
-# Backend Dockerfile for FastAPI
 FROM python:3.11
 
 # Nhận biến ARG để xác định dùng GPU hay CPU
 ARG DEVICE=cpu
 
 # Chỉ định thư mục làm việc
-WORKDIR /app
+WORKDIR /backend
 
 # Cài dependency hệ thống cần cho OpenCV & hiển thị ảnh
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -34,12 +33,12 @@ RUN if [ "$DEVICE" = "gpu" ]; then \
 COPY . .
 
 # Entrypoint to start both Telegram bot and API server
-RUN chmod +x /app/entrypoint.sh
+RUN chmod +x /backend/entrypoint.sh
 
 # Mở port cho FastAPI
 EXPOSE 8000
 
 # Run FastAPI và Telegram bot
-CMD ["/app/entrypoint.sh"]
+CMD ["/backend/entrypoint.sh"]
 
 # docker build -t myapp-cpu --build-arg DEVICE=cpu .
