@@ -15,6 +15,7 @@ import {
   UserCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { authConfig, userConfig } from "@/config";
 
 function UserProfile() {
   // Profile information states
@@ -40,12 +41,12 @@ function UserProfile() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const token = localStorage.getItem("access_token");
+        const token = localStorage.getItem(authConfig.TOKEN_KEY);
         if (!token) {
           toast.error("Vui lòng đăng nhập");
           return;
         }
-        const res = await fetch("http://localhost:8000/api/v1/auth/me", {
+        const res = await fetch(authConfig.ME_URL, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -69,8 +70,8 @@ function UserProfile() {
     setError("");
     setSuccess(false);
     try {
-      const token = localStorage.getItem("access_token");
-      const res = await fetch("http://localhost:8000/api/v1/users/profile", {
+      const token = localStorage.getItem(authConfig.TOKEN_KEY);
+      const res = await fetch(userConfig.PROFILE_URL, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -109,8 +110,8 @@ function UserProfile() {
     setError("");
     setSuccess(false);
     try {
-      const token = localStorage.getItem("access_token");
-      const res = await fetch("http://localhost:8000/api/v1/users/password", {
+      const token = localStorage.getItem(authConfig.TOKEN_KEY);
+      const res = await fetch(userConfig.PASSWORD_URL, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

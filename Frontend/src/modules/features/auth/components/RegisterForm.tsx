@@ -13,6 +13,7 @@ import {
   Car,
   CheckCircle,
 } from "lucide-react";
+import { authConfig } from "@/config";
 
 function Register({ onRegisterSuccess }: { onRegisterSuccess?: () => void }) {
   const navigate = useNavigate();
@@ -49,7 +50,7 @@ function Register({ onRegisterSuccess }: { onRegisterSuccess?: () => void }) {
     setSuccess(false);
 
     try {
-      const res = await fetch("http://localhost:8000/api/v1/auth/register", {
+      const res = await fetch(authConfig.REGISTER_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

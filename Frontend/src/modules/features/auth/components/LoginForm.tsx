@@ -4,6 +4,7 @@ import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Eye, EyeOff, Mail, Lock, Car } from "lucide-react";
+import { authConfig } from "@/config";
 
 function Login({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
   const navigate = useNavigate();
@@ -18,14 +19,14 @@ function Login({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("http://localhost:8000/api/v1/auth/login", {
+      const res = await fetch(authConfig.LOGIN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
       if (res.ok && data.access_token) {
-        localStorage.setItem("access_token", data.access_token);
+        localStorage.setItem(authConfig.TOKEN_KEY, data.access_token);
         onLoginSuccess?.();
         navigate("/home");
       } else {
