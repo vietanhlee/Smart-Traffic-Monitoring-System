@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+# Change to working directory
+cd /backend
+
 # Start Telegram bot in the background
 if [ -f "app/bot_tele.py" ]; then
   echo "Chạy bot telegram..."
