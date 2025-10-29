@@ -10,6 +10,7 @@ async def create_tables():
     """Tạo tất cả bảng trong database"""
     # Import models để đảm bảo chúng được đăng ký với Base
     from models.user import User
+    from models.TokenLLM import TokenLLM
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
