@@ -549,3 +549,4 @@ curl -X POST http://localhost:8000/chat \
 - Monitor system resources during video processing
 - Use appropriate hardware acceleration (CPU/GPU) based on needs
 - Regular cleanup of processed video data
+
