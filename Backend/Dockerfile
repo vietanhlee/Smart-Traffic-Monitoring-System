@@ -3,7 +3,6 @@ FROM python:3.11
 # Nhận biến ARG để xác định dùng GPU hay CPU
 ARG DEVICE=cpu
 
-# Chỉ định thư mục làm việc
 WORKDIR /backend
 
 # Cài dependency hệ thống cần cho OpenCV & hiển thị ảnh
@@ -16,10 +15,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements (expect build context at repo backend/ root)
 COPY requirements_cpu.txt requirements_gpu.txt ./
 
-# Nâng pip
 RUN pip install --upgrade pip
 
 # Cài requirements phù hợp theo DEVICE
@@ -29,16 +26,14 @@ RUN if [ "$DEVICE" = "gpu" ]; then \
         pip install --no-cache-dir -r requirements_cpu.txt; \
     fi
 
-# Copy toàn bộ source code vào container
 COPY . .
 
 # Entrypoint to start both Telegram bot and API server
-RUN chmod +x /backend/entrypoint.sh
+RUN chmod +x entrypoint.sh
 
-# Mở port cho FastAPI
 EXPOSE 8000
 
 # Run FastAPI và Telegram bot
-CMD ["/backend/entrypoint.sh"]
+CMD ["./entrypoint.sh"]
 
 # docker build -t myapp-cpu --build-arg DEVICE=cpu .

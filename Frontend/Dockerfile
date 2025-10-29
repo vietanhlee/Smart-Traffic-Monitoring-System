@@ -5,18 +5,12 @@ FROM node:${NODE_VERSION}-alpine
 
 ENV NODE_ENV=development
 
-# Install pnpm globally
 RUN npm install -g pnpm@${PNPM_VERSION}
 
 WORKDIR /frontend
 
-# Copy package files first for better caching
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-
-# Install dependencies
 RUN pnpm install
 
-# Copy rest of the application
 COPY . .
 
 EXPOSE 5173
