@@ -15,7 +15,29 @@ os.environ["OPENCV_VIDEOIO_PRIORITY_DSHOW"] = "1"
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
-app = FastAPI()
+app = FastAPI(
+    title="Smart Transportation System API",
+    description="""
+    Real-time Traffic Monitoring & AI Assistant
+    
+    API cung cấp:
+    - Real-time video streaming và phân tích giao thông
+    - AI Chatbot hỗ trợ thông tin giao thông
+    - Analytics và metrics về lưu lượng xe
+    - User authentication và management
+    - Admin tools và system monitoring
+    
+    """,
+    version="1.0.0",
+    docs_url="/docs",  # Swagger UI
+    redoc_url="/redoc",  # ReDoc
+    contact={
+        "name": "Lê Việt Anh",
+        "email": "levietanhtrump@gmail.com",
+    },
+    
+)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  
@@ -35,18 +57,46 @@ def signal_handler(signum, frame):
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
-@app.get(path= '/')
+@app.get(
+    path='/',
+    tags=["Root"],
+    summary="Redirect to Frontend",
+    description="Redirect người dùng đến trang Frontend",
+    include_in_schema=False  # Ẩn khỏi docs vì chỉ là redirect
+)
 def direct_home():
-    return RedirectResponse(url= 'http://localhost:5173/')
+    return RedirectResponse(url='http://localhost:5173/')
 
-app.include_router(v1.api_chatbot.router, prefix="/api/v1", tags=["post chat"])
-app.include_router(v1.api_vehicles_frames.router, prefix="/api/v1", tags=["vehicles and frames of processes"])
-app.include_router(v1.api_auth.router, prefix="/api/v1", tags=["auth"])
-app.include_router(v1.api_user.router, prefix="/api/v1/users", tags=["users"])
-app.include_router(v1.api_admin.router, prefix="/api/v1", tags=["admin"])
+# API Routers với tags và descriptions rõ ràng
+app.include_router(
+    v1.api_auth.router, 
+    prefix="/api/v1", 
+    tags=["Authentication"],
+)
+app.include_router(
+    v1.api_user.router, 
+    prefix="/api/v1/users", 
+    tags=["User Management"],
+)
+app.include_router(
+    v1.api_vehicles_frames.router, 
+    prefix="/api/v1", 
+    tags=["Traffic Monitoring"],
+)
+app.include_router(
+    v1.api_chatbot.router, 
+    prefix="/api/v1", 
+    tags=["AI Chatbot"],
+)
+app.include_router(
+    v1.api_admin.router, 
+    prefix="/api/v1/admin", 
+    tags=["Admin Tools"],
+)
 
-# app.include_router(v2.api_chatbot.router, prefix="/api/v2", tags=["post chat"])
-# app.include_router(v2.api_vehicles_frames.router, prefix="/api/v2", tags=["vehicles and frames of processes"])
+# V2 APIs (commented out)
+# app.include_router(v2.api_chatbot.router, prefix="/api/v2", tags=["AI Chatbot V2"])
+# app.include_router(v2.api_vehicles_frames.router, prefix="/api/v2", tags=["Traffic Monitoring V2"])
 
 @app.on_event("startup")
 async def startup_event():
@@ -66,16 +116,3 @@ def shutdown():
         v1.state.analyzer.cleanup_processes()
     # if v2.state.analyzer:
     #     v2.state.analyzer.cleanup_processes()
-
-
-"""Lưu ý về luồng:
-- Khi chạy FastAPI (bằng uvicorn/gunicorn), server sẽ giữ tiến trình chạy liên tục để lắng nghe request
- HTTP.
-- Các thread tạo trong analyze_multi.process() (mặc định daemon=False) sẽ tiếp tục chạy song song 
-với main thread của FastAPI.
-- FastAPI/uvicorn sẽ KHÔNG kết thúc chương trình cho đến khi bạn dừng server (Ctrl+C hoặc kill process).
-- Vì vậy, không cần join() các thread phân tích video, chương trình vẫn không bị thoát vì event loop 
-của FastAPI vẫn giữ tiến trình sống.
-- Nếu chạy script này như một script Python bình thường (không phải FastAPI server), main thread kết 
-thúc sẽ làm các thread con daemon=True bị dừng theo.
-- Nhưng với FastAPI, tiến trình server luôn sống, nên các thread phân tích vẫn tiếp tục chạy song song."""
