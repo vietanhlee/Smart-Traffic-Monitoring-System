@@ -2,8 +2,9 @@ import requests
 import json
 from langchain_core.tools import tool
 from typing import Annotated
+from core.config import settings_network
 
-BASE_URL = "http://localhost:8000/api/v1"
+BASE_URL = f"http://{settings_network.HOST}/api/v1"
 
 @tool
 def get_roads() -> str:

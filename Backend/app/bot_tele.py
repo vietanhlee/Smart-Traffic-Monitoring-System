@@ -3,9 +3,13 @@ from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, fil
 import requests
 import logging
 from io import BytesIO
+from core.config import settings_network
+from dotenv import load_dotenv
+load_dotenv()
+import os
 
-API_URL = "http://localhost:8000/api/v1/chat_no_auth"
-BOT_TOKEN = "7278180996:AAF3zjRmDm2tpTYzl5W1rRXMfTBkt47xWBA"
+API_URL = f"{settings_network.BASE_URL_API}/api/v1/chat_no_auth"
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 logging.basicConfig(level=logging.INFO)
 

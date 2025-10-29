@@ -10,7 +10,6 @@ class SettingServer:
     JWT_SECRET = os.getenv("JWT_SECRET_KEY")
     JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
     ACCESS_TOKEN_EXPIRE_DAYS = int(os.getenv("ACCESS_TOKEN_EXPIRE_DAYS"))
-
 class SettingMetricTransport:
     REGIONS = [
         np.array([[50, 400], [50, 265], [370, 130], [540, 130], [490, 400]]),
@@ -39,6 +38,10 @@ class SettingMetricTransport:
     DEVICE = 'cpu'
 class SettingChatBot:
     MODELNAME = ""
-
+class SettingNetwork:
+    BASE_URL_API = "http://localhost:8000"
+    URL_FRONTEND = "http://localhost:5173"
 settings_server = SettingServer()
 settings_metric_transport = SettingMetricTransport()
+settings_chat_bot = SettingChatBot()
+settings_network = SettingNetwork()

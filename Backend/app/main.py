@@ -6,7 +6,7 @@ from api import v1, v2
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import RedirectResponse
 from db.base import create_tables
-
+from core.config import settings_network
 # Ưu tiên DirectShow, tắt MSMF để tránh kẹt Ctrl+C trên Windows
 os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
 os.environ["OPENCV_VIDEOIO_PRIORITY_DSHOW"] = "1"
@@ -65,7 +65,7 @@ signal.signal(signal.SIGTERM, signal_handler)
     include_in_schema=False  # Ẩn khỏi docs vì chỉ là redirect
 )
 def direct_home():
-    return RedirectResponse(url='http://localhost:5173/')
+    return RedirectResponse(url= settings_network.URL_FRONTEND)
 
 # API Routers với tags và descriptions rõ ràng
 app.include_router(
