@@ -140,6 +140,7 @@ smart-transportation-system
 └─ README1.md
 
 ```
+
 </details>
 
 ## Requirements
@@ -163,10 +164,13 @@ cd Backend/app
 2. Install Python dependencies:
 
 - For CPU-only installation
+
 ```bash
 pip install -r requirements_cpu.txt
 ```
+
 - For GPU support
+
 ```
 pip install -r requirements_gpu.txt
 ```
@@ -187,6 +191,7 @@ gdown --folder https://drive.google.com/drive/folders/1gkac5U5jEs174p7V7VC3rCmgv
 5. Configure environment variables:
 
 Create .env file for ChatBot configuration (Optional)
+
 ```bash
 echo "GOOGLE_API_KEY=your_google_api_key_here" > .env
 ```
@@ -210,6 +215,7 @@ pnpm install
 ```bash
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
+
 > Server will be available at http://localhost:8000
 
 2. From Frontend directory, start the frontend development server:
@@ -217,6 +223,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```bash
 pnpm run dev
 ```
+
 > Vite dev server will be available at http://localhost:5173
 
 ## Configuration
@@ -241,33 +248,73 @@ Navigate to Backend/app directory where `videos_test` will be stored
 ```bash
 cd app
 ```
+
 Install gdown tool for downloading from Google Drive
+
 ```bash
 pip install gdown
 ```
 
-Download test videos 
+Download test videos
+
 ```bash
 gdown --folder https://drive.google.com/drive/folders/1gkac5U5jEs174p7V7VC3rCmgvO_cVwxH
 ```
+
 Return to root directory for docker-compose
+
 ```bash
 cd ..
 ```
 
 2. Run with Docker Compose:
 
-Build and start services
+Build and start all services
+
 ```bash
 docker compose up --build
 ```
+
 Or run in background
+
 ```bash
 docker compose up --build -d
 ```
-Stop services
+
+Build services individually
+
+```bash
+docker compose build fastapi
+docker compose build frontend
 ```
+
+Start services without rebuilding
+
+```bash
+docker compose up
+```
+
+Check logs
+
+```bash
+# All services
+docker compose logs -f
+
+# Specific service
+docker compose logs -f fastapi
+docker compose logs -f frontend
+```
+
+Stop services
+
+```bash
 docker compose down
+```
+
+Stop and remove volumes
+
+```bash
+docker compose down -v
 ```
 
 This will start:
@@ -303,6 +350,7 @@ To enable GPU acceleration:
 - **Port conflicts**: Verify ports 8000 and 5173 are available
 - **Video files**: Ensure test videos are in `app/video_test/`
 - **Build issues**: Try rebuilding without cache:
+
   ```bash
   docker compose build --no-cache
   ```
@@ -311,7 +359,7 @@ To enable GPU acceleration:
   ```bash
   docker compose logs [service_name]
   ```
-</details>
+  </details>
 
 ---
 
@@ -341,7 +389,6 @@ To enable GPU acceleration:
       "error": "Lỗi: Dữ liệu bị lỗi, kiểm tra core"
     }
     ```
-
 
 - `GET /info/{road_name}`
   - Returns latest traffic metrics for specified road
@@ -421,9 +468,11 @@ To enable GPU acceleration:
 ## API Authentication & Usage
 
 ### User Registration
+
 `POST /register`
 
 **Request:**
+
 ```json
 {
   "username": "string",
@@ -432,39 +481,49 @@ To enable GPU acceleration:
   "phone_number": "string"
 }
 ```
+
 **Response:**
+
 ```json
-{"msg": "Register successful"}
+{ "msg": "Register successful" }
 // or 400 if duplicate username/email/phone
 ```
 
 ### User Login
+
 `POST /login`
 
 **Request:**
+
 ```json
 {
   "username": "string", // or use "email"
   "password": "string"
 }
 ```
+
 **Response:**
+
 ```json
-{"access_token": "<JWT token>", "token_type": "bearer"}
+{ "access_token": "<JWT token>", "token_type": "bearer" }
 ```
 
 ### Token Requirement (VERY IMPORTANT)
+
 **All other API (including /chat, /info, /frames, etc.) require Bearer JWT token.**
-  - Add `Authorization: Bearer <access_token>` header to EVERY request.
+
+- Add `Authorization: Bearer <access_token>` header to EVERY request.
 
 **Example error if token missing/invalid:**
+
 ```json
-{"detail": "Token không hợp lệ hoặc đã hết hạn."}
+{ "detail": "Token không hợp lệ hoặc đã hết hạn." }
 ```
 
 ---
 
 ### Example: Authenticated Chat Request
+
 ```bash
 # Login to get token:
 curl -X POST http://localhost:8000/login \
@@ -485,6 +544,7 @@ curl -X POST http://localhost:8000/chat \
 ---
 
 ## Protected REST Endpoints (require token)
+
 - `GET /roads_name`
 - `GET /frames/{road_name}`
 - `GET /info/{road_name}`
@@ -502,15 +562,19 @@ curl http://localhost:8000/roads_name
 ```
 
 - Get traffic info for specific road
+
 ```bash
 curl http://localhost:8000/info/"Nguyễn Trãi"
 ```
 
 - Get raw JPEG frame
-```bash 
+
+```bash
 curl http://localhost:8000/frames/"Nguyễn Trãi" --output frame.jpg
 ```
+
 - Send chat message
+
 ```bash
 curl -X POST http://localhost:8000/chat \
   -H "Content-Type: application/json" \
@@ -522,7 +586,8 @@ curl -X POST http://localhost:8000/chat \
 </details>
 
 ---
-<details> <summary> <strong> Troubleshooting Guide </strong> </summary> 
+
+<details> <summary> <strong> Troubleshooting Guide </strong> </summary>
 
 ### Common Issues
 
@@ -541,7 +606,7 @@ curl -X POST http://localhost:8000/chat \
 3. **Environment Changes**
    - Requires Vite dev server restart
    - Check environment variable loading in `config.ts`
-</details>
+   </details>
 
 ### Best Practices
 
@@ -549,4 +614,3 @@ curl -X POST http://localhost:8000/chat \
 - Monitor system resources during video processing
 - Use appropriate hardware acceleration (CPU/GPU) based on needs
 - Regular cleanup of processed video data
-
