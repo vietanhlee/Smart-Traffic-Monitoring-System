@@ -1,1 +1,1 @@
-from api.v1 import api_auth, api_chatbot, api_vehicles_frames, state, api_user, api_admin, chat_history
+from api.v1 import api_auth, api_chatbot, api_vehicles_frames, state, api_user, api_admin

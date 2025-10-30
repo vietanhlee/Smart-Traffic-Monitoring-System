@@ -11,7 +11,6 @@ from core.config import settings_network
 # Import all models để SQLAlchemy registry biết về relationships
 from models.user import User
 from models.TokenLLM import TokenLLM
-from models.chat_message import ChatMessage
 
 # Ưu tiên DirectShow, tắt MSMF để tránh kẹt Ctrl+C trên Windows
 os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
@@ -93,11 +92,6 @@ app.include_router(
     v1.api_chatbot.router, 
     prefix="/api/v1", 
     tags=["AI Chatbot"],
-)
-app.include_router(
-    v1.chat_history.router,
-    prefix="/api/v1/chat",
-    tags=["🤖 Chat History"],
 )
 app.include_router(
     v1.api_admin.router, 
