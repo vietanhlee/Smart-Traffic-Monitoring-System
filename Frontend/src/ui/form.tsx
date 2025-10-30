@@ -1,3 +1,5 @@
+/* @refresh reset */
+/* eslint-disable react-refresh/only-export-components */
 import * as React from "react";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { Slot } from "@radix-ui/react-slot";
@@ -155,7 +157,6 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
 }
 
 export {
-  useFormField,
   Form,
   FormItem,
   FormLabel,
@@ -163,4 +164,5 @@ export {
   FormDescription,
   FormMessage,
   FormField,
+  useFormField, // Keep at end to minimize fast refresh issues
 };
