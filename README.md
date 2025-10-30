@@ -236,6 +236,33 @@ Base URLs and API endpoints are configured in `src/config.ts` and can be customi
 
 Configured in `core/config.py` and can be customized environment variables.
 
+### Database Migrations (Alembic)
+
+The project uses Alembic for database schema management:
+
+```bash
+cd backend
+
+# Apply all migrations
+alembic upgrade head
+
+# Create new migration after model changes
+alembic revision --autogenerate -m "Description"
+
+# Rollback last migration
+alembic downgrade -1
+
+# View migration history
+alembic history
+```
+
+**Required dependencies (already in requirements):**
+
+- `alembic==1.17.0` - Migration tool
+- `psycopg2-binary==2.9.11` - PostgreSQL driver
+
+**Documentation:** See `backend/ALEMBIC_README.md` for detailed guide.
+
 <details>
 <summary> <strong> Docker Deployment  </strong></summary>
 
@@ -365,274 +392,261 @@ To enable GPU acceleration:
 
 ## API Documentation
 
-### REST Endpoints
+### 📖 Interactive API Documentation (Swagger UI)
 
-#### Road Information
+The API provides interactive documentation through Swagger UI and ReDoc:
 
-- `GET /roads_name`
+**Swagger UI (Interactive Testing):**
 
-  - Returns list of road names being processed
-  - Response:
-    ```json
-    {
-      "road_names": ["road1", "road2", ...]
-    }
-    ```
+```
+http://localhost:8000/docs
+```
 
-- `GET /frames/{road_name}`
+**ReDoc (Clean Documentation):**
 
-  - Returns latest frame for specified road as raw JPEG bytes
-  - Response type: `image/jpeg`
-  - Error Response (500):
-    ```json
-    {
-      "error": "Lỗi: Dữ liệu bị lỗi, kiểm tra core"
-    }
-    ```
+```
+http://localhost:8000/redoc
+```
 
-- `GET /info/{road_name}`
-  - Returns latest traffic metrics for specified road
-  - Response:
-    ```json
-    {
-      "count_car": 12,
-      "count_motor": 31,
-      "speed_car": 32.4,
-      "speed_motor": 26.1
-    }
-    ```
-  - Error Response (500):
-    ```json
-    {
-      "error": "Lỗi: Dữ liệu bị lỗi, kiểm tra core"
-    }
-    ```
+**OpenAPI JSON:**
 
-#### Chat API
+```
+http://localhost:8000/openapi.json
+```
 
-- `POST /chat`
-  - Send message to AI assistant
-  - Request:
-    ```json
-    {
-      "message": "string"
-    }
-    ```
-  - Response format:
-    ```json
-    {
-      "message": "string",
-      "image": list(url to image (byte code))
-    }
-    ```
+### 📊 API Structure Overview
 
-### WebSocket Endpoints
+```
+Smart Transportation System API v1.0.0
+├── 🔐 Authentication
+│   ├── POST /api/v1/register
+│   ├── POST /api/v1/login
+│   ├── GET /api/v1/me
+│   └── PUT /api/v1/me
+│
+├── 👤 User Management
+│   ├── PUT /api/v1/users/password
+│   └── PUT /api/v1/users/profile
+│
+├── 📹 Traffic Monitoring
+│   ├── GET /api/v1/roads_name
+│   ├── GET /api/v1/info/{road_name}
+│   ├── GET /api/v1/frames/{road_name}
+│   ├── WS /ws/frames/{road_name}
+│   └── WS /ws/info/{road_name}
+│
+├── 🤖 AI Chatbot
+│   ├── POST /api/v1/chat
+│   └── WS /ws/chat
+│
+└── 🔧 Admin Tools
+    └── GET /api/v1/admin/resources
+```
 
-- `WS /ws/frames/{road_name}`
+### 🔐 Using Authentication in Swagger UI
 
-  - Streams continuous frames for specified road
-  - Message format: Raw JPEG bytes (binary)
-  - Frame rate: 15 FPS (sleep 1/15 second between frames)
+1. Register/Login via `/api/v1/register` or `/api/v1/login`
+2. Copy the `access_token` from the response
+3. Click the **"Authorize"** button (🔒 icon at top right)
+4. Enter: `Bearer <your_access_token>`
+5. Click "Authorize" - Now all protected endpoints will include your token!
 
-- `WS /ws/info/{road_name}`
+> **⚠️ Important:** All endpoints (except `/api/v1/register` and `/api/v1/login`) require JWT authentication. Include header: `Authorization: Bearer <access_token>`
 
-  - Streams continuous traffic metrics for specified road
-  - Update interval: Every 5 seconds
-  - Message format:
-    ```json
-    {
-      "count_car": 12,
-      "count_motor": 31,
-      "speed_car": 32.4,
-      "speed_motor": 26.1
-    }
-    ```
+### 🔌 WebSocket Client Examples
 
-- `WS /chat`
+WebSocket endpoints cannot be tested directly in Swagger UI. Use WebSocket clients:
 
-  - Basic chatbot WebSocket endpoint
-  - Request format:
-    ```json
-    {
-      "message": "string"
-    }
-    ```
-  - Response format:
-    ```json
-    {
-      "message": "string",
-      "image": list(url to image (byte code))
-    }
-    ```
+#### Browser JavaScript
 
-## API Authentication & Usage
+```javascript
+// Stream video frames
+const ws = new WebSocket("ws://localhost:8000/ws/frames/Văn Quán");
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  // data.frame = base64 encoded JPEG
+  document.getElementById("img").src = `data:image/jpeg;base64,${data.frame}`;
+};
 
-### User Registration
+// Stream traffic info
+const wsInfo = new WebSocket("ws://localhost:8000/ws/info/Văn Quán");
+wsInfo.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log("Traffic data:", data);
+  // { count_car: 10, count_motor: 5, speed_car: 45.2, speed_motor: 30.1 }
+};
 
-`POST /register`
+// AI Chat
+const wsChat = new WebSocket("ws://localhost:8000/ws/chat");
+wsChat.onopen = () => {
+  wsChat.send(JSON.stringify({ message: "Xin chào!" }));
+};
+wsChat.onmessage = (event) => {
+  const response = JSON.parse(event.data);
+  console.log("AI:", response.message);
+  console.log("Images:", response.image); // Array of image URLs
+};
+```
+
+#### Python Client
+
+```python
+import websocket
+import json
+
+# Connect to chat
+ws = websocket.create_connection("ws://localhost:8000/ws/chat")
+
+# Send message
+ws.send(json.dumps({"message": "Cho tôi biết tình hình giao thông"}))
+
+# Receive response
+response = json.loads(ws.recv())
+print("AI:", response['message'])
+print("Images:", response['image'])
+
+ws.close()
+```
+
+### 📦 Request/Response Examples
+
+#### POST /api/v1/login
 
 **Request:**
 
 ```json
 {
-  "username": "string",
-  "password": "string",
-  "email": "user@email.com",
-  "phone_number": "string"
+  "username": "john_doe",
+  "password": "secure_password123"
 }
 ```
 
-**Response:**
+**Response (200 OK):**
 
 ```json
-{ "msg": "Register successful" }
-// or 400 if duplicate username/email/phone
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "user": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com",
+    "phone_number": "0123456789",
+    "role_id": 1
+  }
+}
 ```
 
-### User Login
+#### GET /api/v1/info/Văn Quán
 
-`POST /login`
+**Headers:**
+
+```
+Authorization: Bearer <your_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "count_car": 15,
+  "count_motor": 8,
+  "speed_car": 42.5,
+  "speed_motor": 28.3
+}
+```
+
+#### POST /api/v1/chat
 
 **Request:**
 
 ```json
 {
-  "username": "string", // or use "email"
-  "password": "string"
+  "message": "Tình hình giao thông Văn Quán hiện tại thế nào?"
 }
 ```
 
-**Response:**
+**Response (200 OK):**
 
 ```json
-{ "access_token": "<JWT token>", "token_type": "bearer" }
+{
+  "message": "Hiện tại đường Văn Quán đang thông thoáng với 15 xe ô tô và 8 xe máy. Tốc độ trung bình xe ô tô là 42.5 km/h.",
+  "image": ["http://localhost:8000/api/v1/frames/Văn%20Quán"]
+}
 ```
 
-### Token Requirement (VERY IMPORTANT)
-
-**All other API (including /chat, /info, /frames, etc.) require Bearer JWT token.**
-
-- Add `Authorization: Bearer <access_token>` header to EVERY request.
-
-**Example error if token missing/invalid:**
-
-```json
-{ "detail": "Token không hợp lệ hoặc đã hết hạn." }
-```
-
----
-
-### Example: Authenticated Chat Request
+### 💻 cURL Examples
 
 ```bash
-# Login to get token:
-curl -X POST http://localhost:8000/login \
+# Get list of roads
+curl -H "Authorization: Bearer <token>" \
+  http://localhost:8000/api/v1/roads_name
+
+# Get traffic info for specific road
+curl -H "Authorization: Bearer <token>" \
+  http://localhost:8000/api/v1/info/Nguyễn%20Trãi
+
+# Get latest frame (JPEG)
+curl -H "Authorization: Bearer <token>" \
+  http://localhost:8000/api/v1/frames/Nguyễn%20Trãi \
+  --output frame.jpg
+
+# Chat with AI
+curl -X POST http://localhost:8000/api/v1/chat \
+  -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"username": "xxx", "password": "xxx"}'
-
-# Save the token, then call:
-curl -X POST http://localhost:8000/chat \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <access_token>" \
-  -d '{"message": "Traffic info"}'
+  -d '{"message": "Traffic on Nguyen Trai?"}'
 ```
 
 ---
 
-> **Lưu ý:** Tất cả API trừ /register, /login đều bắt buộc truyền Header `Authorization: Bearer <access_token>`. Thiếu hoặc sai sẽ trả lỗi 401 (Token không hợp lệ).
+## 📚 Additional Documentation & Resources
 
----
+### Backend Documentation
 
-## Protected REST Endpoints (require token)
+- **[Alembic Migrations](backend/ALEMBIC_README.md)** - Database migration guide
+- **[Swagger API Guide](backend/SWAGGER_README.md)** - Detailed API documentation
+- **[Setup Complete](backend/SETUP_COMPLETE.md)** - Backend setup checklist
 
-- `GET /roads_name`
-- `GET /frames/{road_name}`
-- `GET /info/{road_name}`
-- `POST /chat`
-- WebSocket endpoints: `ws/frames/{road_name}`, `ws/info/{road_name}`, `ws/chat` –> pass token in the header or via cookie if client supports
-
----
-
-<details> <summary> <strong> Example Usage </strong> </summary> 
-  
-- Get list of roads
-
-```bash
-curl http://localhost:8000/roads_name
-```
-
-- Get traffic info for specific road
-
-```bash
-curl http://localhost:8000/info/"Nguyễn Trãi"
-```
-
-- Get raw JPEG frame
-
-```bash
-curl http://localhost:8000/frames/"Nguyễn Trãi" --output frame.jpg
-```
-
-- Send chat message
-
-```bash
-curl -X POST http://localhost:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message":"Traffic on Nguyen Trai?"}'
-```
-
-> Note: For WebSocket endpoints, you'll need to use a WebSocket client or the provided React frontend components.
-
-</details>
-
----
-
-<details> <summary> <strong> Troubleshooting Guide </strong> </summary>
-
-### Common Issues
-
-1. **API Endpoint Errors**
-
-   - 404 errors for `/vehicles` or legacy `/frames`
-   - Solution: Use current endpoints (`/road_name` and WebSocket endpoints)
-   - Close legacy tabs (e.g., `FRONTEND_for_testing/index.html`)
-   - Hard-reload the Vite app
-
-2. **CORS Issues**
-
-   - Backend uses permissive CORS in development
-   - For production: Configure `allow_origins` in `app/main.py`
-
-3. **Environment Changes**
-   - Requires Vite dev server restart
-   - Check environment variable loading in `config.ts`
-   </details>
-
-## 📚 Additional Documentation
+### Project Documentation
 
 - **[Performance Optimization](PERFORMANCE_OPTIMIZATION.md)** - System optimization tips
 - **[Improvements](IMPROVEMENTS.md)** - Planned features and enhancements
 
-## 🔍 Chat System Features
+### Quick Reference
 
-### Current Implementation (localStorage)
+- **Swagger UI:** http://localhost:8000/docs
+- **ReDoc:** http://localhost:8000/redoc
+- **Frontend:** http://localhost:5173
+- **Backend API:** http://localhost:8000
 
-- ✅ User-specific chat storage based on JWT token
-- ✅ Automatic message reload on account switch
-- ✅ Multi-tab support (1s sync interval)
-- ✅ Logout clears user data
-- ✅ Debug function: `debugChatStorage()` in DevTools console
+---
 
-### Quick Test
+## � Development Tips
 
-```javascript
-// In DevTools Console (F12)
-debugChatStorage(); // Shows: token, storage keys, message counts
-```
+### Chat System Features
+
+- **Storage:** User-specific chat history via localStorage (JWT token-based)
+- **Multi-tab sync:** Automatic synchronization every 1 second
+- **Account switching:** Auto-reload messages on login/logout
+- **Debug tool:** Run `debugChatStorage()` in browser console (F12)
 
 ### Best Practices
 
-- Keep `videos_test` in `Backend/app/` directory
-- Monitor system resources during video processing
-- Use appropriate hardware acceleration (CPU/GPU) based on needs
+- Keep test videos in `backend/app/videos_test/` directory
+- Monitor system resources during video processing (use `/api/v1/admin/resources`)
+- Choose appropriate hardware acceleration (CPU/GPU) based on deployment needs
+- Apply database migrations after model changes: `alembic upgrade head`
+- Use Swagger UI (`/docs`) for API testing and exploration
 - Regular cleanup of processed video data
+
+### Troubleshooting
+
+**Common Issues:**
+
+1. **API 404 Errors** - Ensure you're using `/api/v1/` prefix for all endpoints
+2. **Authentication Errors** - Verify JWT token in `Authorization: Bearer <token>` header
+3. **CORS Issues** - Configure `allow_origins` in `main.py` for production
+4. **Port Conflicts** - Check that ports 8000 (backend) and 5173 (frontend) are available
+5. **Database Errors** - Run `alembic upgrade head` to apply pending migrations
+
