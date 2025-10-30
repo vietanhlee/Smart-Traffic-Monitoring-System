@@ -1,0 +1,47 @@
+# Core ML/AI libraries
+numpy
+opencv-python
+cvzone
+torch
+torchvision
+torchaudio
+ultralytics
+openvino
+shapely
+lap
+gdown
+git+https://github.com/ultralytics/CLIP.git
+
+# FastAPI and web framework
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+
+# Database and authentication
+sqlalchemy[asyncio]
+asyncpg
+alembic
+psycopg2-binary
+passlib
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+python-jose[cryptography]
+python-multipart
+
+# LangChain and AI
+langchain
+langchain_google_genai
+langgraph
+
+# Utilities
+overrides
+email-validator
+
+
+# telegram_bot
+python-telegram-bot
+
+# System metrics and testing
+psutil
+pytest
