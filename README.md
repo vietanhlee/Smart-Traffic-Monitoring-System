@@ -608,6 +608,42 @@ curl -X POST http://localhost:8000/chat \
    - Check environment variable loading in `config.ts`
    </details>
 
+## 📚 Additional Documentation
+
+- **[Chat Account Separation Guide](CHAT_ACCOUNT_SEPARATION_GUIDE.md)** - Quick testing guide for multi-user chat isolation
+- **[Account Separation Fix Details](ACCOUNT_SEPARATION_FIX.md)** - Technical implementation details
+- **[Chat Database Guide](backend/CHAT_DATABASE_GUIDE.md)** - PostgreSQL backend for chat history
+- **[Chat Storage Comparison](CHAT_STORAGE_COMPARISON.md)** - localStorage vs Database comparison
+- **[Performance Optimization](PERFORMANCE_OPTIMIZATION.md)** - System optimization tips
+- **[Improvements](IMPROVEMENTS.md)** - Planned features and enhancements
+
+## 🔍 Chat System Features
+
+### Current Implementation (localStorage)
+
+- ✅ User-specific chat storage based on JWT token
+- ✅ Automatic message reload on account switch
+- ✅ Multi-tab support (1s sync interval)
+- ✅ Logout clears user data
+- ✅ Debug function: `debugChatStorage()` in DevTools console
+
+### Quick Test
+
+```javascript
+// In DevTools Console (F12)
+debugChatStorage(); // Shows: token, storage keys, message counts
+```
+
+### Database Backend (Optional)
+
+Backend APIs ready but not integrated yet:
+
+- `POST /api/v1/chat/messages` - Save message
+- `GET /api/v1/chat/messages` - Get history
+- `DELETE /api/v1/chat/messages` - Clear history
+
+See `backend/CHAT_DATABASE_GUIDE.md` for integration steps.
+
 ### Best Practices
 
 - Keep `videos_test` in `Backend/app/` directory

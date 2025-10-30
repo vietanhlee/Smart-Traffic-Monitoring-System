@@ -1,4 +1,12 @@
 import { useState, useRef, useEffect, memo, useCallback } from "react";
+import {
+  loadChatHistory,
+  saveChatHistory,
+  clearChatHistory,
+  loadChatDraft,
+  saveChatDraft,
+  clearChatDraft,
+} from "@/utils/chatStorage";
 // Component fetch và hiển thị ảnh từ URL API (có token)
 const ChatImageFromUrl = ({ url }: { url: string }) => {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
@@ -43,7 +51,16 @@ import { Input } from "@/ui/input";
 import { ScrollArea } from "@/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/ui/avatar";
 import { Badge } from "@/ui/badge";
-import { Send, Bot, User, Loader2, Trash2, Copy, Check } from "lucide-react";
+import {
+  Send,
+  Bot,
+  User,
+  Loader2,
+  Trash2,
+  Copy,
+  Check,
+  Download,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -115,7 +132,7 @@ const markdownComponents: Components = {
 };
 import { useWebSocket } from "../../../../hooks/useWebSocket";
 
-import { endpoints } from "../../../../config";
+import { endpoints, authConfig } from "../../../../config";
 
 interface VehicleData {
   count_car: number;
@@ -267,9 +284,21 @@ MessageBubble.displayName = "MessageBubble";
 // extractImageLinks and removeImageLinksFromText are unused, removed for lint clean
 function addTokenToImageUrl(url: string): string {
   if (!url) return url;
-  url = url.replace(/([?&])token=[^&]+(&)?/, (p1, p2) => (p2 ? p1 : ""));
+
+  // Fix double protocol issue (http://http://)
+  url = url.replace(/^https?:\/\/https?:\/\//i, (match) => {
+    // Keep only the first protocol
+    return match.includes("https://https://") ? "https://" : "http://";
+  });
+
+  // Remove all existing token parameters first
+  url = url.replace(/([?&])token=[^&]+/g, "");
+  // Clean up trailing & or ?
+  url = url.replace(/[?&]$/, "");
+
+  // Only add token if it's a local API URL
   if (url.includes("localhost:8000") || url.includes("127.0.0.1:8000")) {
-    const token = localStorage.getItem("access_token");
+    const token = localStorage.getItem(authConfig.TOKEN_KEY);
     if (token) {
       const separator = url.includes("?") ? "&" : "?";
       return `${url}${separator}token=${encodeURIComponent(token)}`;
@@ -277,51 +306,76 @@ function addTokenToImageUrl(url: string): string {
   }
   return url;
 }
+
 function processImageUrlsInText(text: string): string {
   if (!text) return text;
+
+  // Match image URLs
   const imgRegex =
     /(https?:\/\/[\w\-./%?=&@]+\.(?:jpg|jpeg|png|webp|gif|bmp))(?!\S)/gi;
+
   return text.replace(imgRegex, (match) => {
     return addTokenToImageUrl(match);
   });
 }
 
 const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
-  // Messages are kept in memory only. We intentionally do NOT persist chat history to localStorage
-  // because the project currently doesn't use a per-account DB. That ensures chat history is
-  // cleared on page refresh or logout and different users won't see each other's chats.
-  const [messages, setMessages] = useState<Message[]>(() => {
-    return [
-      {
-        id: "1",
-        text: "Xin chào! Tôi là trợ lý AI của hệ thống giao thông thông minh. Bạn có thể hỏi tôi về tình trạng giao thông hiện tại, thống kê xe cộ, hoặc bất kỳ thông tin nào về các tuyến đường đang được giám sát. Tôi có thể giúp gì cho bạn?",
-        user: false,
-        time: new Date().toLocaleTimeString("vi-VN"),
-      },
-    ];
-  });
-
-  const [input, setInput] = useState("");
-  const DRAFT_KEY = "chat_draft";
+  // Load chat history from localStorage using helper functions
+  const [messages, setMessages] = useState<Message[]>(() => loadChatHistory());
+  const [input, setInput] = useState(() => loadChatDraft());
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Persist only the input draft so typing isn't lost when navigating away
-  useEffect(() => {
-    const saved = localStorage.getItem(DRAFT_KEY);
-    if (saved) setInput(saved);
-    return () => {
-      // persist on unmount as well
-      if (input) localStorage.setItem(DRAFT_KEY, input);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Track current token to reload messages when user switches accounts
+  const [currentToken, setCurrentToken] = useState(() =>
+    localStorage.getItem(authConfig.TOKEN_KEY)
+  );
 
+  // Reload messages when token changes (user logged in/out or switched accounts)
   useEffect(() => {
-    localStorage.setItem(DRAFT_KEY, input);
+    const token = localStorage.getItem(authConfig.TOKEN_KEY);
+
+    if (token !== currentToken) {
+      console.log("[ChatInterface] Token changed, reloading messages");
+      console.log("  Old token:", currentToken?.substring(0, 10));
+      console.log("  New token:", token?.substring(0, 10));
+
+      setCurrentToken(token);
+      const newMessages = loadChatHistory();
+      setMessages(newMessages);
+      setInput(loadChatDraft());
+
+      console.log(
+        "[ChatInterface] Loaded",
+        newMessages.length,
+        "messages for new user"
+      );
+    }
+  }, [currentToken]);
+
+  // Check token periodically in case user logs in/out in another tab
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const token = localStorage.getItem(authConfig.TOKEN_KEY);
+      if (token !== currentToken) {
+        setCurrentToken(token);
+      }
+    }, 1000); // Check every second
+
+    return () => clearInterval(interval);
+  }, [currentToken]);
+
+  // Save chat history to localStorage whenever messages change
+  useEffect(() => {
+    saveChatHistory(messages);
+  }, [messages]);
+
+  // Persist draft input
+  useEffect(() => {
+    saveChatDraft(input);
   }, [input]);
 
   // Kiểm tra trafficData
@@ -353,7 +407,7 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
   }, [messages]);
 
   // Chat WebSocket with authentication - setup trước để dùng trong handlers
-  const token = localStorage.getItem("access_token");
+  const token = localStorage.getItem(authConfig.TOKEN_KEY);
   const chatWsUrl = token
     ? `${endpoints.chatWs}?token=${encodeURIComponent(token)}`
     : null;
@@ -406,7 +460,7 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
     console.log("Sending message:", { message: userMessage }); // Log tin nhắn gửi đi
     setInput("");
     // clear saved draft after sending
-    localStorage.removeItem(DRAFT_KEY);
+    clearChatDraft();
     setIsLoading(true);
 
     // Add user message
@@ -569,8 +623,31 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
       time: new Date().toLocaleTimeString("vi-VN"),
     };
     setMessages([welcomeMsg]);
+    // Clear chat history using helper function
+    clearChatHistory();
     toast.success("Đã xóa lịch sử chat");
   }, []);
+
+  const exportHistory = useCallback(() => {
+    try {
+      const dataStr = JSON.stringify(messages, null, 2);
+      const blob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `chat-history-${new Date()
+        .toISOString()
+        .slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success("Đã xuất lịch sử chat");
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Không thể xuất lịch sử chat");
+    }
+  }, [messages]);
 
   const copyMessage = useCallback(async (text: string, messageId: string) => {
     try {
@@ -590,16 +667,27 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
   // --- COMPONENT RETURN ---
   return (
     <Card className="h-[calc(100vh-8rem)] min-h-[600px] max-h-[900px] flex flex-col relative shadow-xl">
-      {/* Floating delete button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={clearChat}
-        title="Xóa lịch sử chat"
-        className="absolute top-3 right-3 z-10 bg-white/90 dark:bg-gray-900/90 hover:bg-red-50 dark:hover:bg-red-900/50 border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-lg transition-all"
-      >
-        <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" />
-      </Button>
+      {/* Floating action buttons */}
+      <div className="absolute top-3 right-3 z-10 flex gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={exportHistory}
+          title="Xuất lịch sử chat"
+          className="bg-white/90 dark:bg-gray-900/90 hover:bg-blue-50 dark:hover:bg-blue-900/50 border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-lg transition-all"
+        >
+          <Download className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={clearChat}
+          title="Xóa lịch sử chat"
+          className="bg-white/90 dark:bg-gray-900/90 hover:bg-red-50 dark:hover:bg-red-900/50 border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-lg transition-all"
+        >
+          <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" />
+        </Button>
+      </div>
       <CardContent className="flex-1 p-3 sm:p-6 overflow-hidden">
         <ScrollArea className="h-full w-full pr-4" ref={scrollAreaRef}>
           <div className="flex flex-col gap-3 sm:gap-4">

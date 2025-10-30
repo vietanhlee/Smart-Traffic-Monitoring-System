@@ -21,6 +21,7 @@ import {
   BarChart3,
   Bot,
 } from "lucide-react";
+import { clearAllChatData } from "@/utils/chatStorage";
 import LoginPage from "./pages/LoginPage";
 import TrafficDashboard from "@/modules/features/traffic/components/TrafficDashboard";
 import AnalyticsPage from "./pages/AnalyticsPage";
@@ -57,7 +58,10 @@ function AppContent() {
   const handleLoginSuccess = () => setAuthed(true);
   const handleRegisterSuccess = () => setShowRegister(false);
   const handleLogout = () => {
+    // Clear authentication
     localStorage.removeItem("access_token");
+    // Clear chat data when user logs out
+    clearAllChatData();
     setAuthed(false);
     setShowUserDropdown(false);
     navigate("/login", { replace: true });
