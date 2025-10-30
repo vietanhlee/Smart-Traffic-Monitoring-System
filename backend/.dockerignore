@@ -1,0 +1,64 @@
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+tests/
+
+# Documentation
+*.md
+!README.md
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Large model files (keep only what's needed)
+**/bench marks/
+**/mnn models/
+**/onnx models/
+**/runs/
+**/TensorRT/
+**/torchscript models/
+
+# Keep only the optimized model
+!**/openvino models/best_int8_openvino_model/
+
+# Environment
+.env.local
+.env.*.local
+
+# Alembic (nếu không cần trong container)
+# alembic/versions/ 
