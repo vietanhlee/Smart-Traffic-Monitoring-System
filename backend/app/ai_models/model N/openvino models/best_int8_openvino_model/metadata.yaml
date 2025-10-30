@@ -1,0 +1,23 @@
+description: Ultralytics YOLO11n model trained on /kaggle/input/veheicle/xe may oto/data.yaml
+author: Ultralytics
+date: '2025-09-03T05:18:40.391953'
+version: 8.3.191
+license: AGPL-3.0 License (https://ultralytics.com/license)
+docs: https://docs.ultralytics.com
+stride: 32
+task: detect
+batch: 1
+imgsz:
+- 640
+- 640
+names:
+  0: car
+  1: Motor
+args:
+  batch: 1
+  fraction: 1.0
+  half: false
+  int8: true
+  dynamic: true
+  nms: false
+channels: 3
