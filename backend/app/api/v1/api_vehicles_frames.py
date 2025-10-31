@@ -5,7 +5,7 @@ import asyncio
 from services.road_services.AnalyzeOnRoadForMultiProcessing import AnalyzeOnRoadForMultiprocessing
 from fastapi.responses import Response
 from fastapi import WebSocket, WebSocketDisconnect, status, Request
-from utils.jwt_handler import get_current_user, get_user_by_token
+from utils.jwt_handler import get_current_user, get_user_by_token, decode_access_token
 from db.base import AsyncSessionLocal
 from fastapi import Depends
 
