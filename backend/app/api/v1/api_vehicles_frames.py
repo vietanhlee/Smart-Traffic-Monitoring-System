@@ -121,11 +121,11 @@ async def get_frame_road(road_name: str, request: Request):
     if token and token.lower().startswith("bearer "):
         token = token.split(" ", 1)[1]
     # Nếu muốn bỏ xác thực ở HTTP, xóa đoạn này và thêm current_user=Depends(get_current_user) vào hàm
-    # if not token or decode_access_token(token) is None:
-    #     return JSONResponse(
-    #         content={"error": "Unauthorized — missing or invalid token"},
-    #         status_code=401
-    #     )
+    if not token or decode_access_token(token) is None:
+        return JSONResponse(
+            content={"error": "Unauthorized — missing or invalid token"},
+            status_code=401
+        )
     frame_bytes = await asyncio.to_thread(state.analyzer.get_frame_road, road_name)
     if frame_bytes is None:
         return JSONResponse(
