@@ -1,6 +1,11 @@
 import os
 import sys
 import signal
+
+# Ensure the backend/app directory is on sys.path so sibling modules (api, models, etc.) are importable.
+app_path = os.path.dirname(os.path.abspath(__file__))
+if app_path not in sys.path:
+    sys.path.insert(0, app_path)
 from fastapi import FastAPI
 from api import v1
 from fastapi.middleware.cors import CORSMiddleware
