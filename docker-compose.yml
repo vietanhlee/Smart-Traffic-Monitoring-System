@@ -16,6 +16,15 @@ services:
       - pgdata:/var/lib/postgresql/data
     networks:
       - mynet
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - mynet
+
   backend:
     build:
       context: ./backend
@@ -29,6 +38,7 @@ services:
       - ./backend/app/video_test:/backend/app/video_test
     depends_on:
       - database
+      - redis
     networks:
       - mynet
 
@@ -49,5 +59,7 @@ services:
 
 networks:
   mynet:
+volumes:
+  pgdata:
 # docker compose up --build
 
