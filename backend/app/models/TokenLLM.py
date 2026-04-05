@@ -7,5 +7,5 @@ class TokenLLM(Base):
 
     # Use user_id as the primary key and FK to users.id to ensure
     # a 1-1 relationship between a user and their LLM token quota
-    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("user.id"), primary_key=True, index=True)
     token = Column(Integer, nullable=False, default=5000)
