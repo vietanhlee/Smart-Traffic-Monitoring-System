@@ -23,12 +23,22 @@ interface ServerMessage {
   created_at: string;
 }
 
+interface ChatHistoryPageResponse {
+  items: ServerMessage[];
+  page: number;
+  page_size: number;
+  total_items: number;
+  total_pages: number;
+  has_next: boolean;
+  has_prev: boolean;
+}
+
 /**
  * Fetch chat history from server
  */
 export const fetchChatHistory = async (
-  limit: number = 100,
-  offset: number = 0
+  page: number = 1,
+  pageSize: number = 20,
 ): Promise<Message[]> => {
   try {
     const token = localStorage.getItem(authConfig.TOKEN_KEY);
@@ -38,22 +48,26 @@ export const fetchChatHistory = async (
     }
 
     const response = await fetch(
-      `${apiConfig.API_HTTP_BASE}/chat/messages?limit=${limit}&offset=${offset}`,
+      `${apiConfig.API_HTTP_BASE}/chat/messages?page=${page}&page_size=${pageSize}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      }
+      },
     );
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const data: ServerMessage[] = await response.json();
+    const data: ChatHistoryPageResponse = await response.json();
+
+    // Backend returns items in descending order (newest -> oldest).
+    // Reverse to render chat chronologically (oldest -> newest) without relying on Date parsing.
+    const orderedItems = [...(data.items || [])].reverse();
 
     // Convert to frontend format
-    return data.map((msg) => ({
+    return orderedItems.map((msg) => ({
       id: msg.id,
       text: msg.text,
       user: msg.user,
@@ -72,7 +86,7 @@ export const fetchChatHistory = async (
 export const saveMessageToServer = async (
   message: string,
   isUser: boolean,
-  images?: string[]
+  images?: string[],
 ): Promise<boolean> => {
   try {
     const token = localStorage.getItem(authConfig.TOKEN_KEY);
@@ -148,7 +162,7 @@ export const getServerMessageCount = async (): Promise<number> => {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -167,7 +181,7 @@ export const getServerMessageCount = async (): Promise<number> => {
  * Sync localStorage to server (upload local history)
  */
 export const syncLocalToServer = async (
-  messages: Message[]
+  messages: Message[],
 ): Promise<number> => {
   let syncedCount = 0;
 
