@@ -4,7 +4,7 @@ import { useTrafficStore } from "@/hooks/useTrafficStore";
 
 const AnalyticsPage = () => {
   // Use central traffic store which starts fetching after login
-  const { trafficData, allowedRoads, historicalData } = useTrafficStore();
+  const { trafficData, allowedRoads } = useTrafficStore();
 
   // small defensive hook: ensure allowedRoads is stable
   useEffect(() => {}, [allowedRoads]);
@@ -15,7 +15,6 @@ const AnalyticsPage = () => {
         <TrafficAnalytics
           trafficData={trafficData}
           allowedRoads={allowedRoads}
-          historicalData={historicalData}
         />
       </div>
     </div>
