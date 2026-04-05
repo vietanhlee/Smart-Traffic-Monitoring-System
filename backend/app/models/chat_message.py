@@ -2,7 +2,7 @@
 Chat Message Model for PostgreSQL
 Lưu trữ lịch sử chat của users
 """
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean, JSON
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean, JSON, Index
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from db.base import Base
@@ -43,6 +43,10 @@ class ChatMessage(Base):
     
     # Relationships
     user = relationship("User", back_populates="chat_messages")
+
+    __table_args__ = (
+        Index("ix_chat_messages_user_created_at", "user_id", "created_at"),
+    )
 
     def __repr__(self):
         return f"<ChatMessage(id={self.id}, user_id={self.user_id}, is_user={self.is_user})>"
