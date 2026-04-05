@@ -1,10 +1,14 @@
+import logging
 import numpy as np
 import cv2
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Sequence
 from core.config import get_threshold_for_road
 
-def convert_frame_to_byte(img: np.array) -> bytes:
+
+logger = logging.getLogger(__name__)
+
+def convert_frame_to_byte(img: np.ndarray) -> Optional[bytes]:
     """ Hàm chuyển đổi ảnh dạng numpy sang bytes
     Args:
         img (np.array): dũ liệu ảnh được đọc bởi cv2
@@ -16,8 +20,8 @@ def convert_frame_to_byte(img: np.array) -> bytes:
         try:
             _, jpeg = cv2.imencode('.jpg', img)
             return jpeg.tobytes()
-        except Exception as e:
-            print(f"Lỗi chuyển đổi sang bytes {e}")
+        except Exception:
+            logger.exception("Loi chuyen doi frame sang bytes")
             return None
     return None
 
@@ -47,7 +51,7 @@ def avg_none_zero_batch(
         _avg(motor_speeds),
     )
     
-def log(names : str, shared_data : dict) -> str:
+def log(names: Sequence[str], shared_data: dict) -> str:
     """Hàm in ra log thông tin các processing
     Hàm này lấy data tổng thể ở share_data (Manager.dict() dùng để giao tiếp các process với nhau)
     Đặt hàm này là static method vì để tránh việc sử dụng multiprocessing bị lỗi do nó sẽ picke các biến\

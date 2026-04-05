@@ -5,8 +5,8 @@ Lưu và lấy lịch sử chat của user
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import delete
-from typing import List, Optional
+from sqlalchemy import delete, func
+from typing import Optional
 from datetime import datetime
 
 from utils.jwt_handler import get_current_user
@@ -16,6 +16,7 @@ from schemas.ChatMessage import (
     ChatMessageCreate,
     ChatMessageResponse,
     ChatMessageListResponse,
+    ChatMessagePageResponse,
     ChatHistoryQuery,
 )
 from db.base import get_db
@@ -60,13 +61,13 @@ async def create_chat_message(
 
 @router.get(
     "/messages",
-    response_model=List[ChatMessageListResponse],
+    response_model=ChatMessagePageResponse,
     summary="Lấy lịch sử chat",
-    description="API lấy lịch sử chat của user hiện tại với phân trang và filter theo thời gian. Trả về danh sách tin nhắn theo thứ tự cũ → mới. Yêu cầu JWT authentication."
+    description="API lấy lịch sử chat của user hiện tại theo phân trang kiểu thương mại điện tử. Chỉ query đúng trang được yêu cầu, không tải toàn bộ DB."
 )
 async def get_chat_history(
-    limit: int = Query(default=100, ge=1, le=1000),
-    offset: int = Query(default=0, ge=0),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
     since: Optional[datetime] = Query(default=None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -74,26 +75,36 @@ async def get_chat_history(
     """
     Lấy lịch sử chat của user hiện tại
     
-    - **limit**: Số lượng tin nhắn tối đa (default: 100, max: 1000)
-    - **offset**: Bỏ qua bao nhiêu tin nhắn đầu (pagination)
+    - **page**: Trang hiện tại (bắt đầu từ 1)
+    - **page_size**: Số lượng bản ghi mỗi trang (mặc định 20, tối đa 100)
     - **since**: Chỉ lấy tin nhắn sau thời điểm này (ISO format)
-    
-    Returns danh sách tin nhắn theo thứ tự thời gian (cũ → mới)
+
+    Returns object gồm items + metadata phân trang.
     """
-    query = select(ChatMessage).where(ChatMessage.user_id == current_user.id)
+    base_query = select(ChatMessage).where(ChatMessage.user_id == current_user.id)
     
     # Filter by timestamp if provided
     if since:
-        query = query.where(ChatMessage.created_at > since)
-    
-    # Order by created_at ascending (oldest first)
-    query = query.order_by(ChatMessage.created_at.asc()).offset(offset).limit(limit)
-    
-    result = await db.execute(query)
+        base_query = base_query.where(ChatMessage.created_at > since)
+
+    # Count only matching rows (for metadata)
+    count_query = select(func.count()).select_from(base_query.subquery())
+    total_items = int((await db.execute(count_query)).scalar() or 0)
+
+    offset = (page - 1) * page_size
+    total_pages = (total_items + page_size - 1) // page_size if total_items > 0 else 0
+
+    data_query = (
+        base_query
+        .order_by(ChatMessage.created_at.desc(), ChatMessage.id.desc())
+        .offset(offset)
+        .limit(page_size)
+    )
+
+    result = await db.execute(data_query)
     messages = result.scalars().all()
-    
-    # Convert to frontend format
-    return [
+
+    items = [
         ChatMessageListResponse(
             id=str(msg.id),
             text=msg.message,
@@ -104,6 +115,16 @@ async def get_chat_history(
         )
         for msg in messages
     ]
+
+    return ChatMessagePageResponse(
+        items=items,
+        page=page,
+        page_size=page_size,
+        total_items=total_items,
+        total_pages=total_pages,
+        has_next=page < total_pages,
+        has_prev=page > 1,
+    )
 
 
 @router.delete(
@@ -171,8 +192,6 @@ async def get_message_count(
     """
     Đếm tổng số tin nhắn của user
     """
-    from sqlalchemy import func
-    
     query = select(func.count(ChatMessage.id)).where(
         ChatMessage.user_id == current_user.id
     )

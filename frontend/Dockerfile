@@ -9,8 +9,10 @@ RUN npm install -g pnpm@${PNPM_VERSION}
 
 WORKDIR /frontend
 
+
 RUN pnpm install
 
+# Copy the rest of the application
 COPY . .
 
 EXPOSE 5173

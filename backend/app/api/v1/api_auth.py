@@ -39,9 +39,9 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
     description="API đăng nhập OAuth2 compatible. Sử dụng email cùng với password để lấy access token. Token này dùng để xác thực các request tiếp theo."
 )
 async def login(
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(), 
     db: AsyncSession = Depends(get_db),
-    response: Response = None,
 ):
     """
     OAuth2 compatible token login, get an access token for future requests.
@@ -75,20 +75,19 @@ async def login(
     token = create_access_token(token_payload)
 
     try:
-        if response is not None:
-            # Expiry in seconds
-            max_age = 60 * 60 * 24 * settings_server.ACCESS_TOKEN_EXPIRE_DAYS
-            # Note: For local HTTP development, secure=False. In production (HTTPS), set secure=True and SameSite=None
-            response.set_cookie(
-                key="access_token",
-                value=token,
-                httponly=True,
-                max_age=max_age,
-                expires=max_age,
-                samesite="lax",
-                secure=False,
-                path="/",
-            )
+        # Expiry in seconds
+        max_age = 60 * 60 * 24 * settings_server.ACCESS_TOKEN_EXPIRE_DAYS
+        # Note: For local HTTP development, secure=False. In production (HTTPS), set secure=True and SameSite=None
+        response.set_cookie(
+            key="access_token",
+            value=token,
+            httponly=True,
+            max_age=max_age,
+            expires=max_age,
+            samesite="lax",
+            secure=False,
+            path="/",
+        )
     except Exception:
         pass
 

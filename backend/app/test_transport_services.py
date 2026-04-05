@@ -10,7 +10,9 @@ if __name__ == "__main__":
         path_video=path_video,
         meter_per_pixel=meter_per_pixel,
         region=settings_metric_transport.REGIONS[3],
-        show=True
+        show=True,
+        infer_every_n_frames=1,
+        model_path= r'G:\smart-transportation-system\backend\app\ai_models\model N\onnx models\best.pt',
     )
 
     analyzer.process_on_single_video()

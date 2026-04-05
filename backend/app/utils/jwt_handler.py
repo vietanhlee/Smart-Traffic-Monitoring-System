@@ -5,12 +5,13 @@ from fastapi import Depends, HTTPException, status, Request, WebSocket
 from fastapi.security import OAuth2PasswordBearer
 from models.user import User
 from db.base import get_db
+from db.base import AsyncSessionLocal
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, Union
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 def extract_token(source: Union[Request, WebSocket]) -> Optional[str]:
     """
@@ -98,66 +99,9 @@ async def get_current_user(
         )
     return user
 
-# async def get_current_user(
-#     request: Request,
-#     db: AsyncSession = Depends(get_db)
-# ) -> User:
-#     """
-#     HTTP dependency linh hoạt: chấp nhận token từ nhiều nguồn.
-    
-#     Thứ tự ưu tiên:
-#     1. Authorization header (Bearer token)
-#     2. Cookie (access_token)
-#     3. Query parameter (?token=...)
-    
-#     ⚠️ LƯU Ý BẢO MẬT:
-#     - Query params có thể bị ghi log vào server/proxy logs → rủi ro lộ token
-#     - Cookies yêu cầu cấu hình CORS/SameSite đúng
-#     - Authorization header là phương thức an toàn nhất cho API
-    
-#     Sử dụng khi:
-#     - Cần hỗ trợ nhiều client types (browser, mobile, desktop)
-#     - Frontend không thể đặt Authorization header dễ dàng
-#     - Cần backward compatibility với legacy systems
-    
-#     Ví dụ sử dụng:
-#     ```python
-#     @router.get("/profile")
-#     async def get_profile(user: User = Depends(get_current_user_flexible)):
-#         return {"email": user.email, "username": user.username}
-#     ```
-    
-#     Args:
-#         request: FastAPI Request object
-#         db: Database session
-        
-#     Returns:
-#         User: Authenticated user object
-        
-#     Raises:
-#         HTTPException: 401 nếu token không tồn tại hoặc không hợp lệ
-#     """
-#     token = extract_token(request)
-    
-#     if not token:
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED,
-#             detail="Token không hợp lệ hoặc không tồn tại. Vui lòng cung cấp token qua Authorization header, cookie hoặc query parameter.",
-#             headers={"WWW-Authenticate": "Bearer"},
-#         )
-    
-#     user = await get_user_by_token(token, db)
-#     if not user:
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED,
-#             detail="Token không hợp lệ hoặc user không tồn tại.",
-#             headers={"WWW-Authenticate": "Bearer"},
-#         )
-#     return user
 
 async def get_current_user_ws(
     websocket: WebSocket,
-    db: AsyncSession = Depends(get_db)
 ) -> User:
     """
     WebSocket-only dependency: lấy token linh hoạt từ header/cookie/query params.
@@ -172,7 +116,10 @@ async def get_current_user_ws(
             detail="Token không hợp lệ hoặc không tồn tại.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    user = await get_user_by_token(token, db)
+    # WebSocket connections are long-lived; avoid holding a DB session
+    # for the whole socket lifetime by creating a short-lived session here.
+    async with AsyncSessionLocal() as session:
+        user = await get_user_by_token(token, session)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

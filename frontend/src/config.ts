@@ -69,6 +69,7 @@ class WebSocketConfig {
   CHAT_PATH = "/ws/chat";
   FRAMES_PATH = "/ws/frames";
   INFO_PATH = "/ws/info";
+  CHART_PATH = "/ws/chart";
 
   // Full WebSocket URLs
   get CHAT_WS() {
@@ -77,13 +78,19 @@ class WebSocketConfig {
 
   framesWs(roadName: string) {
     return `${apiConfig.API_WS_BASE}${this.FRAMES_PATH}/${encodeURIComponent(
-      roadName
+      roadName,
     )}`;
   }
 
   infoWs(roadName: string) {
     return `${apiConfig.API_WS_BASE}${this.INFO_PATH}/${encodeURIComponent(
-      roadName
+      roadName,
+    )}`;
+  }
+
+  chartWs(roadName: string) {
+    return `${apiConfig.API_WS_BASE}${this.CHART_PATH}/${encodeURIComponent(
+      roadName,
     )}`;
   }
 }
@@ -114,7 +121,20 @@ export const API_WS_BASE = apiConfig.API_WS_BASE;
 
 export const endpoints = {
   roadNames: `${apiConfig.API_HTTP_BASE}/roads_name`,
+  roadHistory: (roadName: string, count = 60, startTime?: string) => {
+    const params = new URLSearchParams({ count: String(count) });
+    if (startTime) {
+      params.set("start_time", startTime);
+    }
+    return `${apiConfig.API_HTTP_BASE}/history/${encodeURIComponent(roadName)}?${params.toString()}`;
+  },
   framesWs: (roadName: string) => wsConfig.framesWs(roadName),
   infoWs: (roadName: string) => wsConfig.infoWs(roadName),
+  chartWs: (roadName: string) => wsConfig.chartWs(roadName),
   chatWs: wsConfig.CHAT_WS,
+  adminTrafficStatus: `${apiConfig.API_HTTP_BASE}/admin/traffic/status`,
+  adminStopRoadProcess: (roadName: string) =>
+    `${apiConfig.API_HTTP_BASE}/admin/traffic/roads/${encodeURIComponent(roadName)}/stop`,
+  adminStartRoadProcess: (roadName: string) =>
+    `${apiConfig.API_HTTP_BASE}/admin/traffic/roads/${encodeURIComponent(roadName)}/start`,
 };

@@ -1,16 +1,23 @@
 import os
+import json
+import logging
+from datetime import datetime, timezone
 from overrides import override
+import cv2
+import redis
 from services.road_services.AnalyzeOnRoadBase import AnalyzeOnRoadBase
 from core.config import settings_metric_transport
 # Đặt như này để tránh trường hợp lỗi do dùng chung thư viện AI 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
+logger = logging.getLogger(__name__)
 
 class AnalyzeOnRoad(AnalyzeOnRoadBase):
     """Class này kế thừa từ class Base (xử lý tuần tự). Class con này chưa phải là code để multiprocessing\
     mà chỉ là một chút cải tiến từ code base (class Base) để có thể vừa xử lý video đầu vào ở một process\
     khác vừa có thể truy xuất thông tin về kết quả mà không bị hiện tượng tranh chấp dữ liệu    
     """    
-    def __init__(self, path_video, meter_per_pixel, info_dict, frame_dict, region, model_path = settings_metric_transport.MODELS_PATH, time_step=30,
+    def __init__(self, path_video, meter_per_pixel, redis_url, region, model_path = settings_metric_transport.MODELS_PATH, time_step=30,
                  is_draw=True, device= settings_metric_transport.DEVICE, iou=0.3, conf=0.2, show=True):
         """Class này kế thừa từ class Base (xử lý tuần tự). Class con này chưa phải là code để multiprocessing\
         mà chỉ là một chút cải tiến từ code base (class Base) để có thể vừa xử lý video đầu vào ở một process\
@@ -19,11 +26,7 @@ class AnalyzeOnRoad(AnalyzeOnRoadBase):
         Args:
             path_video (str): Đường dẫn đến video
             meter_per_pixel (float): Tỉ lệ 1 mét ngoài đời với 1 pixel
-            info_dict (Manager().dict()): Một dict dùng để chia sẽ giữ liệu trung gian giữa các process với nhau,\
-            mặc định là sẽ được truyền tham chiếu và nó sẽ được thay đỏi nếu các process con thay đổi nó cho nên\
-            ta có thể truy cập dữ liệu kết quả xử lý ở bên ngoài dễ dàng nhưng phải đảm bảo truy cập an toàn
-            frame_dict (Manager().dict()): Tương tự info_dict nhưng dùng để chứa thông tin ảnh dạng bytecode đã được encode
-            do manager() không hỗ trợ kiểu này nên ta sẽ dùng dict trung gian để chưa mã bytecode đó ở value (key là "frame")
+            redis_url (str): URL kết nối Redis để chia sẻ dữ liệu realtime và queue lịch sử.
             model_path (str): Đường dẫn đến model. Defaults to "best.pt".
             time_step (int): Khoảng thời gian giữa 2 lần cập nhật thông tin các phương tiện. Defaults to 30.
             is_draw (bool): Biến chỉ định có vẽ các thông tin xử lý được lên frame hay không. Defaults to True.
@@ -38,55 +41,59 @@ class AnalyzeOnRoad(AnalyzeOnRoadBase):
         >>> analyzer = AnalyzeOnRoad(
         >>>     path_video=path_video,
         >>>     meter_per_pixel=meter_per_pixel,
-        >>>     info_dict=info_dict,
-        >>>     frame_dict=frame_dict,
+        >>>     redis_url=redis_url,
         >>>     **kwargs
         >>> )
         >>> analyzer.process_on_single_video()
         """
         super().__init__(path_video, meter_per_pixel, model_path, time_step,
                  is_draw, device, iou, conf, show, region)
-        self.info_dict = info_dict
-        self.frame_dict = frame_dict
+        self.redis = redis.Redis.from_url(redis_url)
+        self.info_key = f"traffic:road:{self.name}:info"
+        self.frame_key = f"traffic:road:{self.name}:frame"
+        self.history_queue_key = "traffic:history:queue"
+        self.frame_ttl_seconds = 10
+        self.info_ttl_seconds = 120
 
     @override
     def update_for_frame(self):
         """Cập nhật frame đang xử lý hiện tại gán vào Manage.dict() để chia sẽ dữ liệu các process với nhau dễ dàng. 
         """
         try: 
-           self.frame_dict["frame"] = self.frame_output
-        except Exception as e:
-            print(f"Lỗi khi cập nhật frame mới nhất của {self.name}: {e}")
+            if self.frame_output is None:
+                return
+            _, jpeg = cv2.imencode('.jpg', self.frame_output)
+            self.redis.setex(self.frame_key, self.frame_ttl_seconds, jpeg.tobytes())
+        except Exception:
+            logger.exception("Loi khi cap nhat frame moi nhat cua %s", self.name)
 
     @override
     def update_for_vehicle(self):
         """Hàm cập nhật thông tin về processing đang xử lý hiện tại và gán vào Manage.dict() để chia sẽ với nhau."""
         try:
-            self.info_dict["count_car"] = self.count_car_display
-            self.info_dict["count_motor"] = self.count_motor_display
-            self.info_dict["speed_car"] = self.speed_car_display
-            self.info_dict["speed_motor"] = self.speed_motor_display
-        except Exception as e:
-            print(f"Lỗi khi update thông tin phương tiện của {self.name}: {e}")
+            payload = {
+                "count_car": int(self.count_car_display),
+                "count_motor": int(self.count_motor_display),
+                "speed_car": float(self.speed_car_display),
+                "speed_motor": float(self.speed_motor_display),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+            self.redis.setex(self.info_key, self.info_ttl_seconds, json.dumps(payload, ensure_ascii=False))
+            self.redis.lpush(self.history_queue_key, json.dumps({"road_name": self.name, **payload}, ensure_ascii=False))
+        except Exception:
+            logger.exception("Loi khi update thong tin phuong tien cua %s", self.name)
 
 #************************************************************************ Script for testing *******************************************************
 if __name__ == "__main__":
-    from multiprocessing import Manager
-    manager = Manager()
-  
+    from core.config import settings_server
+
     path_video = "./video_test/Đường Láng.mp4"
     meter_per_pixel = 0.04
-    info_dict = manager.dict({"count_car": 0,
-                             "count_motor": 0,
-                             "speed_car": 0,
-                             "speed_motor": 0})
-    frame_dict = manager.dict({"frame": None})
     
     analyzer = AnalyzeOnRoad(
         path_video=path_video,
         meter_per_pixel=meter_per_pixel,
-        info_dict=info_dict,
-        frame_dict=frame_dict,
+        redis_url=settings_server.REDIS_URL,
         show=True
     )
     

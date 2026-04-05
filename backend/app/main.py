@@ -1,17 +1,44 @@
 import os
 import sys
 import signal
+from contextlib import asynccontextmanager
+from types import FrameType
 from fastapi import FastAPI
 from api import v1
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import RedirectResponse
 from db.base import create_tables
 from core.config import settings_network
+from core.logging_config import get_logger, setup_logging
 
 os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
 os.environ["OPENCV_VIDEOIO_PRIORITY_DSHOW"] = "1"
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
+setup_logging()
+logger = get_logger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Quản lý vòng đời ứng dụng: startup và shutdown."""
+    logger.info("Creating database tables...")
+    try:
+        await create_tables()
+        logger.info("Database tables initialized.")
+    except Exception as e:
+        logger.exception("Failed to initialize database tables: %s", e)
+        raise
+
+    try:
+        yield
+    finally:
+        logger.info("Shutting down application resources...")
+        if v1.state.traffic_history_worker:
+            await v1.state.traffic_history_worker.stop()
+        if v1.state.analyzer:
+            v1.state.analyzer.cleanup_processes()
 
 
 app = FastAPI(
@@ -28,6 +55,7 @@ app = FastAPI(
     
     """,
     version="1.0.0",
+    lifespan=lifespan,
     docs_url="/docs",  
     redoc_url="/redoc", 
     contact={
@@ -45,33 +73,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def signal_handler(signum, frame):
+def signal_handler(signum: int, frame: FrameType | None):
     """Xử lý Ctrl+C"""
-    print("\nĐang shutdown server...")
+    _ = frame
+    logger.warning("Received signal %s. Stopping server...", signum)
     if v1.state.analyzer:
         v1.state.analyzer.cleanup_processes()
     sys.exit(0)
 
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Tạo bảng database khi khởi động"""
-    print("Creating database tables...")
-    try:
-        await create_tables()
-        print("Tạo xong bảng database.")
-    except Exception as e:
-        print(f"Lỗi tạo bảng database: {e}")
-        raise e
-
-@app.on_event("shutdown")
-def shutdown():
-    print("Tắt mọi thứ...")
-    if v1.state.analyzer:
-        v1.state.analyzer.cleanup_processes()
 
 @app.get(
     path='/',

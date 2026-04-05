@@ -1,11 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { endpoints } from "@/config";
 import { useMultipleTrafficInfo } from "./useWebSocket";
 import { TrafficContext } from "./TrafficContext";
-import type { HistoricalDataPoint, TrafficStore } from "./TrafficContext";
-
-const MAX_HISTORY = 60; // keep at most 60 recent points
+import type { TrafficStore } from "./TrafficContext";
 
 export function TrafficProvider({ children }: { children: React.ReactNode }) {
   const [allowedRoads, setAllowedRoads] = useState<string[]>([]);
@@ -42,50 +40,9 @@ export function TrafficProvider({ children }: { children: React.ReactNode }) {
   const { trafficData, connections, isAnyConnected, areAllConnected } =
     useMultipleTrafficInfo(allowedRoads);
 
-  // Build and maintain historical data capped to MAX_HISTORY
-  const historyRef = useRef<HistoricalDataPoint[]>([]);
-  const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>(
-    []
-  );
-  const lastTrafficRef = useRef<Record<string, string>>({});
-
-  useEffect(() => {
-    // When trafficData changes, push a new point
-    if (!trafficData || Object.keys(trafficData).length === 0) return;
-
-    const now = new Date();
-    const timeString = now.toLocaleTimeString("vi-VN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-
-    // Avoid pushing duplicate consecutive points (string compare)
-    const stateKey = JSON.stringify(trafficData);
-    if (lastTrafficRef.current["__full"] === stateKey) return;
-    lastTrafficRef.current["__full"] = stateKey;
-
-    const point: HistoricalDataPoint = { time: timeString };
-    allowedRoads.forEach((road) => {
-      const d = trafficData[road];
-      const total = (d?.count_car || 0) + (d?.count_motor || 0);
-      point[`${road}_cars`] = d?.count_car || 0;
-      point[`${road}_motors`] = d?.count_motor || 0;
-      point[`${road}_car_speed`] = d?.speed_car || 0;
-      point[`${road}_motor_speed`] = d?.speed_motor || 0;
-      point[`${road}_total`] = total;
-    });
-
-    historyRef.current = [...historyRef.current, point].slice(-MAX_HISTORY);
-    // publish a new array reference so consumers re-render
-    setHistoricalData([...historyRef.current]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(trafficData), JSON.stringify(allowedRoads)]);
-
   const value: TrafficStore = {
     allowedRoads,
     trafficData,
-    historicalData,
     isAnyConnected,
     areAllConnected,
     connections,

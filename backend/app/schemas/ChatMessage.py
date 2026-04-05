@@ -38,6 +38,18 @@ class ChatMessageListResponse(BaseModel):
     created_at: str
 
 
+class ChatMessagePageResponse(BaseModel):
+    """Paginated response for chat history (ecommerce style)."""
+
+    items: List[ChatMessageListResponse]
+    page: int
+    page_size: int
+    total_items: int
+    total_pages: int
+    has_next: bool
+    has_prev: bool
+
+
 class ChatHistoryQuery(BaseModel):
     """Query parameters for chat history"""
     limit: int = Field(default=100, ge=1, le=1000)

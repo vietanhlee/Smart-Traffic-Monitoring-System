@@ -2,13 +2,16 @@ from abc import abstractmethod
 import cvzone
 import cv2
 import os
+import logging
 import numpy as np
 from datetime import datetime
 from ultralytics import solutions
-from utils.transport_utils import *
+from utils.transport_utils import avg_none_zero_batch
 from core.config import settings_metric_transport
 # Thêm cái này để tránh xung đột
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
+logger = logging.getLogger(__name__)
 
 class AnalyzeOnRoadBase:
     """Class gói gọn script xử lý tuần tự nhưng đảm bảo tính đóng gói OOP
@@ -35,7 +38,8 @@ class AnalyzeOnRoadBase:
     def __init__(self, path_video = "./video_test/Đường Láng.mp4", meter_per_pixel = 0.06,
                  model_path= settings_metric_transport.MODELS_PATH, time_step=30,
                  is_draw=True, device= settings_metric_transport.DEVICE, iou=0.3, conf=0.2, show=False,
-                 region = np.array([[50, 400], [50, 265], [370, 130], [600, 130], [600, 400]])):
+                 region = np.array([[50, 400], [50, 265], [370, 130], [600, 130], [600, 400]]),
+                 infer_every_n_frames=3):
         """Hàm xử lý tuần tự như một Script đơn giản áp dụng YOLO và cải tiến hơn là ở việc gói gọn trong 1 class
 
         Args:
@@ -49,6 +53,7 @@ class AnalyzeOnRoadBase:
             conf (float): Ngưỡng tin cậy về nhãn được dự đoán. Defaults to 0.2.
             show (bool): Hiển thị video xử lý qua opencv, đặt là False khi tích hợp làm server tránh lãng phí tài nguyên.\
             Defaults to True.
+            infer_every_n_frames (int): Số frame cho mỗi lần infer (ví dụ 5 = 5 frame infer 1 lần).
             max_buffer_size (int): Kích thước tối đa của buffer cho deque. Defaults to 900.
         """
         self.speed_tool = solutions.SpeedEstimator(
@@ -60,7 +65,7 @@ class AnalyzeOnRoadBase:
             iou=iou,
             conf=conf,
             meter_per_pixel=meter_per_pixel,
-            max_hist=20
+            max_hist=5
         )
 
         self.region = region
@@ -70,7 +75,7 @@ class AnalyzeOnRoadBase:
 
         self.show = show
         self.path_video = path_video
-        self.name = path_video.split('/')[-1][:-4]
+        self.name = os.path.splitext(os.path.basename(path_video))[0]
 
         self.count_car_display = 0
         self.list_count_car = []
@@ -87,12 +92,10 @@ class AnalyzeOnRoadBase:
         self.time_step = time_step
         self.frame_predict = None
         self.is_draw = is_draw
+        self.infer_every_n_frames = max(1, int(infer_every_n_frames))
+        self.frame_count = 0
         self.delta_time = 0
         self.time_pre_for_fps = datetime.now()
-
-        # ROI
-        self.roi_y_start = 130
-        self.roi_x_start = 50
 
         # Draw
         self.font = cv2.FONT_HERSHEY_SIMPLEX
@@ -163,8 +166,9 @@ class AnalyzeOnRoadBase:
             # Tránh copy toàn bộ frame, chỉ tạo view
             self.frame_output = frame_input
 
-            # Sử dụng view trực tiếp ROI (tránh copy thừa); copy sẽ được thực hiện khi đưa vào speed_tool
-            self.frame_predict = self.frame_output[self.roi_y_start:, self.roi_x_start:]
+            # Crop theo bounding rect của polygon trên hệ tọa độ ảnh gốc
+            bx, by, bw, bh = self.region_bbox
+            self.frame_predict = self.frame_output[by:by + bh, bx:bx + bw]
 
             # Cần dùng bản copy để tránh công cụ ghi đè label lên ảnh đầu vào
             self.speed_tool.process(self.frame_predict.copy())
@@ -181,18 +185,35 @@ class AnalyzeOnRoadBase:
             # Cập nhật data
             self.update_data()
 
-        except Exception as e:
-            print(f"Lỗi khi xử lý với file {self.name}: {e}")
+        except Exception:
+            logger.exception("Lỗi khi xử lý single frame %s", self.name)
 
     def post_processing(self):
         if self.speed_tool.track_data is not None:
             # Batch convert to numpy một lần (giảm nhiều lần truy cập thuộc tính)
             track_data = self.speed_tool.track_data
             speeds_dict = self.speed_tool.spd  # dict: id -> speed
+            bx, by, _, _ = self.region_bbox
 
-            ids = track_data.id.cpu().numpy().astype(np.int32)
-            classes = track_data.cls.cpu().numpy().astype(np.int32)
-            boxes = track_data.xyxy.cpu().numpy().astype(np.int32)
+            raw_ids = getattr(track_data, "id", None)
+            raw_classes = getattr(track_data, "cls", None)
+            raw_boxes = getattr(track_data, "xyxy", None)
+
+            # Có frame detector có box nhưng tracker chưa gán track id
+            if raw_ids is None or raw_classes is None or raw_boxes is None:
+                self.speeds = {}
+                self.ids = np.empty((0,), dtype=np.int32)
+                self.classes = np.empty((0,), dtype=np.int32)
+                self.boxes = np.empty((0, 4), dtype=np.int32)
+                return
+
+            ids = raw_ids.cpu().numpy().astype(np.int32)
+            classes = raw_classes.cpu().numpy().astype(np.int32)
+            boxes = raw_boxes.cpu().numpy().astype(np.int32)
+
+            # Map box từ tọa độ crop rect về tọa độ ảnh gốc
+            boxes[:, [0, 2]] += bx
+            boxes[:, [1, 3]] += by
 
             # Lưu vào thuộc tính phục vụ vẽ
             self.speeds = speeds_dict
@@ -231,6 +252,12 @@ class AnalyzeOnRoadBase:
                 self.list_speed_car.extend(car_speeds)
             if motor_speeds:
                 self.list_speed_motor.extend(motor_speeds)
+        else:
+            # Không có track_data ở frame này -> xóa track cũ để tránh hiển thị sai
+            self.speeds = {}
+            self.ids = np.empty((0,), dtype=np.int32)
+            self.classes = np.empty((0,), dtype=np.int32)
+            self.boxes = np.empty((0, 4), dtype=np.int32)
 
 
     def draw_info_to_frame_output(self):
@@ -246,21 +273,17 @@ class AnalyzeOnRoadBase:
                 cx = ((x1 + x2) // 2).astype(np.int32)
                 cy = ((y1 + y2) // 2).astype(np.int32)
 
-                # Batch ROI
-                cx_adj = cx + self.roi_x_start
-                cy_adj = cy + self.roi_y_start
-
                 # Tìm các điểm nằm trong vùng ROI: prefilter bằng bounding box để giảm số lần pointPolygonTest
                 bx, by, bw, bh = self.region_bbox
                 in_bbox_mask = (
-                    (cx_adj >= bx) & (cx_adj < bx + bw) &
-                    (cy_adj >= by) & (cy_adj < by + bh)
+                    (cx >= bx) & (cx < bx + bw) &
+                    (cy >= by) & (cy < by + bh)
                 )
                 candidate_idx = np.nonzero(in_bbox_mask)[0]
                 valid_list = []
                 region_pts_local = self.region_pts  # local ref
                 for idx in candidate_idx:
-                    if cv2.pointPolygonTest(region_pts_local, (int(cx_adj[idx]), int(cy_adj[idx])), False) >= 0:
+                    if cv2.pointPolygonTest(region_pts_local, (int(cx[idx]), int(cy[idx])), False) >= 0:
                         valid_list.append(idx)
                 if valid_list:
                     valid_indices = np.asarray(valid_list, dtype=np.int32)
@@ -275,16 +298,20 @@ class AnalyzeOnRoadBase:
                     color = self.color_motor if class_id == 1 else self.color_car
                     label = f"{speed_id} km/h"
 
-                    cx_local = cx[idx]
-                    cy_local = cy[idx]
+                    cx_global = cx[idx]
+                    cy_global = cy[idx]
 
-                    cv2.putText(self.frame_predict, label,
-                               (cx_local - 50, cy_local - 15),
-                               self.font, self.font_scale, color, self.font_thickness)
-                    cv2.circle(self.frame_predict, (cx_local, cy_local), 5, color, -1)
+                    cv2.putText(
+                        self.frame_output,
+                        label,
+                        (cx_global - 50, cy_global - 15),
+                        self.font,
+                        self.font_scale,
+                        color,
+                        self.font_thickness,
+                    )
+                    cv2.circle(self.frame_output, (cx_global, cy_global), 5, color, -1)
 
-            # Gắn lại vùng được cắt để predict lại vào frame ban đầu 
-            self.frame_output[self.roi_y_start:, self.roi_x_start:] = self.frame_predict
             cv2.polylines(self.frame_output, [self.region_pts],
                          isClosed=True, color=self.color_region, thickness=4)
 
@@ -295,26 +322,26 @@ class AnalyzeOnRoadBase:
 
             colors = [(0, 0, 200), (200, 0, 0)]
 
-            # for i, t in enumerate(info):
-            #     cvzone.putTextRect(
-            #         self.frame_output, t,
-            #         (10, 25 + i * 35),
-            #         scale=1.5, thickness=2,
-            #         colorT=colors[i],
-            #         colorR=(50, 50, 50),
-            #         border=2,
-            #         colorB=(255, 255, 255)
-            #     )
+            for i, t in enumerate(info):
+                cvzone.putTextRect(
+                    self.frame_output, t,
+                    (10, 25 + i * 35),
+                    scale=1.5, thickness=2,
+                    colorT=colors[i],
+                    colorR=(50, 50, 50),
+                    border=2,
+                    colorB=(255, 255, 255)
+                )
 
-        except Exception as e:
-            print(f"Lỗi khi vẽ: {e}")
+        except Exception:
+            logger.exception("Lỗi khi vẽ frame cho %s", self.name)
 
     def process_on_single_video(self):
         """Hàm này sẽ được gọi để xử lý video bằng việc đọc từng frame và xử lý từng frame một"""
         cam = cv2.VideoCapture(self.path_video)
 
         if not cam.isOpened():
-            print(f'Không thể mở video: {self.path_video}')
+            logger.error("Không thể mở video: %s", self.path_video)
             return
 
         target_size = (600, 400)
@@ -324,8 +351,6 @@ class AnalyzeOnRoadBase:
                 check, cap = cam.read()
 
                 if not check:
-                    print(f'Kết thúc video: {self.path_video}')
-                    # Restart video để loop
                     cam.set(cv2.CAP_PROP_POS_FRAMES, 0)
                     continue
 
@@ -345,8 +370,15 @@ class AnalyzeOnRoadBase:
                                  border=2,
                                  colorB=(255, 255, 255))
 
-                # Xử lý từng frame
-                self.process_single_frame(cap)
+                # Chỉ infer mỗi N frame để giảm tải
+                self.frame_count += 1
+                if self.frame_count % self.infer_every_n_frames == 0:
+                    self.process_single_frame(cap)
+                else:
+                    # Không infer ở frame này, ghi đè trace cũ lên frame mới
+                    self.frame_output = cap
+                    if self.is_draw:
+                        self.draw_info_to_frame_output()
 
                 # Hiển thị frame nếu show là True
                 if self.show:
@@ -355,9 +387,9 @@ class AnalyzeOnRoadBase:
                         break
 
         except KeyboardInterrupt:
-            print(f"Đã dừng xử lý {self.name}")
-        except Exception as e:
-            print(f"Lỗi khi xử lý {self.name}: {e}")
+            logger.info("Đã dừng xử lý %s", self.name)
+        except Exception:
+            logger.exception("Lỗi khi xử lý single video %s", self.name)
         finally:
             # Giải phóng tài nguyên
             cam.release()
