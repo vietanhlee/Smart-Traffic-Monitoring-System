@@ -21,9 +21,12 @@ dist-ssr
 .DS_Store
 *.suo
 *.ntvs*
+project_overview.md
 *.njsproj
 *.sln
 *.sw?
+.pdf
+.pptx
 
 
 # app
@@ -42,3 +45,4 @@ Test
 .vscode
 todo.md
 Agent
+.cph
