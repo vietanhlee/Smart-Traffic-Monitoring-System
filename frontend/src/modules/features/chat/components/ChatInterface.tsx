@@ -1,70 +1,14 @@
 import { useState, useRef, useEffect, memo, useCallback } from "react";
 import {
-  loadChatHistory,
-  saveChatHistory,
-  clearChatHistory,
   loadChatDraft,
   saveChatDraft,
   clearChatDraft,
 } from "@/utils/chatStorage";
-import { apiConfig, authConfig, endpoints } from "@/config";
-// Helper: check if an URL points to the same API origin (handles localhost vs 127.0.0.1)
-function isSameApiOrigin(url: string): boolean {
-  try {
-    const target = new URL(url, window.location.origin);
-    const apiBase = new URL(apiConfig.API_HTTP_BASE);
-    return target.origin === apiBase.origin;
-  } catch {
-    return false;
-  }
-}
-
-// Component fetch và hiển thị ảnh từ URL API bằng Authorization header
-const ChatImageFromUrl = ({ url }: { url: string }) => {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [error, setError] = useState(false);
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchImg() {
-      setError(false);
-      try {
-        const token =
-          typeof window !== "undefined"
-            ? localStorage.getItem(authConfig.TOKEN_KEY)
-            : null;
-        const isLocalApi = isSameApiOrigin(url);
-        const headers: HeadersInit = {};
-        if (token && isLocalApi) {
-          headers["Authorization"] = `Bearer ${token}`;
-        }
-        const res = await fetch(url, { headers, credentials: "include" });
-        if (!res.ok) throw new Error("fetch error");
-        const blob = await res.blob();
-        if (!cancelled) setBlobUrl(URL.createObjectURL(blob));
-      } catch {
-        if (!cancelled) setError(true);
-      }
-    }
-    fetchImg();
-    return () => {
-      cancelled = true;
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
-    };
-    // eslint-disable-next-line
-  }, [url]);
-  if (error)
-    return <div className="text-xs text-red-500">Không thể tải ảnh</div>;
-  if (!blobUrl)
-    return <div className="w-32 h-24 bg-gray-200 animate-pulse rounded" />;
-  return (
-    <img
-      src={blobUrl}
-      alt="Ảnh chat"
-      className="w-full h-full rounded shadow border border-gray-200 dark:border-gray-700 object-contain"
-      style={{ width: "100%", height: "100%" }}
-    />
-  );
-};
+import { authConfig, endpoints } from "@/config";
+import {
+  fetchChatHistory,
+  clearServerChatHistory,
+} from "@/services/chatHistoryService";
 import { Card, CardContent } from "@/ui/card";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
@@ -87,6 +31,14 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import type { Components } from "react-markdown";
+
+function normalizeImageSource(raw: string): string {
+  if (!raw) return raw;
+  if (raw.startsWith("data:image/")) return raw;
+  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+  return `data:image/jpeg;base64,${raw}`;
+}
+
 // Custom markdown components for react-markdown v8+
 const markdownComponents: Components = {
   a: (props) => (
@@ -126,13 +78,11 @@ const markdownComponents: Components = {
     );
   },
   img: (props) => {
-    const src = (props as { src?: string }).src;
-    if (src && isSameApiOrigin(src)) {
-      return <ChatImageFromUrl url={src} />;
-    }
+    const src = normalizeImageSource((props as { src?: string }).src ?? "");
     return (
       <img
         {...props}
+        src={src}
         style={{ maxWidth: "100%", borderRadius: 8, margin: "8px 0" }}
         alt="Markdown img"
       />
@@ -188,6 +138,13 @@ interface Message {
 interface ChatInterfaceProps {
   trafficData: TrafficData;
 }
+
+const createWelcomeMessage = (): Message => ({
+  id: "1",
+  text: "Xin chào! Tôi là trợ lý AI của hệ thống giao thông thông minh. Bạn có thể hỏi tôi về tình trạng giao thông hiện tại, thống kê xe cộ, hoặc bất kỳ thông tin nào về các tuyến đường đang được giám sát. Tôi có thể giúp gì cho bạn?",
+  user: false,
+  time: new Date().toLocaleTimeString("vi-VN"),
+});
 
 // Memoized MessageBubble component để tránh re-render không cần thiết
 const MessageBubble = memo(
@@ -247,15 +204,20 @@ const MessageBubble = memo(
           </div>
           {msg.image && msg.image.length > 0 && (
             <div className="flex flex-wrap gap-3 mb-2">
-              {msg.image.map((imgUrl, i) => (
+              {msg.image.map((imgData, i) => (
                 <button
                   key={i}
                   type="button"
                   className="w-full sm:max-w-[520px] h-auto hover:opacity-90 transition"
-                  onClick={() => onPreviewImage(imgUrl)}
+                  onClick={() => onPreviewImage(imgData)}
                   title="Xem ảnh lớn"
                 >
-                  <ChatImageFromUrl url={imgUrl} />
+                  <img
+                    src={normalizeImageSource(imgData)}
+                    alt="Ảnh chat"
+                    className="w-full h-full rounded shadow border border-gray-200 dark:border-gray-700 object-contain"
+                    style={{ width: "100%", height: "100%" }}
+                  />
                 </button>
               ))}
             </div>
@@ -308,51 +270,18 @@ const MessageBubble = memo(
       JSON.stringify(prevProps.msg.image) ===
         JSON.stringify(nextProps.msg.image)
     );
-  }
+  },
 );
 MessageBubble.displayName = "MessageBubble";
 
-// extractImageLinks and removeImageLinksFromText are unused, removed for lint clean
-function addTokenToImageUrl(url: string): string {
-  if (!url) return url;
-
-  // Fix double protocol issue (http://http://)
-  url = url.replace(/^https?:\/\/https?:\/\//i, (match) => {
-    // Keep only the first protocol
-    return match.includes("https://https://") ? "https://" : "http://";
-  });
-
-  // Remove all existing token parameters first
-  url = url.replace(/([?&])token=[^&]+/g, "");
-  // Clean up trailing & or ?
-  url = url.replace(/[?&]$/, "");
-
-  // Only add token if it's a local API URL
-  if (url.includes("localhost:8000") || url.includes("127.0.0.1:8000")) {
-    const token = localStorage.getItem(authConfig.TOKEN_KEY);
-    if (token) {
-      const separator = url.includes("?") ? "&" : "?";
-      return `${url}${separator}token=${encodeURIComponent(token)}`;
-    }
-  }
-  return url;
-}
-
 function processImageUrlsInText(text: string): string {
-  if (!text) return text;
-
-  // Match image URLs
-  const imgRegex =
-    /(https?:\/\/[\w\-./%?=&@]+\.(?:jpg|jpeg|png|webp|gif|bmp))(?!\S)/gi;
-
-  return text.replace(imgRegex, (match) => {
-    return addTokenToImageUrl(match);
-  });
+  return text;
 }
 
 const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
-  // Load chat history from localStorage using helper functions
-  const [messages, setMessages] = useState<Message[]>(() => loadChatHistory());
+  const [messages, setMessages] = useState<Message[]>(() => [
+    createWelcomeMessage(),
+  ]);
   const [input, setInput] = useState(() => loadChatDraft());
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -374,10 +303,10 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
 
   // Track current token to reload messages when user switches accounts
   const [currentToken, setCurrentToken] = useState(() =>
-    localStorage.getItem(authConfig.TOKEN_KEY)
+    localStorage.getItem(authConfig.TOKEN_KEY),
   );
 
-  // Reload messages when token changes (user logged in/out or switched accounts)
+  // Reload messages from backend when token changes (user logged in/out or switched accounts)
   useEffect(() => {
     const token = localStorage.getItem(authConfig.TOKEN_KEY);
 
@@ -387,15 +316,27 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
       console.log("  New token:", token?.substring(0, 10));
 
       setCurrentToken(token);
-      const newMessages = loadChatHistory();
-      setMessages(newMessages);
       setInput(loadChatDraft());
 
-      console.log(
-        "[ChatInterface] Loaded",
-        newMessages.length,
-        "messages for new user"
-      );
+      void (async () => {
+        if (!token) {
+          setMessages([createWelcomeMessage()]);
+          return;
+        }
+
+        const history = await fetchChatHistory(1, 100);
+        if (history.length > 0) {
+          setMessages(history);
+        } else {
+          setMessages([createWelcomeMessage()]);
+        }
+
+        console.log(
+          "[ChatInterface] Loaded",
+          history.length,
+          "messages from API",
+        );
+      })();
     }
   }, [currentToken]);
 
@@ -411,15 +352,26 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
     return () => clearInterval(interval);
   }, [currentToken]);
 
-  // Save chat history to localStorage whenever messages change
-  useEffect(() => {
-    saveChatHistory(messages);
-  }, [messages]);
-
   // Persist draft input
   useEffect(() => {
     saveChatDraft(input);
   }, [input]);
+
+  // Initial load from backend history
+  useEffect(() => {
+    if (!token) {
+      setMessages([createWelcomeMessage()]);
+      return;
+    }
+
+    void (async () => {
+      const history = await fetchChatHistory(1, 100);
+      if (history.length > 0) {
+        setMessages(history);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Kiểm tra trafficData
   useEffect(() => {
@@ -614,9 +566,8 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
         return;
       }
 
-      // Process image URLs to add authentication token
-      const imageUrls = (responseImage || []).map((url) =>
-        addTokenToImageUrl(url)
+      const imageUrls = (responseImage || []).map((img) =>
+        normalizeImageSource(img),
       );
 
       // Process text to add authentication token to any image URLs in text
@@ -662,21 +613,18 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
         handleSendMessage();
       }
     },
-    [handleSendMessage]
+    [handleSendMessage],
   );
 
   // Restore clearChat for delete button
-  const clearChat = useCallback(() => {
-    const welcomeMsg: Message = {
-      id: "1",
-      text: "Xin chào! Tôi là trợ lý AI của hệ thống giao thông thông minh. Bạn có thể hỏi tôi về tình trạng giao thông hiện tại, thống kê xe cộ, hoặc bất kỳ thông tin nào về các tuyến đường đang được giám sát. Tôi có thể giúp gì cho bạn?",
-      user: false,
-      time: new Date().toLocaleTimeString("vi-VN"),
-    };
-    setMessages([welcomeMsg]);
-    // Clear chat history using helper function
-    clearChatHistory();
-    toast.success("Đã xóa lịch sử chat");
+  const clearChat = useCallback(async () => {
+    const success = await clearServerChatHistory();
+    setMessages([createWelcomeMessage()]);
+    if (success) {
+      toast.success("Đã xóa lịch sử chat");
+    } else {
+      toast.error("Không thể xóa lịch sử trên server");
+    }
   }, []);
 
   const exportHistory = useCallback(() => {
@@ -711,8 +659,8 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
     }
   }, []);
 
-  const handlePreviewImage = useCallback((url: string) => {
-    setPreviewImage(url);
+  const handlePreviewImage = useCallback((rawImage: string) => {
+    setPreviewImage(normalizeImageSource(rawImage));
   }, []);
 
   // --- COMPONENT RETURN ---
