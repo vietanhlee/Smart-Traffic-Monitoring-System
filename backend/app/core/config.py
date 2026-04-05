@@ -8,10 +8,12 @@ DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
 DATABASE_PORT = os.getenv("DATABASE_PORT")
 DATABASE_HOST = os.getenv("DATABASE_HOST")
 DATABASE_NAME = os.getenv("DATABASE_NAME")
-
 class SettingServer:
     PROJECT_NAME = "FastAPI CRUD with JWT"
     DATABASE_URL = f"postgresql+asyncpg://{DATABASE_USERNAME}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
+    SQL_ECHO = os.getenv("SQL_ECHO", "false").lower() in {"1", "true", "yes", "on"}
+    REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    # DATABASE_URL = 'postgresql+psycopg_async://neondb_owner:npg_JEOMv5puo3wz@ep-mute-glade-ad2qnbo9-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
     JWT_SECRET = os.getenv("JWT_SECRET_KEY")
     JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
     ACCESS_TOKEN_EXPIRE_DAYS = int(os.getenv("ACCESS_TOKEN_EXPIRE_DAYS"))
@@ -34,11 +36,11 @@ class SettingMetricTransport:
     ]
 
     METER_PER_PIXELS = [
-                        0.1,
-                        0.15,
-                        0.42,
-                        0.15,
-                        0.05
+                        0.05,
+                        0.07,
+                        0.2,
+                        0.07,
+                        0.025
                         ]
     MODELS_PATH = r'./ai_models/model N/openvino models/best_int8_openvino_model'
 
