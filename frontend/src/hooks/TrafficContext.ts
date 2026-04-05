@@ -15,7 +15,6 @@ export type HistoricalDataPoint = {
 export type TrafficStore = {
   allowedRoads: string[];
   trafficData: Record<string, VehicleData>;
-  historicalData: HistoricalDataPoint[];
   isAnyConnected: boolean;
   areAllConnected: boolean;
   connections: Record<string, boolean>;
