@@ -1,23 +1,58 @@
+import logging
 from api.v1 import state
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, status
 from schemas.ChatRequest import ChatRequest 
 from schemas.ChatResponse import ChatResponse
 from services.chat_services.ChatBotAgent import ChatBotAgent
 from utils.jwt_handler import get_current_user, get_current_user_ws
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from db.base import get_db, AsyncSessionLocal
+from models.chat_message import ChatMessage
 
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+
+
+async def _save_chat_turn(
+    db: AsyncSession,
+    user_id: int,
+    user_message: str,
+    ai_message: str,
+    ai_images: list[str] | None,
+    channel: str,
+):
+    """Save both user and assistant messages for one turn."""
+    db.add(
+        ChatMessage(
+            user_id=user_id,
+            message=user_message,
+            is_user=True,
+            images=None,
+            extra_data={"channel": channel},
+        )
+    )
+    db.add(
+        ChatMessage(
+            user_id=user_id,
+            message=ai_message,
+            is_user=False,
+            images=ai_images or None,
+            extra_data={"channel": channel},
+        )
+    )
+    await db.commit()
 
 @router.on_event("startup")
 def start_up():
     if not hasattr(state, 'agent') or state.agent is None:
-        print("Đang khởi tạo Chat Agent...")
+        logger.info("Đang khởi tạo Chat Agent...")
         try:
             state.agent = ChatBotAgent()
-            print("Khởi tạo Chat Agent thành công")
-        except Exception as e:
-            print(f"Không thể khởi tạo Chat Agent: {e}")
+            logger.info("Khởi tạo Chat Agent thành công")
+        except Exception:
+            logger.exception("Không thể khởi tạo Chat Agent")
             state.agent = None
 
 @router.post(
@@ -26,8 +61,27 @@ def start_up():
     summary="Chat với AI Assistant",
     description="API gửi tin nhắn tới AI Chatbot và nhận phản hồi. AI có thể trả lời về giao thông, cung cấp hình ảnh và thông tin liên quan. Yêu cầu JWT authentication."
 )
-async def chat(request: ChatRequest, current_user = Depends(get_current_user)):
-    data = await state.agent.get_response(request.message, id= current_user.id)
+async def chat(
+    request: ChatRequest,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if state.agent is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Chat service is unavailable.",
+        )
+
+    data = await state.agent.get_response(request.message, id=current_user.id)
+    await _save_chat_turn(
+        db=db,
+        user_id=current_user.id,
+        user_message=request.message,
+        ai_message=data["message"],
+        ai_images=data.get("image"),
+        channel="http",
+    )
+
     return ChatResponse(
         message=data["message"],
         image=data["image"]
@@ -40,7 +94,13 @@ async def chat(request: ChatRequest, current_user = Depends(get_current_user)):
     description="API gửi tin nhắn tới AI Chatbot KHÔNG yêu cầu authentication. Dùng cho demo hoặc public access. Mặc định sử dụng user_id = 1."
 )
 async def chat_no_auth(request: ChatRequest):
-    data = await state.agent.get_response(request.message, id= 9999)
+    if state.agent is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Chat service is unavailable.",
+        )
+
+    data = await state.agent.get_response(request.message, id=9999)
     return ChatResponse(
         message=data["message"],
         image=data["image"]
@@ -52,7 +112,7 @@ async def chat_no_auth(request: ChatRequest):
 )
 async def websocket_chat(
     websocket: WebSocket,
-    current_user = Depends(get_current_user_ws)
+    current_user=Depends(get_current_user_ws),
 ):
     """
     WebSocket endpoint cho AI ChatBot Agent.
@@ -67,6 +127,12 @@ async def websocket_chat(
     Authentication:
         Yêu cầu token qua query params (?token=...), cookie (access_token), hoặc header (Authorization: Bearer ...)
     """
+    if state.agent is None:
+        await websocket.accept()
+        await websocket.send_json({"message": "Chat service is unavailable.", "image": None})
+        await websocket.close(code=1013)
+        return
+
     await websocket.accept()
     
     try:
@@ -78,6 +144,16 @@ async def websocket_chat(
                 continue
 
             response = await state.agent.get_response(user_message, id=current_user.id)
+            async with AsyncSessionLocal() as db:
+                await _save_chat_turn(
+                    db=db,
+                    user_id=current_user.id,
+                    user_message=user_message,
+                    ai_message=response["message"],
+                    ai_images=response.get("image"),
+                    channel="websocket",
+                )
+
             await websocket.send_json({
                 "message": response["message"],
                 "image": response["image"]
@@ -86,12 +162,12 @@ async def websocket_chat(
     except WebSocketDisconnect:
         pass
     except Exception as e:
-        print(f"WebSocket error: {e}")
+        logger.exception("WebSocket error")
         try:
             await websocket.send_json({
                 "message": f"Lỗi: {str(e)}",
                 "image": None
             })
-        except:
+        except Exception:
             pass
         await websocket.close()
