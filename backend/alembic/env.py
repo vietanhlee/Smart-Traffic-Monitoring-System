@@ -16,6 +16,7 @@ sys.path.insert(0, app_path)
 from app.db.base import Base
 from app.models.user import User
 from app.models.TokenLLM import TokenLLM
+from app.models.traffic_history import TrafficHistory
 from app.core.config import settings_server
 
 # this is the Alembic Config object, which provides
