@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { endpoints } from "@/config";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
 import {
@@ -35,56 +36,369 @@ export type HistoricalData = { time: string; [key: string]: string | number };
 interface Props {
   trafficData: TrafficData;
   allowedRoads: string[];
-  historicalData?: HistoricalData[]; // optional external history from store
 }
 
-const INTERNAL_MAX = 60; // fallback cap for component-local history
+const HISTORY_MAX = 1000;
+const HISTORY_FETCH_COUNT = 600;
+const TREND_VISIBLE_WINDOW = 120;
+const TREND_MIN_WINDOW = 20;
 
-const TrafficAnalytics: React.FC<Props> = ({
-  trafficData,
-  allowedRoads,
-  historicalData,
-}) => {
-  // internal fallback history used only when `historicalData` prop isn't provided
-  const [internalHistory, setInternalHistory] = useState<HistoricalData[]>([]);
+const toSecondBucketIso = (value?: string) => {
+  const dt = value ? new Date(value) : new Date();
+  const ms = dt.getTime();
+  const bucketMs = Math.floor(ms / 1000) * 1000;
+  return new Date(bucketMs).toISOString();
+};
 
-  useEffect(() => {
-    if (historicalData && Array.isArray(historicalData)) return; // store provides history
-    if (Object.keys(trafficData).length === 0) return;
+type ChartPayload = {
+  road_name: string;
+  timestamp?: string;
+  time?: string;
+  count_car?: number;
+  count_motor?: number;
+  speed_car?: number;
+  speed_motor?: number;
+  total?: number;
+};
 
-    const now = new Date();
-    const timeString = now.toLocaleTimeString("vi-VN", {
+type InternalPoint = HistoricalData & {
+  _ts: string;
+};
+
+const TrafficAnalytics: React.FC<Props> = ({ trafficData, allowedRoads }) => {
+  const [trendsData, setTrendsData] = useState<HistoricalData[]>([]);
+  const [visibleRoads, setVisibleRoads] = useState<string[]>([]);
+  const [followLatest, setFollowLatest] = useState(true);
+  const [trendStartIndex, setTrendStartIndex] = useState(0);
+  const [trendEndIndex, setTrendEndIndex] = useState(0);
+  const [isDraggingTrend, setIsDraggingTrend] = useState(false);
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
+  const [hasMoreOlder, setHasMoreOlder] = useState(true);
+  const dragStartClientXRef = useRef<number | null>(null);
+  const dragStartWindowRef = useRef<{ start: number; end: number } | null>(
+    null,
+  );
+  const trendChartWrapperRef = useRef<HTMLDivElement | null>(null);
+  const mergedRef = useRef<InternalPoint[]>([]);
+
+  const publishMerged = () => {
+    const cleaned = mergedRef.current
+      .sort((a, b) => a._ts.localeCompare(b._ts))
+      .slice(-HISTORY_MAX)
+      .map(({ _ts, ...rest }) => rest);
+    setTrendsData(cleaned);
+  };
+
+  const upsertMerged = (road: string, payload: ChartPayload) => {
+    const ts = toSecondBucketIso(payload.timestamp);
+    // Always format from ISO timestamp on client to avoid UTC/local mismatch.
+    const time = new Date(ts).toLocaleTimeString("vi-VN", {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
     });
 
-    const newPoint: HistoricalData = {
-      time: timeString,
-      ...Object.entries(trafficData).reduce((acc, [road, d]) => {
-        acc[`${road}_cars`] = d.count_car;
-        acc[`${road}_motors`] = d.count_motor;
-        acc[`${road}_car_speed`] = d.speed_car;
-        acc[`${road}_motor_speed`] = d.speed_motor;
-        acc[`${road}_total`] = d.count_car + d.count_motor;
-        return acc;
-      }, {} as Record<string, number>),
+    const countCar = Number(payload.count_car || 0);
+    const countMotor = Number(payload.count_motor || 0);
+    const speedCar = Number(payload.speed_car || 0);
+    const speedMotor = Number(payload.speed_motor || 0);
+    const total = Number(payload.total ?? countCar + countMotor);
+
+    const idx = mergedRef.current.findIndex((item) => item._ts === ts);
+    if (idx >= 0) {
+      mergedRef.current[idx] = {
+        ...mergedRef.current[idx],
+        time,
+        [`${road}_cars`]: countCar,
+        [`${road}_motors`]: countMotor,
+        [`${road}_car_speed`]: speedCar,
+        [`${road}_motor_speed`]: speedMotor,
+        [`${road}_total`]: total,
+      };
+    } else {
+      mergedRef.current.push({
+        _ts: ts,
+        time,
+        [`${road}_cars`]: countCar,
+        [`${road}_motors`]: countMotor,
+        [`${road}_car_speed`]: speedCar,
+        [`${road}_motor_speed`]: speedMotor,
+        [`${road}_total`]: total,
+      });
+    }
+  };
+
+  const loadOlderHistory = async () => {
+    if (isLoadingOlder || !hasMoreOlder || allowedRoads.length === 0) {
+      return;
+    }
+
+    const sorted = [...mergedRef.current].sort((a, b) =>
+      a._ts.localeCompare(b._ts),
+    );
+    const oldestTs = sorted[0]?._ts;
+    if (!oldestTs) {
+      return;
+    }
+
+    setIsLoadingOlder(true);
+    try {
+      let gotAnyOlder = false;
+      const responses = await Promise.all(
+        allowedRoads.map((road) =>
+          fetch(endpoints.roadHistory(road, HISTORY_FETCH_COUNT, oldestTs)),
+        ),
+      );
+
+      for (let i = 0; i < responses.length; i += 1) {
+        const road = allowedRoads[i];
+        const res = responses[i];
+        if (!res.ok) continue;
+
+        const json = await res.json();
+        const rows: ChartPayload[] = Array.isArray(json?.data) ? json.data : [];
+
+        rows.forEach((row) => {
+          const rowTs = toSecondBucketIso(row.timestamp);
+          if (rowTs < oldestTs) {
+            gotAnyOlder = true;
+          }
+          upsertMerged(road, row);
+        });
+      }
+
+      publishMerged();
+      setHasMoreOlder(gotAnyOlder);
+    } catch {
+      // ignore transient network errors, user can drag again
+    } finally {
+      setIsLoadingOlder(false);
+    }
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    const wsMap: Record<string, WebSocket> = {};
+
+    const bootstrap = async () => {
+      if (allowedRoads.length === 0) {
+        mergedRef.current = [];
+        setTrendsData([]);
+        setVisibleRoads([]);
+        return;
+      }
+
+      setVisibleRoads(allowedRoads);
+      setHasMoreOlder(true);
+      mergedRef.current = [];
+
+      try {
+        const responses = await Promise.all(
+          allowedRoads.map((road) =>
+            fetch(endpoints.roadHistory(road, HISTORY_FETCH_COUNT)),
+          ),
+        );
+        if (!mounted) return;
+        for (let i = 0; i < responses.length; i += 1) {
+          const road = allowedRoads[i];
+          const res = responses[i];
+          if (!res.ok) continue;
+
+          const json = await res.json();
+          const rows: ChartPayload[] = Array.isArray(json?.data)
+            ? json.data
+            : [];
+          rows.forEach((item) => upsertMerged(road, item));
+        }
+        publishMerged();
+      } catch {
+        if (!mounted) return;
+      }
+
+      allowedRoads.forEach((road) => {
+        const ws = new WebSocket(endpoints.chartWs(road));
+        wsMap[road] = ws;
+
+        ws.onmessage = (event) => {
+          try {
+            const payload = JSON.parse(event.data) as ChartPayload;
+            upsertMerged(road, payload);
+            publishMerged();
+          } catch {
+            // ignore invalid payload
+          }
+        };
+      });
     };
 
-    setInternalHistory((prev) => {
-      // avoid duplicate consecutive points
-      const last = prev[prev.length - 1];
-      if (last && JSON.stringify(last) === JSON.stringify(newPoint))
-        return prev;
-      const next = [...prev, newPoint].slice(-INTERNAL_MAX);
-      return next;
-    });
-  }, [trafficData, historicalData]);
+    bootstrap();
 
-  const trendsData =
-    historicalData && Array.isArray(historicalData)
-      ? historicalData
-      : internalHistory;
+    return () => {
+      mounted = false;
+      Object.values(wsMap).forEach((ws) => ws.close());
+    };
+  }, [allowedRoads]);
+
+  useEffect(() => {
+    setVisibleRoads((prev) => {
+      const kept = prev.filter((road) => allowedRoads.includes(road));
+      if (kept.length === 0 && allowedRoads.length > 0) {
+        return allowedRoads;
+      }
+      return kept;
+    });
+  }, [allowedRoads]);
+
+  useEffect(() => {
+    if (trendsData.length === 0) {
+      setTrendStartIndex(0);
+      setTrendEndIndex(0);
+      return;
+    }
+
+    if (!followLatest) {
+      const maxIndex = trendsData.length - 1;
+      if (trendEndIndex > maxIndex) {
+        const window = Math.max(1, trendEndIndex - trendStartIndex);
+        setTrendEndIndex(maxIndex);
+        setTrendStartIndex(Math.max(0, maxIndex - window));
+      }
+      return;
+    }
+
+    const end = trendsData.length - 1;
+    const start = Math.max(0, end - TREND_VISIBLE_WINDOW + 1);
+    setTrendStartIndex(start);
+    setTrendEndIndex(end);
+  }, [trendsData, followLatest, trendStartIndex, trendEndIndex]);
+
+  const moveWindow = (nextStart: number, windowSize: number) => {
+    if (trendsData.length === 0) return;
+
+    const normalizedWindow = Math.max(
+      1,
+      Math.min(windowSize, trendsData.length),
+    );
+    const maxStart = Math.max(0, trendsData.length - normalizedWindow);
+    const clampedStart = Math.max(0, Math.min(nextStart, maxStart));
+    const clampedEnd = Math.min(
+      trendsData.length - 1,
+      clampedStart + normalizedWindow - 1,
+    );
+    setTrendStartIndex(clampedStart);
+    setTrendEndIndex(clampedEnd);
+  };
+
+  const handleTrendMouseDown: React.MouseEventHandler<HTMLDivElement> = (
+    event,
+  ) => {
+    if (event.button !== 0) return;
+
+    event.preventDefault();
+    if (typeof window !== "undefined") {
+      window.getSelection()?.removeAllRanges();
+    }
+
+    setFollowLatest(false);
+    setIsDraggingTrend(true);
+    dragStartClientXRef.current = event.clientX;
+    dragStartWindowRef.current = { start: trendStartIndex, end: trendEndIndex };
+  };
+
+  const handleTrendMouseUp = () => {
+    setIsDraggingTrend(false);
+    dragStartClientXRef.current = null;
+    dragStartWindowRef.current = null;
+  };
+
+  useEffect(() => {
+    if (!isDraggingTrend) {
+      return;
+    }
+
+    const onWindowMouseMove = (event: MouseEvent) => {
+      const dragStartClientX = dragStartClientXRef.current;
+      const dragStartWindow = dragStartWindowRef.current;
+      const wrapperWidth = trendChartWrapperRef.current?.clientWidth ?? 0;
+
+      if (
+        dragStartClientX === null ||
+        dragStartWindow === null ||
+        wrapperWidth <= 0
+      ) {
+        return;
+      }
+
+      const windowSize = dragStartWindow.end - dragStartWindow.start + 1;
+      const deltaPx = event.clientX - dragStartClientX;
+      const deltaIndex = Math.round((deltaPx / wrapperWidth) * windowSize);
+
+      // Grab-to-pan: drag right => move to older data, drag left => move newer.
+      const intendedStart = dragStartWindow.start - deltaIndex;
+      if (intendedStart < 0) {
+        void loadOlderHistory();
+      }
+      moveWindow(intendedStart, windowSize);
+    };
+
+    const onWindowMouseUp = () => {
+      handleTrendMouseUp();
+    };
+
+    window.addEventListener("mousemove", onWindowMouseMove);
+    window.addEventListener("mouseup", onWindowMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", onWindowMouseMove);
+      window.removeEventListener("mouseup", onWindowMouseUp);
+    };
+  }, [isDraggingTrend]);
+
+  const handleTrendWheel: React.WheelEventHandler<HTMLDivElement> = (event) => {
+    if (trendsData.length === 0) return;
+    event.preventDefault();
+
+    const currentWindow = Math.max(1, trendEndIndex - trendStartIndex + 1);
+    const zoomIn = event.deltaY < 0;
+    const step = Math.max(1, Math.round(currentWindow * 0.15));
+    const targetWindow = zoomIn ? currentWindow - step : currentWindow + step;
+    const nextWindow = Math.max(
+      TREND_MIN_WINDOW,
+      Math.min(trendsData.length, targetWindow),
+    );
+
+    const center = Math.floor((trendStartIndex + trendEndIndex) / 2);
+    const nextStart = center - Math.floor(nextWindow / 2);
+    setFollowLatest(false);
+    moveWindow(nextStart, nextWindow);
+  };
+
+  const moveToLatest = () => {
+    if (trendsData.length === 0) {
+      return;
+    }
+    setFollowLatest(true);
+  };
+
+  const allRoadsSelected =
+    allowedRoads.length > 0 && visibleRoads.length === allowedRoads.length;
+
+  const toggleAllRoads = () => {
+    if (allRoadsSelected) {
+      setVisibleRoads([]);
+      return;
+    }
+    setVisibleRoads(allowedRoads);
+  };
+
+  const toggleRoad = (road: string) => {
+    setVisibleRoads((prev) => {
+      if (prev.includes(road)) {
+        return prev.filter((item) => item !== road);
+      }
+      return [...prev, road];
+    });
+  };
 
   const vehicleCountData = useMemo(
     () =>
@@ -98,7 +412,7 @@ const TrafficAnalytics: React.FC<Props> = ({
           total: (d?.count_car || 0) + (d?.count_motor || 0),
         };
       }),
-    [allowedRoads, trafficData]
+    [allowedRoads, trafficData],
   );
 
   const speedData = useMemo(
@@ -112,7 +426,7 @@ const TrafficAnalytics: React.FC<Props> = ({
           motorSpeed: d?.speed_motor || 0,
         };
       }),
-    [allowedRoads, trafficData]
+    [allowedRoads, trafficData],
   );
 
   const pieData = useMemo(
@@ -129,10 +443,15 @@ const TrafficAnalytics: React.FC<Props> = ({
           };
         })
         .filter((i) => i.value > 0),
-    [allowedRoads, trafficData]
+    [allowedRoads, trafficData],
   );
 
   const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"];
+
+  const trendWindowData = useMemo(() => {
+    if (trendsData.length === 0) return [];
+    return trendsData.slice(trendStartIndex, trendEndIndex + 1);
+  }, [trendsData, trendStartIndex, trendEndIndex]);
 
   const EmptyState: React.FC<{ message: string }> = ({ message }) => (
     <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -293,41 +612,113 @@ const TrafficAnalytics: React.FC<Props> = ({
         <TabsContent value="trends">
           <Card className="shadow-lg">
             <CardHeader className="pb-4">
-              <CardTitle className="text-base sm:text-lg">
-                Xu hướng giao thông theo thời gian
-              </CardTitle>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <CardTitle className="text-base sm:text-lg">
+                    Xu hướng giao thông theo thời gian
+                  </CardTitle>
+                  <button
+                    type="button"
+                    onClick={moveToLatest}
+                    className="rounded-md border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                  >
+                    Về mới nhất
+                  </button>
+                </div>
+
+                <div className="rounded-md border border-gray-200 p-3 dark:border-gray-700">
+                  <div className="mb-2 flex items-center gap-2">
+                    <input
+                      id="toggle-all-roads"
+                      type="checkbox"
+                      checked={allRoadsSelected}
+                      onChange={toggleAllRoads}
+                      className="h-4 w-4"
+                    />
+                    <label
+                      htmlFor="toggle-all-roads"
+                      className="text-sm font-medium"
+                    >
+                      Hiển thị tất cả
+                    </label>
+                  </div>
+                  <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-3">
+                    {allowedRoads.map((road) => {
+                      const id = `toggle-road-${road}`;
+                      return (
+                        <label
+                          key={road}
+                          htmlFor={id}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <input
+                            id={id}
+                            type="checkbox"
+                            checked={visibleRoads.includes(road)}
+                            onChange={() => toggleRoad(road)}
+                            className="h-4 w-4"
+                          />
+                          <span>{road}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="px-2 sm:px-4">
               {trendsData.length === 0 ? (
                 <EmptyState message="Chưa có dữ liệu lịch sử" />
+              ) : visibleRoads.length === 0 ? (
+                <EmptyState message="Hãy chọn ít nhất một tuyến đường để hiển thị" />
               ) : (
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={trendsData}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "rgba(255,255,255,0.95)",
-                        border: "1px solid #e5e7eb",
-                        borderRadius: 8,
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                    {allowedRoads.map((road, index) => (
-                      <Line
-                        key={road}
-                        type="monotone"
-                        dataKey={`${road}_total`}
-                        stroke={COLORS[index % COLORS.length]}
-                        name={road}
-                        strokeWidth={2}
-                        dot={{ r: 3 }}
-                        activeDot={{ r: 5 }}
+                <div
+                  ref={trendChartWrapperRef}
+                  className={`trend-pan-area select-none rounded-md ${
+                    isDraggingTrend
+                      ? "cursor-grabbing [&_*]:cursor-grabbing"
+                      : "cursor-grab [&_*]:cursor-grab"
+                  }`}
+                  onMouseDown={handleTrendMouseDown}
+                  onWheel={handleTrendWheel}
+                >
+                  {isLoadingOlder && (
+                    <div className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                      Đang tải thêm dữ liệu quá khứ...
+                    </div>
+                  )}
+                  <ResponsiveContainer width="100%" height={400}>
+                    <LineChart
+                      data={trendWindowData}
+                      onMouseUp={handleTrendMouseUp}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                      <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "rgba(255,255,255,0.95)",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: 8,
+                        }}
                       />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      {visibleRoads.map((road, index) => (
+                        <Line
+                          key={road}
+                          type="linear"
+                          dataKey={`${road}_total`}
+                          stroke={COLORS[index % COLORS.length]}
+                          name={road}
+                          connectNulls={true}
+                          strokeWidth={2}
+                          dot={false}
+                          activeDot={{ r: 5 }}
+                        />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               )}
             </CardContent>
           </Card>
