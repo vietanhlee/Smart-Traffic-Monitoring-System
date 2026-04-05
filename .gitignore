@@ -24,6 +24,7 @@ dist-ssr
 project_overview.md
 *.njsproj
 *.sln
+.env
 *.sw?
 .pdf
 .pptx
