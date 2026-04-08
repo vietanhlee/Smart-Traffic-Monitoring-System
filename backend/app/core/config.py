@@ -35,6 +35,8 @@ class SettingServer:
     MINIO_URL_EXPIRY_SECONDS = max(60, _env_int("MINIO_URL_EXPIRY_SECONDS", 3600))
     MINIO_PUBLIC_ENDPOINT = os.getenv("MINIO_PUBLIC_ENDPOINT", MINIO_ENDPOINT)
     MINIO_PUBLIC_SCHEME = os.getenv("MINIO_PUBLIC_SCHEME", "https" if MINIO_SECURE else "http")
+    MINIO_IMAGE_URL_MODE = os.getenv("MINIO_IMAGE_URL_MODE", "presigned").strip().lower()
+    MINIO_AUTO_SET_PUBLIC_READ = _env_bool("MINIO_AUTO_SET_PUBLIC_READ", "false")
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
     LOG_FILE_NAME = os.getenv("LOG_FILE_NAME", "app.log")
     LOG_FILE_MAX_BYTES = _env_int("LOG_FILE_MAX_BYTES", 5242880)

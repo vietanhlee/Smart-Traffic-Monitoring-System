@@ -52,35 +52,77 @@ LƯU Ý KỸ THUẬT:
 """
 MAX_SHORT_TERM_MESSAGES = settings_server.CHAT_MAX_SHORT_TERM_MESSAGES
 LONG_TERM_MEMORY_LIMIT = settings_server.CHAT_LONG_TERM_MEMORY_LIMIT
+_GEMINI_TOOL_CALL_ORDER_ERROR = "function call turn comes immediately after a user turn or after a function response turn"
 
 
 class ChatAgentContext(TypedDict):
     user_id: str
 
 
+def _message_type(message: Any) -> str:
+    return str(getattr(message, "type", "") or "")
+
+
+def _is_ai_tool_call_message(message: Any) -> bool:
+    return _message_type(message) == "ai" and bool(getattr(message, "tool_calls", None))
+
+
+def _sanitize_messages_for_gemini(messages: list[Any]) -> list[Any]:
+    """Ensure tool-call turns remain valid after trimming history.
+
+    Gemini yêu cầu AI function-call chỉ xuất hiện ngay sau human/tool turn.
+    Hàm này loại bỏ các message mồ côi có thể gây INVALID_ARGUMENT.
+    """
+    if not messages:
+        return []
+
+    window = list(messages[-MAX_SHORT_TERM_MESSAGES:])
+    sanitized: list[Any] = []
+
+    for msg in window:
+        msg_type = _message_type(msg)
+
+        if msg_type == "tool":
+            if sanitized and _is_ai_tool_call_message(sanitized[-1]):
+                sanitized.append(msg)
+            continue
+
+        if _is_ai_tool_call_message(msg):
+            if not sanitized:
+                continue
+            prev_type = _message_type(sanitized[-1])
+            if prev_type in {"human", "tool"}:
+                sanitized.append(msg)
+            continue
+
+        sanitized.append(msg)
+
+    while sanitized and _message_type(sanitized[0]) not in {"human", "system"}:
+        sanitized.pop(0)
+
+    while sanitized and _is_ai_tool_call_message(sanitized[-1]):
+        sanitized.pop()
+
+    return sanitized
+
+
 @before_model
 def _trim_messages_before_model(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-    """Trim old messages in agent state before each model call to bound context growth."""
+    """Provide a sanitized llm input window without mutating persisted chat history."""
     _ = runtime
     messages = state.get("messages", [])
-    if len(messages) <= MAX_SHORT_TERM_MESSAGES:
+    if not messages:
         return None
 
-    keep = list(messages[-MAX_SHORT_TERM_MESSAGES:])
-
-    # Avoid starting the trimmed window with a tool message.
-    while keep and getattr(keep[0], "type", "") == "tool":
-        keep.pop(0)
-
+    keep = _sanitize_messages_for_gemini(messages)
     if not keep:
         return None
 
-    return {
-        "messages": [
-            RemoveMessage(id=REMOVE_ALL_MESSAGES),
-            *keep,
-        ]
-    }
+    # Keep default behavior when sanitization does not change anything and context is small.
+    if len(messages) <= MAX_SHORT_TERM_MESSAGES and len(keep) == len(messages):
+        return None
+
+    return {"llm_input_messages": keep}
 
 
 _agent_logger = get_named_rotating_file_logger(
@@ -251,11 +293,33 @@ class ChatBotAgent:
         thread_id = f"{id}"
         state.clear_private_images(thread_id)
         config = {"configurable": {"thread_id": thread_id}}
-        response = await run_in_threadpool(
-            self._agent.invoke,
-            {"messages": [{"role": "user", "content": user_input}]},
-            config,
-        )
+        payload = {"messages": [{"role": "user", "content": user_input}]}
+
+        try:
+            response = await run_in_threadpool(
+                self._agent.invoke,
+                payload,
+                config,
+            )
+        except Exception as exc:
+            msg = str(exc).lower()
+            if _GEMINI_TOOL_CALL_ORDER_ERROR in msg:
+                _agent_logger.warning(
+                    "Detected invalid Gemini tool-call order for thread_id=%s. Resetting thread history and retrying once.",
+                    thread_id,
+                )
+                response = await run_in_threadpool(
+                    self._agent.invoke,
+                    {
+                        "messages": [
+                            RemoveMessage(id=REMOVE_ALL_MESSAGES),
+                            {"role": "user", "content": user_input},
+                        ]
+                    },
+                    config,
+                )
+            else:
+                raise
         structured = response.get("structured_response")
         message = ""
         if structured is not None:
