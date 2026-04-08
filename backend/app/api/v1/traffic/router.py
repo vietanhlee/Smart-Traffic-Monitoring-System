@@ -3,7 +3,7 @@ from datetime import datetime
 
 import cv2
 import numpy as np
-from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
+from aiortc import RTCPeerConnection, RTCRtpSender, RTCSessionDescription, VideoStreamTrack
 from av import VideoFrame
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import Response
@@ -31,6 +31,15 @@ from core.logging_config import get_logger
 router = APIRouter()
 logger = get_logger(__name__)
 active_peer_connections: set[RTCPeerConnection] = set()
+
+
+def _build_video_codec_preferences():
+    capabilities = RTCRtpSender.getCapabilities("video")
+    preferred_order = {"video/H264": 0, "video/VP8": 1, "video/AV1": 2}
+    return sorted(
+        capabilities.codecs,
+        key=lambda codec: preferred_order.get(codec.mimeType, 99),
+    )
 
 
 class RoadVideoStreamTrack(VideoStreamTrack):
@@ -135,7 +144,11 @@ async def webrtc_offer(
             await _close_peer_connection(pc)
 
     video_track = RoadVideoStreamTrack(analyzer=analyzer, road_name=road_name)
-    pc.addTrack(video_track)
+    transceiver = pc.addTransceiver(video_track, direction="sendonly")
+    try:
+        transceiver.setCodecPreferences(_build_video_codec_preferences())
+    except Exception as exc:
+        logger.warning("Cannot set codec preference for road=%s: %s", road_name, exc)
 
     try:
         offer = RTCSessionDescription(sdp=payload.sdp, type=payload.type)

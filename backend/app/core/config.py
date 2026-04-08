@@ -56,9 +56,10 @@ class SettingServer:
 
 class SettingMetricTransport:
     REGIONS = [
-        np.array([[50, 400], [50, 265], [370, 130], [540, 130], [490, 400]]),
+        np.array([[0, 400], [0, 180], [370, 130], [540, 130], [490, 400]]),
         np.array([[230, 400], [90, 260], [350, 200], [600, 320], [600, 400]]),
-        np.array([[50, 400], [50, 340], [400, 125], [530, 185], [470, 400]]),
+        # np.array([[50, 400], [50, 340], [400, 125], [530, 185], [470, 400]]),
+        np.array([[0, 400], [0, 180], [150, 70], [480, 70], [600, 260], [600, 400]]),
         np.array([[140, 400], [400, 200], [550, 200], [530, 400]]),
         np.array([[50, 400], [50, 320], [390, 130], [550, 220], [480, 400]]),
     ]
@@ -72,11 +73,11 @@ class SettingMetricTransport:
     ]
 
     METER_PER_PIXELS = [
-                        0.05,
+                        0.04,
+                        0.045,
+                        0.025,
                         0.07,
-                        0.2,
-                        0.07,
-                        0.025
+                        0.028
                         ]
     MODELS_PATH = r'./ai_models/model N/openvino models/best_int8_openvino_model'
 
@@ -123,7 +124,7 @@ class RoadThreshold(TypedDict):
 TRAFFIC_THRESHOLDS: Dict[str, RoadThreshold] = {
     "Đường Láng": {"v": 18, "c1": 12, "c2": 20},
     "Ngã Tư Sở": {"v": 19, "c1": 35, "c2": 47},
-    "Nguyễn Trãi": {"v": 24, "c1": 20, "c2": 30},
+    "Nguyễn Trãi": {"v": 18, "c1": 12, "c2": 22},
     "Văn Quán": {"v": 17, "c1": 8, "c2": 15},
     "Văn Phú": {"v": 18, "c1": 12, "c2": 23},
 }

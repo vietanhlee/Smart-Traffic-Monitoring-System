@@ -3,6 +3,7 @@ from datetime import timedelta
 from io import BytesIO
 from threading import Lock
 from urllib.parse import urlparse, urlunparse
+from uuid import uuid4
 
 from minio import Minio
 
@@ -82,7 +83,7 @@ class MinioImageStore:
 
         self._ensure_bucket()
         road_slug = _slugify(road_name)
-        object_name = f"roads/{road_slug}/latest.jpg"
+        object_name = f"roads/{road_slug}/{uuid4().hex}.jpg"
 
         self._client.put_object(
             bucket_name=self._bucket_name,

@@ -114,6 +114,14 @@ export const useMultipleWebRTCFrameStreams = (roadNames: string[]) => {
     pc.addTransceiver("video", { direction: "recvonly" });
 
     pc.ontrack = (event: RTCTrackEvent) => {
+      if ("contentHint" in event.track) {
+        try {
+          event.track.contentHint = "detail";
+        } catch {
+          // Ignore browsers that don't allow changing this hint.
+        }
+      }
+
       const [stream] = event.streams;
       if (!stream) {
         return;
