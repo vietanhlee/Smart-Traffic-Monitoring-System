@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Badge } from "@/ui/badge";
 import { Skeleton } from "@/ui/skeleton";
@@ -24,9 +24,9 @@ interface VehicleData {
   speed_motor: number;
 }
 
-interface FrameData {
+interface StreamData {
   [roadName: string]: {
-    frame: string; // Now contains blob URL
+    stream: MediaStream | null;
   };
 }
 
@@ -35,7 +35,8 @@ interface TrafficData {
 }
 
 interface VideoMonitorProps {
-  frameData: FrameData;
+  streamData: StreamData;
+  streamConnections: Record<string, boolean>;
   trafficData: TrafficData;
   allowedRoads: string[];
   selectedRoad: string | null;
@@ -44,8 +45,39 @@ interface VideoMonitorProps {
   isFullscreen: boolean;
 }
 
+type StreamVideoProps = {
+  stream: MediaStream | null;
+  className: string;
+};
+
+const StreamVideo = ({ stream, className }: StreamVideoProps) => {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const node = videoRef.current;
+    if (!node) {
+      return;
+    }
+
+    if (node.srcObject !== stream) {
+      node.srcObject = stream;
+    }
+
+    if (stream) {
+      void node.play().catch(() => {
+        // Ignore autoplay errors; user interaction will resume playback.
+      });
+    }
+  }, [stream]);
+
+  return (
+    <video ref={videoRef} autoPlay playsInline muted className={className} />
+  );
+};
+
 const VideoMonitor = ({
-  frameData,
+  streamData,
+  streamConnections,
   trafficData,
   allowedRoads,
   selectedRoad,
@@ -186,19 +218,20 @@ const VideoMonitor = ({
             <span className="text-sm sm:text-base">Camera Giao Thông</span>
           </CardTitle>
           {/* Connection Status */}
-          {Object.keys(frameData).length > 0 && (
+          {allowedRoads.length > 0 && (
             <div
               className={`flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium ${
-                Object.keys(trafficData).length > 0
+                Object.values(streamConnections).some(Boolean)
                   ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
                   : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
               }`}
             >
-              {Object.keys(trafficData).length > 0 ? (
+              {Object.values(streamConnections).some(Boolean) ? (
                 <>
                   <Wifi className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span>
-                    Đang kết nối với {Object.keys(trafficData).length}/
+                    Đang kết nối với{" "}
+                    {Object.values(streamConnections).filter(Boolean).length}/
                     {allowedRoads.length} camera
                   </span>
                 </>
@@ -222,7 +255,7 @@ const VideoMonitor = ({
         >
           <AnimatePresence>
             {allowedRoads.map((roadName) => {
-              const frame = frameData[roadName];
+              const streamEntry = streamData[roadName];
               const data = trafficData[roadName];
               const { color, icon: Icon, text } = getTrafficStatus(roadName);
               const { speedText, speedColor } = getSpeedStatus(roadName);
@@ -252,10 +285,9 @@ const VideoMonitor = ({
                 >
                   {/* Video Frame (responsive) */}
                   <div className="relative w-full max-w-sm mx-auto aspect-[3/2] bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                    {frame?.frame ? (
-                      <img
-                        src={frame.frame}
-                        alt={`Camera ${roadName}`}
+                    {streamEntry?.stream ? (
+                      <StreamVideo
+                        stream={streamEntry.stream}
                         className="w-full h-full object-contain block"
                       />
                     ) : (
@@ -371,8 +403,8 @@ const VideoMonitor = ({
           setModalRoadName("");
         }}
         roadName={modalRoadName}
-        frameData={
-          modalRoadName ? frameData[modalRoadName]?.frame || null : null
+        stream={
+          modalRoadName ? streamData[modalRoadName]?.stream || null : null
         }
         trafficData={modalRoadName ? trafficData[modalRoadName] : undefined}
       />

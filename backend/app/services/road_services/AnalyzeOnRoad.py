@@ -1,4 +1,3 @@
-import os
 import json
 import logging
 from datetime import datetime, timezone
@@ -7,8 +6,6 @@ import cv2
 import redis
 from services.road_services.AnalyzeOnRoadBase import AnalyzeOnRoadBase
 from core.config import settings_metric_transport
-# Đặt như này để tránh trường hợp lỗi do dùng chung thư viện AI 
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 logger = logging.getLogger(__name__)
 

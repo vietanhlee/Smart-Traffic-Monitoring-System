@@ -1,4 +1,6 @@
 import logging
+import sys
+import traceback
 from api.v1 import state
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, status
 from schemas.ChatRequest import ChatRequest 
@@ -9,10 +11,38 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from db.base import get_db, AsyncSessionLocal
 from models.chat_message import ChatMessage
+from fastapi.websockets import WebSocketState
 
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+BUSY_MESSAGE = "Hệ thống đang bận, vui lòng thử lại sau."
+
+
+def _log_exception_everywhere(context: str, exc: Exception) -> None:
+    """Log exception to configured logger (file) and stderr (console)."""
+    logger.exception("%s: %s", context, exc)
+    traceback.print_exception(type(exc), exc, exc.__traceback__, file=sys.stderr)
+
+
+async def _safe_ws_send_busy(websocket: WebSocket) -> None:
+    """Best-effort send busy message if websocket is still open."""
+    if websocket.application_state != WebSocketState.CONNECTED:
+        return
+    try:
+        await websocket.send_json({"message": BUSY_MESSAGE, "image": []})
+    except Exception as exc:
+        _log_exception_everywhere("Failed to send busy message via websocket", exc)
+
+
+async def _safe_ws_close(websocket: WebSocket, code: int = 1011) -> None:
+    """Best-effort close websocket and avoid duplicate close errors."""
+    if websocket.application_state == WebSocketState.DISCONNECTED:
+        return
+    try:
+        await websocket.close(code=code)
+    except Exception as exc:
+        _log_exception_everywhere("Failed to close websocket", exc)
 
 
 async def _save_chat_turn(
@@ -24,6 +54,10 @@ async def _save_chat_turn(
     channel: str,
 ):
     """Save both user and assistant messages for one turn."""
+    ai_extra_data = {"channel": channel}
+    if ai_images:
+        ai_extra_data["image_source"] = "minio-url"
+
     db.add(
         ChatMessage(
             user_id=user_id,
@@ -39,13 +73,13 @@ async def _save_chat_turn(
             message=ai_message,
             is_user=False,
             images=ai_images or None,
-            extra_data={"channel": channel},
+            extra_data=ai_extra_data,
         )
     )
     await db.commit()
 
 @router.on_event("startup")
-def start_up():
+def _startup_chat_agent():
     if not hasattr(state, 'agent') or state.agent is None:
         logger.info("Đang khởi tạo Chat Agent...")
         try:
@@ -72,20 +106,24 @@ async def chat(
             detail="Chat service is unavailable.",
         )
 
-    data = await state.agent.get_response(request.message, id=current_user.id)
-    await _save_chat_turn(
-        db=db,
-        user_id=current_user.id,
-        user_message=request.message,
-        ai_message=data["message"],
-        ai_images=data.get("image"),
-        channel="http",
-    )
+    try:
+        data = await state.agent.get_response(request.message, id=current_user.id)
+        await _save_chat_turn(
+            db=db,
+            user_id=current_user.id,
+            user_message=request.message,
+            ai_message=data["message"],
+            ai_images=data.get("image"),
+            channel="http",
+        )
 
-    return ChatResponse(
-        message=data["message"],
-        image=data["image"]
-    )   
+        return ChatResponse(
+            message=data["message"],
+            image=data["image"]
+        )
+    except Exception as exc:
+        _log_exception_everywhere("HTTP chat failed", exc)
+        return ChatResponse(message=BUSY_MESSAGE, image=[])
     
 @router.post(
     path='/chat_no_auth',
@@ -100,11 +138,15 @@ async def chat_no_auth(request: ChatRequest):
             detail="Chat service is unavailable.",
         )
 
-    data = await state.agent.get_response(request.message, id=9999)
-    return ChatResponse(
-        message=data["message"],
-        image=data["image"]
-    )
+    try:
+        data = await state.agent.get_response(request.message, id=9999)
+        return ChatResponse(
+            message=data["message"],
+            image=data["image"]
+        )
+    except Exception as exc:
+        _log_exception_everywhere("HTTP chat_no_auth failed", exc)
+        return ChatResponse(message=BUSY_MESSAGE, image=[])
     
 @router.websocket(
     path = "/ws/chat",
@@ -129,7 +171,7 @@ async def websocket_chat(
     """
     if state.agent is None:
         await websocket.accept()
-        await websocket.send_json({"message": "Chat service is unavailable.", "image": None})
+        await websocket.send_json({"message": BUSY_MESSAGE, "image": []})
         await websocket.close(code=1013)
         return
 
@@ -143,31 +185,29 @@ async def websocket_chat(
                 await websocket.send_json({"message": "Bạn chưa nhập tin nhắn.", "image": None})
                 continue
 
-            response = await state.agent.get_response(user_message, id=current_user.id)
-            async with AsyncSessionLocal() as db:
-                await _save_chat_turn(
-                    db=db,
-                    user_id=current_user.id,
-                    user_message=user_message,
-                    ai_message=response["message"],
-                    ai_images=response.get("image"),
-                    channel="websocket",
-                )
+            try:
+                response = await state.agent.get_response(user_message, id=current_user.id)
+                async with AsyncSessionLocal() as db:
+                    await _save_chat_turn(
+                        db=db,
+                        user_id=current_user.id,
+                        user_message=user_message,
+                        ai_message=response["message"],
+                        ai_images=response.get("image"),
+                        channel="websocket",
+                    )
 
-            await websocket.send_json({
-                "message": response["message"],
-                "image": response["image"]
-            })
+                await websocket.send_json({
+                    "message": response["message"],
+                    "image": response["image"]
+                })
+            except Exception as exc:
+                _log_exception_everywhere("WebSocket chat turn failed", exc)
+                await _safe_ws_send_busy(websocket)
 
     except WebSocketDisconnect:
-        pass
-    except Exception as e:
-        logger.exception("WebSocket error")
-        try:
-            await websocket.send_json({
-                "message": f"Lỗi: {str(e)}",
-                "image": None
-            })
-        except Exception:
-            pass
-        await websocket.close()
+        logger.info("WebSocket chat disconnected user_id=%s", getattr(current_user, "id", None))
+    except Exception as exc:
+        _log_exception_everywhere("WebSocket chat error", exc)
+        await _safe_ws_send_busy(websocket)
+        await _safe_ws_close(websocket)

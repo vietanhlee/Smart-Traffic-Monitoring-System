@@ -8,11 +8,47 @@ DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
 DATABASE_PORT = os.getenv("DATABASE_PORT")
 DATABASE_HOST = os.getenv("DATABASE_HOST")
 DATABASE_NAME = os.getenv("DATABASE_NAME")
+
+
+def _env_bool(name: str, default: str = "false") -> bool:
+    return os.getenv(name, default).lower() in {"1", "true", "yes", "on"}
+
+
+def _env_int(name: str, default: int) -> int:
+    raw_value = os.getenv(name, str(default))
+    try:
+        return int(raw_value)
+    except (TypeError, ValueError):
+        return default
+
+
 class SettingServer:
     PROJECT_NAME = "FastAPI CRUD with JWT"
     DATABASE_URL = f"postgresql+asyncpg://{DATABASE_USERNAME}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
-    SQL_ECHO = os.getenv("SQL_ECHO", "false").lower() in {"1", "true", "yes", "on"}
+    SQL_ECHO = _env_bool("SQL_ECHO", "false")
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "localhost:9000")
+    MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", os.getenv("ACCESS_KEY", "minioadmin"))
+    MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", os.getenv("SECRET_KEY", "minioadmin"))
+    MINIO_SECURE = _env_bool("MINIO_SECURE", "false")
+    MINIO_BUCKET = os.getenv("MINIO_BUCKET", "road-frames")
+    MINIO_URL_EXPIRY_SECONDS = max(60, _env_int("MINIO_URL_EXPIRY_SECONDS", 3600))
+    MINIO_PUBLIC_ENDPOINT = os.getenv("MINIO_PUBLIC_ENDPOINT", MINIO_ENDPOINT)
+    MINIO_PUBLIC_SCHEME = os.getenv("MINIO_PUBLIC_SCHEME", "https" if MINIO_SECURE else "http")
+    LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+    LOG_FILE_NAME = os.getenv("LOG_FILE_NAME", "app.log")
+    LOG_FILE_MAX_BYTES = _env_int("LOG_FILE_MAX_BYTES", 5242880)
+    LOG_FILE_BACKUP_COUNT = _env_int("LOG_FILE_BACKUP_COUNT", 5)
+    LOG_TO_CONSOLE = _env_bool("LOG_TO_CONSOLE", "false")
+    CHAT_MAX_SHORT_TERM_MESSAGES = max(6, _env_int("CHAT_MAX_SHORT_TERM_MESSAGES", 24))
+    CHAT_LONG_TERM_MEMORY_LIMIT = max(1, _env_int("CHAT_LONG_TERM_MEMORY_LIMIT", 3))
+    CHAT_MEMORY_DB_URI = os.getenv(
+        "CHAT_MEMORY_DB_URI",
+        DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://"),
+    )
+    OPENCV_VIDEOIO_PRIORITY_MSMF = os.getenv("OPENCV_VIDEOIO_PRIORITY_MSMF", "0")
+    OPENCV_VIDEOIO_PRIORITY_DSHOW = os.getenv("OPENCV_VIDEOIO_PRIORITY_DSHOW", "1")
+    KMP_DUPLICATE_LIB_OK = os.getenv("KMP_DUPLICATE_LIB_OK", "TRUE")
     # DATABASE_URL = 'postgresql+psycopg_async://neondb_owner:npg_JEOMv5puo3wz@ep-mute-glade-ad2qnbo9-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
     JWT_SECRET = os.getenv("JWT_SECRET_KEY")
     JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
@@ -49,8 +85,8 @@ class SettingMetricTransport:
 class SettingChatBot:
     from langchain_google_genai import ChatGoogleGenerativeAI
 
-    LLM = ChatGoogleGenerativeAI(model="gemini-2.5-flash",
-                                temperature=0.6, 
+    LLM = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite-preview",
+                                temperature=0.4, 
                                 max_output_tokens=1024
                                 )
     # Dùng ollama local api llm
@@ -85,15 +121,13 @@ class RoadThreshold(TypedDict):
 
 
 TRAFFIC_THRESHOLDS: Dict[str, RoadThreshold] = {
-    "Đường Láng": {"v": 13, "c1": 17, "c2": 26},
-    "Ngã Tư Sở": {"v": 17, "c1": 45, "c2": 57},
-    "Nguyễn Trãi": {"v": 30, "c1": 25, "c2": 35},
-    "Văn Quán": {"v": 10, "c1": 10, "c2": 17},
-    "Văn Phú": {"v": 15, "c1": 18, "c2": 26},
+    "Đường Láng": {"v": 18, "c1": 12, "c2": 20},
+    "Ngã Tư Sở": {"v": 19, "c1": 35, "c2": 47},
+    "Nguyễn Trãi": {"v": 24, "c1": 20, "c2": 30},
+    "Văn Quán": {"v": 17, "c1": 8, "c2": 15},
+    "Văn Phú": {"v": 18, "c1": 12, "c2": 23},
 }
 
 DEFAULT_THRESHOLD: RoadThreshold = {"v": 15, "c1": 15, "c2": 25}
 
 
-def get_threshold_for_road(road_name: str) -> RoadThreshold:
-    return TRAFFIC_THRESHOLDS.get(road_name, DEFAULT_THRESHOLD)

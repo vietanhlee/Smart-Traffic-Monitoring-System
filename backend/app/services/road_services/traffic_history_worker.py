@@ -5,6 +5,7 @@ import logging
 import multiprocessing
 from datetime import datetime, timezone
 
+from fastapi.concurrency import run_in_threadpool
 from core.config import settings_server
 from db.base import AsyncSessionLocal
 from models.traffic_history import TrafficHistory
@@ -42,7 +43,7 @@ async def _run_worker_loop(redis_url: str, queue_key: str, stop_event):
 	try:
 		while not stop_event.is_set():
 			try:
-				item = await asyncio.to_thread(redis_client.brpop, queue_key, 1)
+				item = await run_in_threadpool(redis_client.brpop, queue_key, 1)
 				if not item:
 					continue
 
@@ -53,7 +54,7 @@ async def _run_worker_loop(redis_url: str, queue_key: str, stop_event):
 				logger.exception("TrafficHistoryWorker process error: %s", exc)
 				await asyncio.sleep(0.5)
 	finally:
-		await asyncio.to_thread(redis_client.close)
+		await run_in_threadpool(redis_client.close)
 
 
 def _process_entrypoint(redis_url: str, queue_key: str, stop_event):
@@ -92,10 +93,10 @@ class TrafficHistoryWorker:
 		if self._stop_event is not None:
 			self._stop_event.set()
 
-		await asyncio.to_thread(self._process.join, 5)
+		await run_in_threadpool(self._process.join, 5)
 		if self._process.is_alive():
 			self._process.terminate()
-			await asyncio.to_thread(self._process.join, 2)
+			await run_in_threadpool(self._process.join, 2)
 
 		self._process = None
 		self._stop_event = None

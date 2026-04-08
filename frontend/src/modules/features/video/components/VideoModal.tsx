@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Maximize2, Minimize2, Video, Car, Bike, Timer } from "lucide-react";
 import { Button } from "@/ui/button";
@@ -8,7 +8,7 @@ interface VideoModalProps {
   isOpen: boolean;
   onClose: () => void;
   roadName: string;
-  frameData: string | null; // Now using blob URL string
+  stream: MediaStream | null;
   trafficData?: {
     count_car: number;
     count_motor: number;
@@ -21,10 +21,28 @@ const VideoModal = ({
   isOpen,
   onClose,
   roadName,
-  frameData,
+  stream,
   trafficData,
 }: VideoModalProps) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const node = videoRef.current;
+    if (!node) {
+      return;
+    }
+
+    if (node.srcObject !== stream) {
+      node.srcObject = stream;
+    }
+
+    if (stream) {
+      void node.play().catch(() => {
+        // Ignore autoplay errors and rely on user interaction fallback.
+      });
+    }
+  }, [stream]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -106,10 +124,12 @@ const VideoModal = ({
             {/* Video */}
             <div className="relative bg-gray-100 dark:bg-gray-700 p-3 sm:p-6 flex-1 flex items-center justify-center min-h-[40vh] lg:min-h-0">
               <div className="relative w-full h-full flex items-center justify-center">
-                {frameData ? (
-                  <img
-                    src={frameData}
-                    alt={`Camera ${roadName}`}
+                {stream ? (
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
                     className="max-w-full max-h-[50vh] sm:max-h-[60vh] lg:max-h-[70vh] object-contain rounded-lg shadow-lg"
                   />
                 ) : (

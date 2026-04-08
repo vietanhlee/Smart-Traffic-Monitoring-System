@@ -1,5 +1,6 @@
 import asyncio
 from fastapi import APIRouter, Depends, HTTPException, WebSocketDisconnect, status, WebSocket
+from fastapi.concurrency import run_in_threadpool
 from api import v1
 from utils.jwt_handler import get_current_user, get_current_user_ws
 from models.user import User
@@ -48,7 +49,7 @@ async def get_traffic_process_status(current_user: User = Depends(get_current_us
             detail="Traffic service is unavailable.",
         )
 
-    statuses = await asyncio.to_thread(analyzer.get_roads_runtime_status)
+    statuses = await run_in_threadpool(analyzer.get_roads_runtime_status)
     logger.info("Admin user_id=%s fetched traffic process status", current_user.id)
     return {"roads": statuses}
 
@@ -69,7 +70,7 @@ async def stop_traffic_road_process(road_name: str, current_user: User = Depends
             detail="Traffic service is unavailable.",
         )
 
-    result = await asyncio.to_thread(analyzer.stop_road, road_name)
+    result = await run_in_threadpool(analyzer.stop_road, road_name)
     if not result.get("ok"):
         logger.warning("Stop road request failed for %s: %s", road_name, result.get("detail"))
         error_status = status.HTTP_404_NOT_FOUND if result.get("detail") == "Road not found." else status.HTTP_409_CONFLICT
@@ -94,7 +95,7 @@ async def start_traffic_road_process(road_name: str, current_user: User = Depend
             detail="Traffic service is unavailable.",
         )
 
-    result = await asyncio.to_thread(analyzer.start_road, road_name)
+    result = await run_in_threadpool(analyzer.start_road, road_name)
     if not result.get("ok"):
         logger.warning("Start road request failed for %s: %s", road_name, result.get("detail"))
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=result.get("detail", "Road not found."))

@@ -8,8 +8,6 @@ from datetime import datetime
 from ultralytics import solutions
 from utils.transport_utils import avg_none_zero_batch
 from core.config import settings_metric_transport
-# Thêm cái này để tránh xung đột
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 logger = logging.getLogger(__name__)
 

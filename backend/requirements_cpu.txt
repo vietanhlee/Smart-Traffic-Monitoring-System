@@ -34,10 +34,15 @@ python-multipart
 langchain
 langchain_google_genai
 langgraph
+langgraph-checkpoint-redis
+langgraph-checkpoint-postgres
 
 # Utilities
 overrides
 email-validator
+minio
+aiortc
+av
 
 
 # telegram_bot

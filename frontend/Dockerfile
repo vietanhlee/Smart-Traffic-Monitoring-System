@@ -1,20 +1,23 @@
 ARG NODE_VERSION=20.17.0
 ARG PNPM_VERSION=9.14.4
 
-FROM node:${NODE_VERSION}-alpine
-
-ENV NODE_ENV=development
-
-RUN npm install -g pnpm@${PNPM_VERSION}
+FROM node:${NODE_VERSION}-alpine AS build
 
 WORKDIR /frontend
 
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 
-RUN pnpm install
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
-# Copy the rest of the application
 COPY . .
+RUN pnpm build
 
-EXPOSE 5173
+FROM nginx:1.27-alpine AS runtime
 
-CMD ["pnpm", "dev", "--host", "0.0.0.0"]
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /frontend/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

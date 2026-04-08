@@ -13,10 +13,8 @@ import {
 } from "lucide-react";
 import VideoMonitor from "../../video/components/VideoMonitor";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  useMultipleTrafficInfo,
-  useMultipleFrameStreams,
-} from "../../../../hooks/useWebSocket";
+import { useMultipleTrafficInfo } from "../../../../hooks/useWebSocket";
+import { useMultipleWebRTCFrameStreams } from "../../../../hooks/useWebRTC";
 import { endpoints } from "../../../../config";
 import { getThresholdForRoad } from "../../../../config/trafficThresholds";
 
@@ -74,7 +72,8 @@ const TrafficDashboard = () => {
 
   // Use WebSocket for traffic data
   const { trafficData, isAnyConnected } = useMultipleTrafficInfo(allowedRoads);
-  const { frameData: frames } = useMultipleFrameStreams(allowedRoads);
+  const { streamData, connections: streamConnections } =
+    useMultipleWebRTCFrameStreams(allowedRoads);
 
   const loading = !isAnyConnected;
 
@@ -146,7 +145,8 @@ const TrafficDashboard = () => {
           {/* Video Monitoring */}
           <div className={localFullscreen ? "col-span-1" : "col-span-3"}>
             <VideoMonitor
-              frameData={frames}
+              streamData={streamData}
+              streamConnections={streamConnections}
               trafficData={trafficData}
               allowedRoads={allowedRoads}
               selectedRoad={selectedRoad}
@@ -159,10 +159,10 @@ const TrafficDashboard = () => {
           {/* Traffic Status Cards */}
           {!localFullscreen && (
             <div className="space-y-4 w-full lg:max-w-xs lg:justify-self-end">
-              <Card className="shadow-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900">
-                <CardHeader className="py-2 bg-transparent border-b border-gray-200 dark:border-gray-700">
-                  <CardTitle className="flex items-center space-x-2 text-base text-gray-900 dark:text-white">
-                    <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <Card className="shadow-lg border border-stone-300 dark:border-zinc-700 bg-white/95 dark:bg-zinc-900/95">
+                <CardHeader className="py-2 bg-transparent border-b border-stone-200 dark:border-zinc-700">
+                  <CardTitle className="flex items-center space-x-2 text-base text-zinc-900 dark:text-zinc-100">
+                    <MapPin className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                     <span>Tình Trạng Giao Thông</span>
                   </CardTitle>
                 </CardHeader>
@@ -202,12 +202,12 @@ const TrafficDashboard = () => {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
                             transition={{ duration: 0.3 }}
-                            className="flex flex-col p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-600 transition-all cursor-pointer hover:shadow-lg space-y-2"
+                            className="flex flex-col p-3 rounded-lg bg-white dark:bg-zinc-800 border border-stone-300 dark:border-zinc-700 hover:bg-purple-50/50 dark:hover:bg-zinc-700 hover:border-purple-300 dark:hover:border-zinc-600 transition-all cursor-pointer hover:shadow-lg space-y-2"
                             onClick={() => setSelectedRoad(road)}
                           >
                             {/* Tên đường và nhãn mật độ */}
                             <div className="flex items-center justify-between">
-                              <span className="font-semibold text-sm text-gray-900 dark:text-white">
+                              <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
                                 {road}
                               </span>
                               <Badge
@@ -215,8 +215,8 @@ const TrafficDashboard = () => {
                                   color === "red"
                                     ? "destructive"
                                     : color === "yellow"
-                                    ? "secondary"
-                                    : "default"
+                                      ? "secondary"
+                                      : "default"
                                 }
                                 className="text-xs h-5 leading-none px-2 py-0"
                               >
@@ -227,10 +227,10 @@ const TrafficDashboard = () => {
                             {/* Thông tin số lượng và tốc độ */}
                             <div className="flex items-center justify-between gap-2">
                               {data && (
-                                <div className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1">
-                                  <Car className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                <div className="text-xs font-medium text-zinc-700 dark:text-zinc-300 flex items-center space-x-1">
+                                  <Car className="h-3 w-3 text-purple-600 dark:text-purple-400" />
                                   <span>{String(data.count_car)}</span>
-                                  <Bike className="h-3 w-3 ml-2 text-green-600 dark:text-green-400" />
+                                  <Bike className="h-3 w-3 ml-2 text-violet-600 dark:text-violet-400" />
                                   <span>{String(data.count_motor)}</span>
                                 </div>
                               )}
@@ -238,8 +238,8 @@ const TrafficDashboard = () => {
                                 variant="outline"
                                 className={`flex items-center space-x-1 text-xs px-2 py-0 h-5 leading-none ${
                                   speedColor === "green"
-                                    ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
-                                    : "bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800"
+                                    ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
+                                    : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800"
                                 }`}
                               >
                                 <Gauge className="h-3 w-3" />

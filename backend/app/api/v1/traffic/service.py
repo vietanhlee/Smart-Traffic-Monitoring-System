@@ -8,7 +8,7 @@ from models.traffic_history import TrafficHistory
 
 class TrafficQueryService:
     @staticmethod
-    def to_chart_point(road_name: str, payload: dict) -> dict:
+    def _to_chart_point(road_name: str, payload: dict) -> dict:
         timestamp = payload.get("timestamp")
         try:
             normalized = str(timestamp).replace("Z", "+00:00") if timestamp else None

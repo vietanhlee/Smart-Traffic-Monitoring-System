@@ -14,30 +14,30 @@ body {
   background:
     radial-gradient(
       circle at 10% 10%,
-      rgba(16, 185, 129, 0.12),
+      rgba(167, 139, 250, 0.12),
       transparent 32%
     ),
     radial-gradient(
       circle at 85% 12%,
-      rgba(14, 116, 144, 0.16),
+      rgba(139, 92, 246, 0.14),
       transparent 30%
     ),
-    linear-gradient(160deg, #f7faf9 0%, #edf4f2 48%, #e6eff5 100%);
+    linear-gradient(160deg, #faf8ff 0%, #f5f3ff 48%, #ede9fe 100%);
 }
 
 .dark .app-shell {
   background:
     radial-gradient(
       circle at 20% 18%,
-      rgba(6, 182, 212, 0.14),
+      rgba(167, 139, 250, 0.15),
       transparent 28%
     ),
     radial-gradient(
       circle at 80% 10%,
-      rgba(249, 115, 22, 0.12),
+      rgba(139, 92, 246, 0.12),
       transparent 28%
     ),
-    linear-gradient(160deg, #0f172a 0%, #102133 55%, #1a2e46 100%);
+    linear-gradient(160deg, #0f0a1a 0%, #1a1329 55%, #26193d 100%);
 }
 
 .app-header {
@@ -76,8 +76,8 @@ body {
   height: 44px;
   border-radius: 14px;
   color: #fff;
-  background: linear-gradient(135deg, #0f766e, #0ea5e9);
-  box-shadow: 0 12px 22px rgba(14, 116, 144, 0.35);
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  box-shadow: 0 12px 22px rgba(124, 58, 237, 0.35);
 }
 
 .app-brand-copy {
@@ -122,20 +122,20 @@ body {
   border: 1px solid transparent;
   font-size: 0.86rem;
   font-weight: 600;
-  color: #114357;
+  color: #3f3f46;
   text-decoration: none;
   transition: all 0.2s ease;
 }
 
 .app-nav-link:hover {
-  background: rgba(2, 132, 199, 0.08);
-  border-color: rgba(14, 116, 144, 0.2);
+  background: rgba(167, 139, 250, 0.12);
+  border-color: rgba(139, 92, 246, 0.2);
 }
 
 .app-nav-link--active {
   color: #fff;
-  background: linear-gradient(135deg, #0f766e, #0284c7);
-  box-shadow: 0 10px 20px rgba(3, 105, 161, 0.35);
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  box-shadow: 0 10px 20px rgba(124, 58, 237, 0.35);
 }
 
 .dark .app-nav-link {
@@ -216,7 +216,7 @@ body {
 }
 
 .app-account-item:hover {
-  background: rgba(15, 118, 110, 0.1);
+  background: rgba(167, 139, 250, 0.12);
 }
 
 .app-account-item--danger {
@@ -234,8 +234,8 @@ body {
 .app-theme-toggle {
   border-radius: 12px;
   border-color: rgba(15, 23, 42, 0.2);
-  background: linear-gradient(145deg, #fef9c3, #fde68a);
-  color: #854d0e;
+  background: linear-gradient(145deg, #f3e8ff, #ede9fe);
+  color: #7c3aed;
 }
 
 .dark .app-theme-toggle {

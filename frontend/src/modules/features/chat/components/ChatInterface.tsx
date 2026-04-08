@@ -9,7 +9,6 @@ import {
   fetchChatHistory,
   clearServerChatHistory,
 } from "@/services/chatHistoryService";
-import { Card, CardContent } from "@/ui/card";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { ScrollArea } from "@/ui/scroll-area";
@@ -23,7 +22,8 @@ import {
   Trash2,
   Copy,
   Check,
-  Download,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -46,7 +46,7 @@ const markdownComponents: Components = {
       {...props}
       target="_blank"
       rel="noopener noreferrer"
-      style={{ color: "#2563eb", textDecoration: "underline" }}
+      style={{ color: "currentColor", textDecoration: "underline" }}
     />
   ),
   code: (props: { inline?: boolean; children?: React.ReactNode }) => {
@@ -55,7 +55,7 @@ const markdownComponents: Components = {
       <code
         {...rest}
         style={{
-          background: "#f3f4f6",
+          background: "rgba(148, 163, 184, 0.2)",
           borderRadius: 4,
           padding: "2px 4px",
           fontSize: 13,
@@ -66,8 +66,8 @@ const markdownComponents: Components = {
     ) : (
       <pre
         style={{
-          background: "#1e293b",
-          color: "#f8fafc",
+          background: "#111827",
+          color: "#e5e7eb",
           borderRadius: 6,
           padding: 12,
           overflowX: "auto",
@@ -95,12 +95,12 @@ const markdownComponents: Components = {
     <blockquote
       {...props}
       style={{
-        borderLeft: "4px solid #2563eb",
-        background: "#f1f5f9",
+        borderLeft: "4px solid rgba(148,163,184,0.8)",
+        background: "rgba(148, 163, 184, 0.12)",
         padding: "8px 16px",
         margin: "8px 0",
         borderRadius: 4,
-        color: "#334155",
+        color: "inherit",
       }}
     />
   ),
@@ -159,6 +159,9 @@ const MessageBubble = memo(
     onCopyMessage: (text: string, id: string) => void;
     onPreviewImage: (url: string) => void;
   }) => {
+    const isUser = msg.user;
+    const hasImage = Boolean(msg.image && msg.image.length > 0);
+
     return (
       <motion.div
         key={msg.id}
@@ -169,91 +172,118 @@ const MessageBubble = memo(
           duration: 0.3,
           ease: "easeOut",
         }}
-        className={`flex ${msg.user ? "justify-end" : "justify-start"}`}
+        className={`flex ${isUser ? "justify-end" : "justify-start"}`}
       >
         <div
-          className={`${
-            msg.image && msg.image.length > 0
-              ? "max-w-[90%] sm:max-w-[60%] md:max-w-[45%]"
-              : "max-w-[60%] sm:max-w-[45%] md:max-w-[35%]"
-          } flex flex-col gap-1 rounded-lg px-4 py-3 shadow-md border text-base transition-all hover:shadow-lg ${
-            msg.user
-              ? "bg-blue-100 dark:bg-blue-900 border-blue-200 dark:border-blue-700 text-right ml-auto"
-              : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-left mr-auto"
+          className={`group flex items-start gap-3 w-full max-w-[min(96%,68rem)] ${
+            isUser ? "flex-row-reverse ml-auto" : "mr-auto"
           }`}
         >
-          <div className="flex items-center gap-2 mb-1">
-            <Avatar className="w-6 h-6">
-              {msg.user ? (
-                <AvatarFallback>
-                  <User className="w-4 h-4" />
-                </AvatarFallback>
-              ) : (
-                <AvatarFallback>
-                  <Bot className="w-4 h-4" />
-                </AvatarFallback>
-              )}
-            </Avatar>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              {msg.user ? "Bạn" : "AI"}
-            </span>
-            <span className="text-xs text-gray-400 ml-2">{msg.time}</span>
-            {msg.typing && (
-              <Loader2 className="w-4 h-4 animate-spin text-blue-400 ml-2" />
+          <Avatar className="w-8 h-8 border border-slate-200 dark:border-slate-700 shrink-0 mt-1">
+            {isUser ? (
+              <AvatarFallback className="bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-100">
+                <User className="w-4 h-4" />
+              </AvatarFallback>
+            ) : (
+              <AvatarFallback className="bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white">
+                <Bot className="w-4 h-4" />
+              </AvatarFallback>
             )}
-          </div>
-          {msg.image && msg.image.length > 0 && (
-            <div className="flex flex-wrap gap-3 mb-2">
-              {msg.image.map((imgData, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  className="w-full sm:max-w-[520px] h-auto hover:opacity-90 transition"
-                  onClick={() => onPreviewImage(imgData)}
-                  title="Xem ảnh lớn"
-                >
-                  <img
-                    src={normalizeImageSource(imgData)}
-                    alt="Ảnh chat"
-                    className="w-full h-full rounded shadow border border-gray-200 dark:border-gray-700 object-contain"
-                    style={{ width: "100%", height: "100%" }}
-                  />
-                </button>
-              ))}
+          </Avatar>
+
+          <div
+            className={`flex min-w-0 flex-col ${isUser ? "items-end" : "items-start"} flex-1`}
+          >
+            <div className="mb-1.5 flex items-center gap-2 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <span>{isUser ? "Bạn" : "Trợ lý"}</span>
+              <span className="text-slate-400 dark:text-slate-500">
+                {msg.time}
+              </span>
+              {msg.typing && (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400 dark:text-slate-500" />
+              )}
             </div>
-          )}
-          {msg.text && (
-            <ReactMarkdown
-              components={markdownComponents}
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeHighlight]}
+
+            <div
+              className={`w-fit max-w-full text-[15px] leading-7 text-left border ${
+                isUser
+                  ? "rounded-[1.4rem] px-4 py-3 bg-gradient-to-br from-violet-500 to-fuchsia-500 border-violet-400/60 text-white shadow-[0_10px_24px_rgba(139,92,246,0.35)]"
+                  : hasImage
+                    ? "rounded-2xl px-3 py-3 bg-white/80 dark:bg-slate-900/55 border-slate-200/70 dark:border-slate-700/70 text-slate-900 dark:text-slate-100 shadow-[0_10px_28px_rgba(15,23,42,0.14)]"
+                    : "rounded-2xl px-4 py-3 bg-white/90 dark:bg-slate-800/70 border-slate-200/80 dark:border-slate-700/70 text-slate-900 dark:text-slate-100 shadow-sm"
+              }`}
             >
-              {msg.text}
-            </ReactMarkdown>
-          )}
-          <div className="flex gap-2 mt-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onCopyMessage(msg.text, msg.id)}
-              title="Sao chép nội dung"
-              className="p-1"
-            >
-              {copiedMessageId === msg.id ? (
-                <Check className="w-4 h-4 text-green-500" />
-              ) : (
-                <Copy className="w-4 h-4" />
+              {msg.image && msg.image.length > 0 && (
+                <div className="flex flex-wrap gap-3 mb-2">
+                  {msg.image.map((imgData, i) => {
+                    const normalizedImage = normalizeImageSource(imgData);
+                    const isRemoteUrl =
+                      normalizedImage.startsWith("http://") ||
+                      normalizedImage.startsWith("https://");
+
+                    return (
+                      <div
+                        key={i}
+                        className="w-full sm:max-w-[620px] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900"
+                      >
+                        <button
+                          type="button"
+                          className="w-full hover:opacity-95 transition"
+                          onClick={() => onPreviewImage(normalizedImage)}
+                          title="Xem ảnh lớn"
+                        >
+                          <img
+                            src={normalizedImage}
+                            alt="Ảnh chat"
+                            className="w-full max-h-[460px] object-contain"
+                            style={{ width: "100%" }}
+                          />
+                        </button>
+                        {isRemoteUrl && (
+                          <div className="px-3 py-2 border-t border-slate-200 dark:border-slate-700">
+                            <a
+                              href={normalizedImage}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-medium text-cyan-700 hover:text-cyan-600 dark:text-cyan-300 dark:hover:text-cyan-200"
+                            >
+                              Mở link ảnh gốc
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               )}
-            </Button>
-            {msg.user && (
-              <Badge variant="outline" className="text-xs">
-                Bạn
-              </Badge>
-            )}
-            {!msg.user && (
-              <Badge variant="secondary" className="text-xs">
-                AI
-              </Badge>
+
+              {msg.text && (
+                <ReactMarkdown
+                  components={markdownComponents}
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeHighlight]}
+                >
+                  {msg.text}
+                </ReactMarkdown>
+              )}
+            </div>
+
+            {!msg.typing && (
+              <div className="flex items-center gap-2 mt-1.5 opacity-70 transition-opacity duration-200 group-hover:opacity-100">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onCopyMessage(msg.text, msg.id)}
+                  title="Sao chép nội dung"
+                  className="h-7 w-7 p-1 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                >
+                  {copiedMessageId === msg.id ? (
+                    <Check className="w-4 h-4 text-emerald-500" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -627,27 +657,6 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
     }
   }, []);
 
-  const exportHistory = useCallback(() => {
-    try {
-      const dataStr = JSON.stringify(messages, null, 2);
-      const blob = new Blob([dataStr], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `chat-history-${new Date()
-        .toISOString()
-        .slice(0, 10)}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      toast.success("Đã xuất lịch sử chat");
-    } catch (error) {
-      console.error("Export error:", error);
-      toast.error("Không thể xuất lịch sử chat");
-    }
-  }, [messages]);
-
   const copyMessage = useCallback(async (text: string, messageId: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -665,31 +674,56 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
 
   // --- COMPONENT RETURN ---
   return (
-    <Card className="h-[calc(100vh-8rem)] min-h-[600px] max-h-[900px] flex flex-col relative shadow-xl">
-      {/* Floating action buttons */}
-      <div className="absolute top-3 right-3 z-10 flex gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={exportHistory}
-          title="Xuất lịch sử chat"
-          className="bg-white/90 dark:bg-gray-900/90 hover:bg-blue-50 dark:hover:bg-blue-900/50 border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-lg transition-all"
-        >
-          <Download className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={clearChat}
-          title="Xóa lịch sử chat"
-          className="bg-white/90 dark:bg-gray-900/90 hover:bg-red-50 dark:hover:bg-red-900/50 border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-lg transition-all"
-        >
-          <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" />
-        </Button>
+    <div className="relative h-screen flex flex-col bg-slate-50 dark:bg-[#0b1020]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_12%,rgba(167,139,250,0.18),transparent_34%),radial-gradient(circle_at_84%_86%,rgba(59,130,246,0.12),transparent_30%)] dark:bg-[radial-gradient(circle_at_15%_12%,rgba(139,92,246,0.24),transparent_34%),radial-gradient(circle_at_84%_86%,rgba(56,189,248,0.12),transparent_30%)]" />
+
+      <div className="relative z-10 border-b border-slate-200/60 dark:border-slate-700/60 bg-white/85 dark:bg-[#0f172a]/85 backdrop-blur-xl">
+        <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white grid place-items-center shadow-sm">
+              <Bot className="w-4.5 h-4.5" />
+            </div>
+            <div>
+              <h1 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100">
+                Trợ lý AI giao thông
+              </h1>
+              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">
+                Trả lời nhanh, có kèm ảnh realtime khi có dữ liệu
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Badge
+              className={
+                isWsConnected
+                  ? "bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800 text-xs"
+                  : "bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800 text-xs"
+              }
+            >
+              {isWsConnected ? (
+                <Wifi className="w-3 h-3 mr-0.5" />
+              ) : (
+                <WifiOff className="w-3 h-3 mr-0.5" />
+              )}
+              {isWsConnected ? "Online" : "Offline"}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearChat}
+              title="Xóa lịch sử chat"
+              className="h-8 w-8 p-0 bg-white/80 dark:bg-slate-800/80 hover:bg-rose-100 dark:hover:bg-rose-900/20 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-400 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        </div>
       </div>
-      <CardContent className="flex-1 p-3 sm:p-6 overflow-hidden">
-        <ScrollArea className="h-full w-full pr-4" ref={scrollAreaRef}>
-          <div className="flex flex-col gap-3 sm:gap-4">
+
+      <div className="relative z-10 flex-1 overflow-hidden bg-gradient-to-b from-slate-50 to-slate-100 dark:from-[#0b1020] dark:to-[#0a1124]">
+        <ScrollArea className="h-full w-full pr-2 sm:pr-4" ref={scrollAreaRef}>
+          <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 py-6 sm:py-8 flex flex-col gap-5">
             <AnimatePresence initial={false}>
               {messages.map((msg) => (
                 <MessageBubble
@@ -705,34 +739,44 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
             <div ref={messagesEndRef} className="h-1" />
           </div>
         </ScrollArea>
-      </CardContent>
-      <form
-        className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50"
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleSendMessage();
-        }}
-      >
-        <Input
-          ref={inputRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Nhập câu hỏi về giao thông..."
-          className="flex-1 h-11 sm:h-12"
-          disabled={isLoading}
-        />
-        <Button
-          type="submit"
-          variant="default"
-          size="icon"
-          disabled={isLoading || !input.trim()}
-          title="Gửi"
-          className="h-11 w-11 sm:h-12 sm:w-12 flex-shrink-0"
+      </div>
+
+      <div className="relative z-10 border-t border-slate-200/60 dark:border-slate-700/60 bg-white/85 dark:bg-[#0f172a]/85 backdrop-blur-xl sticky bottom-0">
+        <form
+          className="mx-auto w-full max-w-6xl px-3 sm:px-4 py-3.5 sm:py-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSendMessage();
+          }}
         >
-          <Send className="w-4 h-4 sm:w-5 sm:h-5" />
-        </Button>
-      </form>
+          <div className="rounded-2xl border border-slate-300/80 dark:border-slate-700/80 bg-white/90 dark:bg-slate-900/75 shadow-[0_10px_30px_rgba(15,23,42,0.12)] px-2 py-2 flex items-end gap-2 sm:gap-3">
+            <div className="flex-1">
+              <Input
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Nhập câu hỏi về giao thông..."
+                className="h-10 sm:h-11 bg-transparent border-0 shadow-none focus-visible:ring-0 placeholder:text-slate-500 dark:placeholder:text-slate-400"
+                disabled={isLoading}
+              />
+              <p className="pl-3 pb-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                Nhấn Enter để gửi nhanh
+              </p>
+            </div>
+            <Button
+              type="submit"
+              variant="default"
+              size="icon"
+              disabled={isLoading || !input.trim()}
+              title="Gửi"
+              className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-gradient-to-br from-violet-500 to-fuchsia-500 hover:from-violet-400 hover:to-fuchsia-400 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all rounded-xl shadow-[0_8px_20px_rgba(139,92,246,0.38)]"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+        </form>
+      </div>
       {/* Simple image preview modal */}
       {previewImage && (
         <motion.div
@@ -754,7 +798,7 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
           />
         </motion.div>
       )}
-    </Card>
+    </div>
   );
 };
 export default ChatInterface;

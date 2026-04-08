@@ -1,21 +1,32 @@
-import dotenv
-from services.chat_services.tool_func import get_frame_road, get_info_road
-from langchain.agents import create_agent
+import logging
+import asyncio
+from contextlib import AbstractContextManager
+from datetime import datetime, timezone
+from typing import Any, TypedDict
+from uuid import uuid4
+
+from services.chat_services.tool_func import get_frame_road, get_info_road, get_roads
+from langchain.agents import AgentState, create_agent
+from langchain.agents.middleware import ModelRequest, before_model, dynamic_prompt
 from langchain.agents.structured_output import ToolStrategy
-from core.config import setting_chatbot
+from langchain.messages import RemoveMessage
+from fastapi.concurrency import run_in_threadpool
+from core.config import setting_chatbot, settings_server
+from core.logging_config import get_named_rotating_file_logger
+from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.checkpoint.memory import InMemorySaver
-from utils.chatbot_utils import TrimMessagesMiddleware
+from langgraph.checkpoint.redis import RedisSaver
+from langgraph.store.postgres import PostgresStore
+from langgraph.runtime import Runtime
 from api.v1 import state
 from schemas.AgentTextResponse import AgentTextResponse
 
 
-prompt = """Bạn là một trợ lý AI chuyên tư vấn giao thông bằng TIẾNG VIỆT.
+_PROMPT = """Bạn là một trợ lý AI chuyên tư vấn giao thông bằng TIẾNG VIỆT.
 
 MỤC TIÊU CHÍNH:
 - Hiểu rõ ý định người dùng, trả lời ngắn gọn, chính xác và có cấu trúc.
-- Khi người dùng yêu cầu thông tin về một hoặc nhiều tuyến đường, BẮT BUỘC phải cung cấp: số lượng và vận tốc trung bình của ô tô (ô tô) và xe máy (xe máy) cho từng tuyến.
-- Nếu người dùng yêu cầu ảnh hoặc khi cần minh hoạ, gọi tool `get_frame_road(road_name)` để lấy ảnh hiện tại.
-- Khi cần dữ liệu thời gian thực (số lượng/tốc độ), gọi tool `get_info_road(road_name)` và sử dụng kết quả trả về.
+- Khi người dùng yêu cầu thông tin về một hoặc nhiều tuyến đường, BẮT BUỘC phải cung cấp: số lượng và vận tốc trung bình của ô tô (ô tô) và xe máy (xe máy) cho từng tuyến và các thông tin về tình trạng giao thông của tuyến đường đó.
 
 ĐỊNH DẠNG TRẢ LỜI (LUÔN BẰNG TIẾNG VIỆT):
 1) Tóm tắt ngắn (1 câu)
@@ -25,7 +36,6 @@ MỤC TIÊU CHÍNH:
     - Số lượng xe máy: A
     - Vận tốc xe máy (trung bình): B km/h
     - Nhận xét tổng quát: (Ví dụ: Thông thoáng / Đông đúc / Tắc nghẽn)
-    - Ghi chú về nguồn dữ liệu: (ví dụ: Lấy từ `get_info_road` tại thời điểm T)
 3) Hành động khuyến nghị (2-3 gợi ý cụ thể, ví dụ chọn lộ trình, thời gian đi, cảnh báo)
 4) Nếu người dùng yêu cầu ảnh: gọi `get_frame_road(road_name)` để hệ thống đính kèm ảnh qua API.
     KHÔNG in URL/base64 hay chuỗi dữ liệu ảnh vào phần `message`.
@@ -40,21 +50,191 @@ LƯU Ý KỸ THUẬT:
 - Trả kết quả có thể parse được bởi chương trình (đặc biệt phần số liệu phải dễ trích xuất).
 - Luôn trả bằng tiếng Việt.
 """
-dotenv.load_dotenv()
+MAX_SHORT_TERM_MESSAGES = settings_server.CHAT_MAX_SHORT_TERM_MESSAGES
+LONG_TERM_MEMORY_LIMIT = settings_server.CHAT_LONG_TERM_MEMORY_LIMIT
+
+
+class ChatAgentContext(TypedDict):
+    user_id: str
+
+
+@before_model
+def _trim_messages_before_model(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+    """Trim old messages in agent state before each model call to bound context growth."""
+    _ = runtime
+    messages = state.get("messages", [])
+    if len(messages) <= MAX_SHORT_TERM_MESSAGES:
+        return None
+
+    keep = list(messages[-MAX_SHORT_TERM_MESSAGES:])
+
+    # Avoid starting the trimmed window with a tool message.
+    while keep and getattr(keep[0], "type", "") == "tool":
+        keep.pop(0)
+
+    if not keep:
+        return None
+
+    return {
+        "messages": [
+            RemoveMessage(id=REMOVE_ALL_MESSAGES),
+            *keep,
+        ]
+    }
+
+
+_agent_logger = get_named_rotating_file_logger(
+    "chat_agent",
+    "chat_agent.log",
+    backup_count=3,
+)
+
+
+def _extract_user_id_from_context(context: Any) -> str | None:
+    if isinstance(context, dict):
+        user_id = context.get("user_id")
+        return str(user_id) if user_id is not None else None
+    user_id = getattr(context, "user_id", None)
+    return str(user_id) if user_id is not None else None
+
+
+def _extract_user_id_from_runtime(runtime: Any) -> str | None:
+    """Resolve user id from runtime context first, then fallback to configurable.thread_id."""
+    user_id = _extract_user_id_from_context(getattr(runtime, "context", None))
+    if user_id:
+        return user_id
+
+    config = getattr(runtime, "config", None)
+    if isinstance(config, dict):
+        configurable = config.get("configurable", {})
+        if isinstance(configurable, dict):
+            thread_id = configurable.get("thread_id")
+            return str(thread_id) if thread_id is not None else None
+
+    return None
+
+
+@dynamic_prompt
+def _inject_long_term_memory_prompt(request: ModelRequest) -> str:
+    """Inject relevant long-term memories into the system prompt using Postgres store."""
+    base_prompt = _PROMPT
+    runtime = request.runtime
+    store = getattr(runtime, "store", None)
+    if store is None:
+        return base_prompt
+
+    user_id = _extract_user_id_from_runtime(runtime)
+    if not user_id:
+        return base_prompt
+
+    messages = request.state.get("messages", [])
+    latest_user = ""
+    for msg in reversed(messages):
+        if getattr(msg, "type", "") == "human":
+            latest_user = str(getattr(msg, "content", "") or "")
+            break
+
+    if not latest_user:
+        return base_prompt
+
+    namespace = ("memories", user_id)
+    try:
+        memories = store.search(namespace, query=latest_user, limit=LONG_TERM_MEMORY_LIMIT)
+    except Exception as exc:
+        _agent_logger.exception("Failed to fetch long-term memories for user_id=%s: %s", user_id, exc)
+        return base_prompt
+
+    if not memories:
+        return base_prompt
+
+    memory_lines: list[str] = []
+    for item in memories:
+        value = getattr(item, "value", {}) or {}
+        text = value.get("data") if isinstance(value, dict) else None
+        if text:
+            memory_lines.append(f"- {text}")
+
+    if not memory_lines:
+        return base_prompt
+
+    return (
+        f"{base_prompt}\n\n"
+        "BỘ NHỚ DÀI HẠN LIÊN QUAN ĐẾN NGƯỜI DÙNG (ưu tiên tham chiếu khi phù hợp):\n"
+        f"{'\n'.join(memory_lines)}"
+    )
 
 class ChatBotAgent:
     def __init__(self):
-        self.prompt = prompt
-        self.llm = setting_chatbot.LLM
-        self.checkpointer = InMemorySaver()
-        self.agent = create_agent(
-            model=self.llm,
-            tools=[get_frame_road, get_info_road],
-            system_prompt=prompt,
+        self._prompt = _PROMPT
+        self._llm = setting_chatbot.LLM
+        self._redis_cm: AbstractContextManager | None = None
+        self._store_cm: AbstractContextManager | None = None
+        self._checkpointer = self._build_checkpointer()
+        self._store = self._build_store()
+        self._agent = create_agent(
+            model=self._llm,
+            tools=[get_frame_road, get_info_road, get_roads],
+            system_prompt=self._prompt,
             response_format=ToolStrategy(AgentTextResponse),
-            middleware=[TrimMessagesMiddleware(max_tokens=2000)],
-            checkpointer=self.checkpointer,
+            middleware=[_trim_messages_before_model, _inject_long_term_memory_prompt],
+            context_schema=ChatAgentContext,
+            checkpointer=self._checkpointer,
+            store=self._store,
         )
+
+    def _build_checkpointer(self):
+        """Prefer Redis for persistent memory; fallback to in-memory if unavailable."""
+        try:
+            redis_url = settings_server.REDIS_URL
+            self._redis_cm = RedisSaver.from_conn_string(redis_url)
+            redis_checkpointer = self._redis_cm.__enter__()
+            redis_checkpointer.setup()
+            _agent_logger.info("Initialized Redis checkpointer for chat memory: %s", redis_url)
+            return redis_checkpointer
+        except Exception as exc:
+            _agent_logger.exception(
+                "Redis checkpointer unavailable, fallback to InMemorySaver: %s",
+                exc,
+            )
+            self._redis_cm = None
+            return InMemorySaver()
+
+    def _build_store(self):
+        """Initialize PostgreSQL long-term memory store; fallback to None if unavailable."""
+        try:
+            db_uri = settings_server.CHAT_MEMORY_DB_URI
+            db_uri = db_uri.replace("postgresql+asyncpg://", "postgresql://")
+            self._store_cm = PostgresStore.from_conn_string(db_uri)
+            store = self._store_cm.__enter__()
+            store.setup()
+            _agent_logger.info("Initialized Postgres long-term memory store: %s", db_uri)
+            return store
+        except Exception as exc:
+            _agent_logger.exception("Postgres long-term memory unavailable: %s", exc)
+            self._store_cm = None
+            return None
+
+    def _remember_user_fact(self, user_id: str, user_input: str) -> None:
+        """Persist explicit user facts to long-term memory store."""
+        if self._store is None:
+            return
+
+        lowered = user_input.lower()
+        trigger_words = ("ghi nhớ", "nhớ rằng", "remember", "tôi tên", "tên tôi là")
+        if not any(word in lowered for word in trigger_words):
+            return
+
+        namespace = ("memories", user_id)
+        payload = {
+            "data": user_input,
+            "source": "user",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        try:
+            self._store.put(namespace, str(uuid4()), payload)
+            _agent_logger.info("Stored long-term memory for user_id=%s", user_id)
+        except Exception as exc:
+            _agent_logger.exception("Failed to store long-term memory for user_id=%s: %s", user_id, exc)
 
     
     async def get_response(self, user_input: str, id: int) -> dict:
@@ -71,9 +251,10 @@ class ChatBotAgent:
         thread_id = f"{id}"
         state.clear_private_images(thread_id)
         config = {"configurable": {"thread_id": thread_id}}
-        response = await self.agent.ainvoke(
+        response = await run_in_threadpool(
+            self._agent.invoke,
             {"messages": [{"role": "user", "content": user_input}]},
-            config = config
+            config,
         )
         structured = response.get("structured_response")
         message = ""
@@ -87,10 +268,29 @@ class ChatBotAgent:
                 message = getattr(last_msg, "content", "") or ""
 
         images = state.pop_private_images(thread_id)
+        self._remember_user_fact(str(id), user_input)
+        _agent_logger.info("raw agent response: %s", response)
         return {
             "message": message,
             "image": images,
         }
+
+    def close(self) -> None:
+        """Release Redis and Postgres context managers if they were initialized."""
+        if self._store_cm is not None:
+            try:
+                self._store_cm.__exit__(None, None, None)
+                _agent_logger.info("Postgres long-term memory store closed")
+            except Exception as exc:
+                _agent_logger.exception("Failed to close Postgres long-term memory store: %s", exc)
+
+        if self._redis_cm is None:
+            return
+        try:
+            self._redis_cm.__exit__(None, None, None)
+            _agent_logger.info("Redis checkpointer closed")
+        except Exception as exc:
+            _agent_logger.exception("Failed to close Redis checkpointer: %s", exc)
 
 
 # ************ TESTING ************

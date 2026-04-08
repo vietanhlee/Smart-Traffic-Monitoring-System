@@ -1,9 +1,8 @@
-version: "3.9"
-
 services:
   database:
-    image: postgres:16
-    container_name: database
+    image: postgres:16-alpine
+    container_name: sts-database
+    restart: unless-stopped
     env_file:
       - ./backend/.env
     environment:
@@ -11,55 +10,120 @@ services:
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
       POSTGRES_DB: ${DATABASE_NAME}
     ports:
-      - "${DATABASE_PORT}:5432"
+      - "${DATABASE_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
-      - mynet
+      - sts-net
 
   redis:
     image: redis:7-alpine
-    container_name: redis
+    container_name: sts-redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     networks:
-      - mynet
+      - sts-net
+
+  minio:
+    image: minio/minio:latest
+    container_name: sts-minio
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O - http://localhost:9000/minio/health/live > /dev/null || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - sts-net
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
       args:
-        DEVICE: cpu
-    container_name: backend
+        DEVICE: ${DEVICE:-cpu}
+    container_name: sts-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_HOST: database
+      DATABASE_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_PUBLIC_ENDPOINT: localhost:9000
+      MINIO_PUBLIC_SCHEME: http
     ports:
       - "8000:8000"
     volumes:
-      - ./backend/app/video_test:/backend/app/video_test
+      - ./backend/app/video_test:/backend/app/video_test:ro
     depends_on:
-      - database
-      - redis
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O - http://localhost:8000/docs > /dev/null || exit 1",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     networks:
-      - mynet
+      - sts-net
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: frontend
+    container_name: sts-frontend
+    restart: unless-stopped
     ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/frontend
-      - /frontend/node_modules # Prevent host node_modules from overriding container's
+      - "5173:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
-      - mynet
+      - sts-net
 
 networks:
-  mynet:
+  sts-net:
+    driver: bridge
+
 volumes:
   pgdata:
-# docker compose up --build
-
+  minio-data:
