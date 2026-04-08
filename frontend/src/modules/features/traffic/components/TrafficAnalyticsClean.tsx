@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { endpoints } from "@/config";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
@@ -47,8 +53,65 @@ interface Props {
 
 const HISTORY_MAX = 1000;
 const HISTORY_FETCH_COUNT = 600;
-const TREND_VISIBLE_WINDOW = 120;
+const TREND_VISIBLE_WINDOW = 60;
 const TREND_MIN_WINDOW = 20;
+
+const formatTrendDateTime = (iso: string) => {
+  const dt = new Date(iso);
+  const date = dt.toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+  const time = dt.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  return `${date} ${time}`;
+};
+
+const formatTrendDateTimeShort = (iso: string) => {
+  const dt = new Date(iso);
+  const date = dt.toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+  });
+  const time = dt.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  return `${date} ${time}`;
+};
+
+const renderTrendTick = ({
+  x,
+  y,
+  payload,
+}: {
+  x: number;
+  y: number;
+  payload?: { value?: string | number };
+}) => {
+  const raw = String(payload?.value ?? "").trim();
+  const [datePart, timePart] = raw.split(" ");
+  const time = timePart ?? raw;
+  const date = datePart ?? "";
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text x={0} y={0} textAnchor="middle" fill="currentColor" fontSize={11}>
+        <tspan x={0} dy="0em">
+          {time}
+        </tspan>
+        <tspan x={0} dy="1.2em" opacity={0.8}>
+          {date}
+        </tspan>
+      </text>
+    </g>
+  );
+};
 
 const toSecondBucketIso = (value?: string) => {
   const dt = value ? new Date(value) : new Date();
@@ -88,15 +151,19 @@ const TrafficAnalytics: React.FC<Props> = ({ trafficData, allowedRoads }) => {
   const trendChartWrapperRef = useRef<HTMLDivElement | null>(null);
   const mergedRef = useRef<InternalPoint[]>([]);
 
-  const publishMerged = () => {
+  const publishMerged = useCallback(() => {
     const cleaned = mergedRef.current
       .sort((a, b) => a._ts.localeCompare(b._ts))
       .slice(-HISTORY_MAX)
-      .map(({ _ts, ...rest }) => rest);
+      .map((item) => {
+        const next = { ...item };
+        delete (next as { _ts?: string })._ts;
+        return next;
+      });
     setTrendsData(cleaned);
-  };
+  }, []);
 
-  const upsertMerged = (road: string, payload: ChartPayload) => {
+  const upsertMerged = useCallback((road: string, payload: ChartPayload) => {
     const ts = toSecondBucketIso(payload.timestamp);
     // Always format from ISO timestamp on client to avoid UTC/local mismatch.
     const time = new Date(ts).toLocaleTimeString("vi-VN", {
@@ -104,6 +171,8 @@ const TrafficAnalytics: React.FC<Props> = ({ trafficData, allowedRoads }) => {
       minute: "2-digit",
       second: "2-digit",
     });
+    const datetimeLabel = formatTrendDateTimeShort(ts);
+    const datetimeFull = formatTrendDateTime(ts);
 
     const countCar = Number(payload.count_car || 0);
     const countMotor = Number(payload.count_motor || 0);
@@ -116,6 +185,8 @@ const TrafficAnalytics: React.FC<Props> = ({ trafficData, allowedRoads }) => {
       mergedRef.current[idx] = {
         ...mergedRef.current[idx],
         time,
+        datetimeLabel,
+        datetimeFull,
         [`${road}_cars`]: countCar,
         [`${road}_motors`]: countMotor,
         [`${road}_car_speed`]: speedCar,
@@ -126,6 +197,8 @@ const TrafficAnalytics: React.FC<Props> = ({ trafficData, allowedRoads }) => {
       mergedRef.current.push({
         _ts: ts,
         time,
+        datetimeLabel,
+        datetimeFull,
         [`${road}_cars`]: countCar,
         [`${road}_motors`]: countMotor,
         [`${road}_car_speed`]: speedCar,
@@ -133,9 +206,9 @@ const TrafficAnalytics: React.FC<Props> = ({ trafficData, allowedRoads }) => {
         [`${road}_total`]: total,
       });
     }
-  };
+  }, []);
 
-  const loadOlderHistory = async () => {
+  const loadOlderHistory = useCallback(async () => {
     if (isLoadingOlder || !hasMoreOlder || allowedRoads.length === 0) {
       return;
     }
@@ -181,7 +254,7 @@ const TrafficAnalytics: React.FC<Props> = ({ trafficData, allowedRoads }) => {
     } finally {
       setIsLoadingOlder(false);
     }
-  };
+  }, [allowedRoads, hasMoreOlder, isLoadingOlder, publishMerged, upsertMerged]);
 
   useEffect(() => {
     let mounted = true;
@@ -244,7 +317,7 @@ const TrafficAnalytics: React.FC<Props> = ({ trafficData, allowedRoads }) => {
       mounted = false;
       Object.values(wsMap).forEach((ws) => ws.close());
     };
-  }, [allowedRoads]);
+  }, [allowedRoads, publishMerged, upsertMerged]);
 
   useEffect(() => {
     setVisibleRoads((prev) => {
@@ -279,22 +352,25 @@ const TrafficAnalytics: React.FC<Props> = ({ trafficData, allowedRoads }) => {
     setTrendEndIndex(end);
   }, [trendsData, followLatest, trendStartIndex, trendEndIndex]);
 
-  const moveWindow = (nextStart: number, windowSize: number) => {
-    if (trendsData.length === 0) return;
+  const moveWindow = useCallback(
+    (nextStart: number, windowSize: number) => {
+      if (trendsData.length === 0) return;
 
-    const normalizedWindow = Math.max(
-      1,
-      Math.min(windowSize, trendsData.length),
-    );
-    const maxStart = Math.max(0, trendsData.length - normalizedWindow);
-    const clampedStart = Math.max(0, Math.min(nextStart, maxStart));
-    const clampedEnd = Math.min(
-      trendsData.length - 1,
-      clampedStart + normalizedWindow - 1,
-    );
-    setTrendStartIndex(clampedStart);
-    setTrendEndIndex(clampedEnd);
-  };
+      const normalizedWindow = Math.max(
+        1,
+        Math.min(windowSize, trendsData.length),
+      );
+      const maxStart = Math.max(0, trendsData.length - normalizedWindow);
+      const clampedStart = Math.max(0, Math.min(nextStart, maxStart));
+      const clampedEnd = Math.min(
+        trendsData.length - 1,
+        clampedStart + normalizedWindow - 1,
+      );
+      setTrendStartIndex(clampedStart);
+      setTrendEndIndex(clampedEnd);
+    },
+    [trendsData.length],
+  );
 
   const handleTrendMouseDown: React.MouseEventHandler<HTMLDivElement> = (
     event,
@@ -359,7 +435,7 @@ const TrafficAnalytics: React.FC<Props> = ({ trafficData, allowedRoads }) => {
       window.removeEventListener("mousemove", onWindowMouseMove);
       window.removeEventListener("mouseup", onWindowMouseUp);
     };
-  }, [isDraggingTrend]);
+  }, [isDraggingTrend, loadOlderHistory, moveWindow]);
 
   const handleTrendWheel: React.WheelEventHandler<HTMLDivElement> = (event) => {
     if (trendsData.length === 0) return;
@@ -779,12 +855,19 @@ const TrafficAnalytics: React.FC<Props> = ({ trafficData, allowedRoads }) => {
                       </defs>
                       <CartesianGrid strokeDasharray="4 4" opacity={0.25} />
                       <XAxis
-                        dataKey="time"
-                        tick={{ fontSize: 11 }}
+                        dataKey="datetimeLabel"
+                        tick={renderTrendTick}
                         tickMargin={8}
+                        height={44}
                       />
                       <YAxis tick={{ fontSize: 11 }} tickMargin={6} />
                       <Tooltip
+                        labelFormatter={(label, payload) => {
+                          const row = payload?.[0]?.payload as
+                            | { datetimeFull?: string }
+                            | undefined;
+                          return row?.datetimeFull || String(label || "");
+                        }}
                         formatter={(value: number, name: string) => [
                           `${Number(value || 0).toFixed(0)} xe`,
                           name,
@@ -800,7 +883,7 @@ const TrafficAnalytics: React.FC<Props> = ({ trafficData, allowedRoads }) => {
                       {visibleRoads.map((road, index) => (
                         <Line
                           key={road}
-                          type="monotone"
+                          type="linear"
                           dataKey={`${road}_total`}
                           stroke={COLORS[index % COLORS.length]}
                           name={road}

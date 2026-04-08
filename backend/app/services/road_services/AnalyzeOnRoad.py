@@ -59,7 +59,12 @@ class AnalyzeOnRoad(AnalyzeOnRoadBase):
         try: 
             if self.frame_output is None:
                 return
-            _, jpeg = cv2.imencode('.jpg', self.frame_output)
+            # Prefer high JPEG quality because this frame is re-encoded again by WebRTC.
+            _, jpeg = cv2.imencode(
+                '.jpg',
+                self.frame_output,
+                [cv2.IMWRITE_JPEG_QUALITY, 98],
+            )
             self.redis.setex(self.frame_key, self.frame_ttl_seconds, jpeg.tobytes())
         except Exception:
             logger.exception("Loi khi cap nhat frame moi nhat cua %s", self.name)
