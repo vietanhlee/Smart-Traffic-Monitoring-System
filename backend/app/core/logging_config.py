@@ -1,8 +1,9 @@
 import logging
-import os
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Optional
+
+from core.config import settings_server
 
 
 _IS_CONFIGURED = False
@@ -18,14 +19,14 @@ def setup_logging(level: Optional[str] = None) -> None:
 	if _IS_CONFIGURED:
 		return
 
-	log_level = (level or os.getenv("LOG_LEVEL", "INFO")).upper()
+	log_level = (level or settings_server.LOG_LEVEL).upper()
 	logs_dir = Path(__file__).resolve().parent.parent / "logs"
 	logs_dir.mkdir(parents=True, exist_ok=True)
 
-	log_file = logs_dir / os.getenv("LOG_FILE_NAME", "app.log")
-	max_bytes = int(os.getenv("LOG_FILE_MAX_BYTES", "5242880"))
-	backup_count = int(os.getenv("LOG_FILE_BACKUP_COUNT", "5"))
-	log_to_console = os.getenv("LOG_TO_CONSOLE", "false").lower() in {"1", "true", "yes", "on"}
+	log_file = logs_dir / settings_server.LOG_FILE_NAME
+	max_bytes = settings_server.LOG_FILE_MAX_BYTES
+	backup_count = settings_server.LOG_FILE_BACKUP_COUNT
+	log_to_console = settings_server.LOG_TO_CONSOLE
 
 	formatter = logging.Formatter(
 		"%(asctime)s | %(levelname)s | %(processName)s | %(name)s | %(message)s"
@@ -50,7 +51,7 @@ def setup_logging(level: Optional[str] = None) -> None:
 	root_logger.addHandler(file_handler)
 
 	# SQLAlchemy logs: ghi vào file log, không in ra console
-	sql_echo_enabled = os.getenv("SQL_ECHO", "false").lower() in {"1", "true", "yes", "on"}
+	sql_echo_enabled = settings_server.SQL_ECHO
 	sql_log_level = logging.INFO if sql_echo_enabled else logging.WARNING
 	for logger_name in ("sqlalchemy", "sqlalchemy.engine", "sqlalchemy.engine.Engine", "sqlalchemy.pool"):
 		sql_logger = logging.getLogger(logger_name)
@@ -74,3 +75,42 @@ def setup_logging(level: Optional[str] = None) -> None:
 
 def get_logger(name: str) -> logging.Logger:
 	return logging.getLogger(name)
+
+
+def get_named_rotating_file_logger(
+	name: str,
+	filename: str,
+	*,
+	level: Optional[str] = None,
+	max_bytes: Optional[int] = None,
+	backup_count: Optional[int] = None,
+) -> logging.Logger:
+	"""Return a dedicated rotating-file logger for a specific module.
+
+	This logger is isolated from root handlers (propagate=False) to avoid duplicate logs.
+	"""
+	logger = logging.getLogger(name)
+	if logger.handlers:
+		return logger
+
+	logs_dir = Path(__file__).resolve().parent.parent / "logs"
+	logs_dir.mkdir(parents=True, exist_ok=True)
+
+	resolved_level = (level or settings_server.LOG_LEVEL).upper()
+	resolved_max_bytes = max_bytes or settings_server.LOG_FILE_MAX_BYTES
+	resolved_backup_count = backup_count or settings_server.LOG_FILE_BACKUP_COUNT
+
+	handler = RotatingFileHandler(
+		filename=logs_dir / filename,
+		maxBytes=resolved_max_bytes,
+		backupCount=resolved_backup_count,
+		encoding="utf-8",
+	)
+	handler.setFormatter(
+		logging.Formatter("%(asctime)s | %(levelname)s | %(name)s | %(message)s")
+	)
+
+	logger.setLevel(resolved_level)
+	logger.addHandler(handler)
+	logger.propagate = False
+	return logger

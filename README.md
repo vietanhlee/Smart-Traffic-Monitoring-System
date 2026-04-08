@@ -22,13 +22,11 @@ An intelligent traffic monitoring system that collects traffic flow and metrics 
 ### Data Flow
 
 1. **Video Processing Pipeline**
-
    - Each video input runs in a separate subprocess
    - YOLO detection → ByteTrack tracking → Metrics computation
    - Each subprocess stores results in shared memory (main process)
 
 2. **Data Serving**
-
    - FastAPI serves processed data via REST/WebSocket
    - React frontend consumes and visualizes data in real-time
 
@@ -206,7 +204,7 @@ pnpm install
 1. From app directory, start the backend server:
 
 ```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uvicorn main:app --reload --host 0.0.0.0 --port 8000 --ws wsproto
 ```
 
 > Server will be available at http://localhost:8000
@@ -335,7 +333,6 @@ The `docker-compose.yml` provides:
 To enable GPU acceleration:
 
 1. Prerequisites:
-
    - NVIDIA Docker runtime installed
    - NVIDIA drivers on host system
 

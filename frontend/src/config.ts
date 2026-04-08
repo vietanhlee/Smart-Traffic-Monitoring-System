@@ -70,6 +70,7 @@ class WebSocketConfig {
   FRAMES_PATH = "/ws/frames";
   INFO_PATH = "/ws/info";
   CHART_PATH = "/ws/chart";
+  WEBRTC_FRAMES_OFFER_PATH = "/webrtc/offer";
 
   // Full WebSocket URLs
   get CHAT_WS() {
@@ -90,6 +91,12 @@ class WebSocketConfig {
 
   chartWs(roadName: string) {
     return `${apiConfig.API_WS_BASE}${this.CHART_PATH}/${encodeURIComponent(
+      roadName,
+    )}`;
+  }
+
+  framesWebRtcOffer(roadName: string) {
+    return `${apiConfig.API_HTTP_BASE}${this.WEBRTC_FRAMES_OFFER_PATH}/${encodeURIComponent(
       roadName,
     )}`;
   }
@@ -129,6 +136,7 @@ export const endpoints = {
     return `${apiConfig.API_HTTP_BASE}/history/${encodeURIComponent(roadName)}?${params.toString()}`;
   },
   framesWs: (roadName: string) => wsConfig.framesWs(roadName),
+  framesWebRtcOffer: (roadName: string) => wsConfig.framesWebRtcOffer(roadName),
   infoWs: (roadName: string) => wsConfig.infoWs(roadName),
   chartWs: (roadName: string) => wsConfig.chartWs(roadName),
   chatWs: wsConfig.CHAT_WS,

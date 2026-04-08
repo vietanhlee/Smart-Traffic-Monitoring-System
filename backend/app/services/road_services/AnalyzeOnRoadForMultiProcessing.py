@@ -9,7 +9,6 @@ from services.road_services.AnalyzeOnRoad import AnalyzeOnRoad
 from core.config import settings_metric_transport, settings_server
 from core.logging_config import get_logger
 
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 logger = get_logger(__name__)
 
 """ Trên Windows, Python multiprocessing sử dụng spawn method thay vì fork (như trên Linux/macOS)
@@ -81,7 +80,7 @@ class AnalyzeOnRoadForMultiprocessing():
     def _create_process_for_road(self, road_name: str) -> Process:
         cfg = self.road_configs[road_name]
         return Process(
-            target=self.run_analyze_process,
+            target=self._run_analyze_process,
             args=(
                 cfg["region"],
                 cfg["path_video"],
@@ -179,7 +178,7 @@ class AnalyzeOnRoadForMultiprocessing():
         self.processes.pop(road_name, None)
         return True
 
-    def start_road(self, road_name: str):
+    def _start_road(self, road_name: str):
         if road_name not in self.road_configs:
             logger.warning("Attempt to start unknown road: %s", road_name)
             return {"ok": False, "detail": "Road not found."}
@@ -203,7 +202,11 @@ class AnalyzeOnRoadForMultiprocessing():
             "pid": process.pid,
         }
 
-    def stop_road(self, road_name: str):
+    def start_road(self, road_name: str):
+        """Public compatibility wrapper for API/admin endpoints."""
+        return self._start_road(road_name)
+
+    def _stop_road(self, road_name: str):
         if road_name not in self.road_configs:
             logger.warning("Attempt to stop unknown road: %s", road_name)
             return {"ok": False, "detail": "Road not found."}
@@ -226,7 +229,11 @@ class AnalyzeOnRoadForMultiprocessing():
             "road_name": road_name,
         }
 
-    def get_roads_runtime_status(self):
+    def stop_road(self, road_name: str):
+        """Public compatibility wrapper for API/admin endpoints."""
+        return self._stop_road(road_name)
+
+    def _get_roads_runtime_status(self):
         status_map = {}
         for road_name in self.road_configs.keys():
             process = self.processes.get(road_name)
@@ -236,6 +243,10 @@ class AnalyzeOnRoadForMultiprocessing():
                 "pid": process.pid if active else None,
             }
         return status_map
+
+    def get_roads_runtime_status(self):
+        """Public compatibility wrapper for API/admin endpoints."""
+        return self._get_roads_runtime_status()
 
     def cleanup_processes(self):
         """Dừng tất cả processes một cách an toàn"""
@@ -258,7 +269,7 @@ class AnalyzeOnRoadForMultiprocessing():
     # hàm bình thường bỏ vào để tổ chức code Có thể gọi thông qua class hoặc instance, nhưng không thể truy cập 
     # trực tiếp vào thuộc tính của class hay instance, trừ khi được truyền vào.
     @staticmethod 
-    def run_analyze_process(region, path_video, meter_per_pixel, redis_url, show):
+    def _run_analyze_process(region, path_video, meter_per_pixel, redis_url, show):
         """Hàm chạy trong process riêng, làm hàm kích hoạt cho Multiprocessing. Đặt hàm này là static method vì
         để tránh việc sử dụng multiprocessing bị lỗi do nó sẽ picke các biến liên quan đến hàm để chuyển dữ liệu
         sang process con, đặc biệt là self chứa các tool của YOLO và các biến khác không thể picke được do đó 
@@ -292,7 +303,7 @@ class AnalyzeOnRoadForMultiprocessing():
             logger.exception("Worker failed for video=%s error=%s", path_video, e)
 
     @staticmethod
-    def run_log_process(names, redis_url):
+    def _run_log_process(names, redis_url):
         """In log dữ liệu giao thông bằng Redis để theo dõi nhanh runtime."""
         redis_client = redis.Redis.from_url(redis_url, decode_responses=True)
         yellow = "\033[93m"
@@ -330,20 +341,20 @@ class AnalyzeOnRoadForMultiprocessing():
         freeze_support()
 
         for road_name in self.road_configs.keys():
-            self.start_road(road_name)
+            self._start_road(road_name)
         
         if self.show_log and (self.log_process is None or not self.log_process.is_alive()):
             self.log_process = Process(
-                target=self.run_log_process,
+                target=self._run_log_process,
                 args=(self.names, settings_server.REDIS_URL),
                 name="traffic-log-process",
             )
             self.log_process.start()
 
         if self.is_join_processes:
-            self.join_process()
+            self._join_process()
     
-    def join_process(self):   
+    def _join_process(self):   
         """ Hàm để join các process với timeout""" 
         for road_name, p in list(self.processes.items()):
             if not p.is_alive():
@@ -354,6 +365,10 @@ class AnalyzeOnRoadForMultiprocessing():
                 logger.warning("Process did not stop in time, force kill road=%s pid=%s", road_name, p.pid)
                 self._ensure_process_stopped(road_name, timeout=2)
         logger.info("join_process completed")
+
+    def join_process(self):
+        """Public compatibility wrapper for script callers."""
+        self._join_process()
     
     def get_frame_road(self, road_name : str):
         data = b""

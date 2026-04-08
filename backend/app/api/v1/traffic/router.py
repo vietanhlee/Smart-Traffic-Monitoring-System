@@ -1,8 +1,13 @@
 import asyncio
 from datetime import datetime
 
+import cv2
+import numpy as np
+from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
+from av import VideoFrame
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import Response
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api import v1
@@ -13,6 +18,8 @@ from api.v1.traffic.schemas import (
     TrafficHistoryPoint,
     TrafficHistoryResponse,
     TrafficInfoResponse,
+    WebRTCSessionDescriptionRequest,
+    WebRTCSessionDescriptionResponse,
 )
 from api.v1.traffic.service import TrafficQueryService
 from services.road_services.AnalyzeOnRoadForMultiProcessing import AnalyzeOnRoadForMultiprocessing
@@ -23,9 +30,52 @@ from core.logging_config import get_logger
 
 router = APIRouter()
 logger = get_logger(__name__)
+active_peer_connections: set[RTCPeerConnection] = set()
+
+
+class RoadVideoStreamTrack(VideoStreamTrack):
+    """WebRTC track that converts JPEG bytes from Redis into video frames."""
+
+    def __init__(self, analyzer: AnalyzeOnRoadForMultiprocessing, road_name: str):
+        super().__init__()
+        self.analyzer = analyzer
+        self.road_name = road_name
+        self._fallback_frame = np.zeros((360, 640, 3), dtype=np.uint8)
+        cv2.putText(
+            self._fallback_frame,
+            f"No frame: {road_name}",
+            (20, 180),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.8,
+            (255, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
+
+    async def recv(self) -> VideoFrame:
+        pts, time_base = await self.next_timestamp()
+        frame_rgb = self._fallback_frame
+
+        frame_bytes = await run_in_threadpool(self.analyzer.get_frame_road, self.road_name)
+        if frame_bytes:
+            encoded = np.frombuffer(frame_bytes, dtype=np.uint8)
+            decoded = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
+            if decoded is not None:
+                frame_rgb = cv2.cvtColor(decoded, cv2.COLOR_BGR2RGB)
+
+        video_frame = VideoFrame.from_ndarray(frame_rgb, format="rgb24")
+        video_frame.pts = pts
+        video_frame.time_base = time_base
+        return video_frame
+
+
+async def _close_peer_connection(pc: RTCPeerConnection) -> None:
+    active_peer_connections.discard(pc)
+    if pc.connectionState != "closed":
+        await pc.close()
 
 @router.on_event("startup")
-async def startup_traffic_runtime() -> None:
+async def _startup_traffic_runtime() -> None:
     try:
         if v1.state.analyzer is None:
             v1.state.analyzer = AnalyzeOnRoadForMultiprocessing()
@@ -44,6 +94,63 @@ async def startup_traffic_runtime() -> None:
         logger.exception("Traffic startup degraded (Redis unavailable): %s", exc)
         v1.state.analyzer = None
         v1.state.traffic_history_worker = None
+
+
+@router.on_event("shutdown")
+async def _shutdown_webrtc_connections() -> None:
+    for pc in list(active_peer_connections):
+        await _close_peer_connection(pc)
+
+
+@router.post(
+    "/webrtc/offer/{road_name}",
+    response_model=WebRTCSessionDescriptionResponse,
+)
+async def webrtc_offer(
+    road_name: str,
+    payload: WebRTCSessionDescriptionRequest,
+    current_user=Depends(get_current_user),
+):
+    _ = current_user
+    analyzer = v1.state.analyzer
+    if analyzer is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Traffic service unavailable (Redis disconnected).",
+        )
+
+    if road_name not in analyzer.names:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Road not found or currently inactive.",
+        )
+
+    pc = RTCPeerConnection()
+    active_peer_connections.add(pc)
+
+    @pc.on("connectionstatechange")
+    async def _on_connectionstatechange() -> None:
+        logger.info("WebRTC state road=%s state=%s", road_name, pc.connectionState)
+        if pc.connectionState in {"failed", "closed", "disconnected"}:
+            await _close_peer_connection(pc)
+
+    video_track = RoadVideoStreamTrack(analyzer=analyzer, road_name=road_name)
+    pc.addTrack(video_track)
+
+    try:
+        offer = RTCSessionDescription(sdp=payload.sdp, type=payload.type)
+        await pc.setRemoteDescription(offer)
+        answer = await pc.createAnswer()
+        await pc.setLocalDescription(answer)
+
+        local = pc.localDescription
+        if local is None:
+            raise RuntimeError("Unable to create local WebRTC description")
+
+        return WebRTCSessionDescriptionResponse(sdp=local.sdp, type=local.type)
+    except Exception:
+        await _close_peer_connection(pc)
+        raise
 
 
 @router.get("/roads_name", response_model=RoadsResponse)
@@ -114,7 +221,7 @@ async def websocket_frames(
     logger.info("frames websocket connected road=%s", road_name)
     try:
         while True:
-            frame_bytes = await asyncio.to_thread(analyzer.get_frame_road, road_name)
+            frame_bytes = await run_in_threadpool(analyzer.get_frame_road, road_name)
             if frame_bytes:
                 await websocket.send_bytes(frame_bytes)
             await asyncio.sleep(1 / 12)
@@ -142,7 +249,7 @@ async def websocket_info(
     logger.info("info websocket connected road=%s", road_name)
     try:
         while True:
-            data = await asyncio.to_thread(analyzer.get_info_road, road_name)
+            data = await run_in_threadpool(analyzer.get_info_road, road_name)
             try:
                 enriched = enrich_info_with_thresholds(data, road_name)
             except Exception:
@@ -176,12 +283,12 @@ async def websocket_chart(websocket: WebSocket, road_name: str):
     last_timestamp = ""
     try:
         while True:
-            payload = await asyncio.to_thread(analyzer.get_info_road, road_name)
+            payload = await run_in_threadpool(analyzer.get_info_road, road_name)
             if payload:
                 current_ts = str(payload.get("timestamp", ""))
                 if current_ts and current_ts != last_timestamp:
                     last_timestamp = current_ts
-                    point = TrafficQueryService.to_chart_point(road_name, payload)
+                    point = TrafficQueryService._to_chart_point(road_name, payload)
                     await websocket.send_json(ChartPointResponse(**point).model_dump(mode="json"))
             await asyncio.sleep(0.3)
     except WebSocketDisconnect:
@@ -194,7 +301,7 @@ async def websocket_chart(websocket: WebSocket, road_name: str):
 
 @router.get("/info/{road_name}", response_model=TrafficInfoResponse)
 async def get_info_road(road_name: str, analyzer=Depends(get_traffic_runtime)):
-    data = await asyncio.to_thread(analyzer.get_info_road, road_name)
+    data = await run_in_threadpool(analyzer.get_info_road, road_name)
     if data is None:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Traffic data unavailable")
 
@@ -207,7 +314,7 @@ async def get_info_road(road_name: str, analyzer=Depends(get_traffic_runtime)):
 
 @router.get("/frames/{road_name}")
 async def get_frame_road(road_name: str, current_user=Depends(get_current_user), analyzer=Depends(get_traffic_runtime)):
-    frame_bytes = await asyncio.to_thread(analyzer.get_frame_road, road_name)
+    frame_bytes = await run_in_threadpool(analyzer.get_frame_road, road_name)
     if frame_bytes is None:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Frame unavailable")
     return Response(content=frame_bytes, media_type="image/jpeg")
@@ -215,7 +322,7 @@ async def get_frame_road(road_name: str, current_user=Depends(get_current_user),
 
 @router.get("/frames_no_auth/{road_name}")
 async def get_frame_road_no_auth(road_name: str, analyzer=Depends(get_traffic_runtime)):
-    frame_bytes = await asyncio.to_thread(analyzer.get_frame_road, road_name)
+    frame_bytes = await run_in_threadpool(analyzer.get_frame_road, road_name)
     if frame_bytes is None:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Frame unavailable")
     return Response(content=frame_bytes, media_type="image/jpeg")

@@ -10,7 +10,7 @@ class ChatMessageCreate(BaseModel):
     """Schema for creating a new chat message"""
     message: str = Field(..., min_length=1, max_length=10000)
     is_user: bool = Field(default=True)
-    images: Optional[List[str]] = Field(default=None)
+    images: Optional[List[str]] = Field(default=None, description="Danh sách URL ảnh (MinIO/presigned URL)")
     extra_data: Optional[Dict[str, Any]] = Field(default=None)
 
 

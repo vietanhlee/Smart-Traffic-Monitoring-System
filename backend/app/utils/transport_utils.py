@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 import time
 from typing import Any, Dict, Optional, Sequence
-from core.config import get_threshold_for_road
+from core.config import TRAFFIC_THRESHOLDS, DEFAULT_THRESHOLD, RoadThreshold
 
 
 logger = logging.getLogger(__name__)
@@ -95,6 +95,9 @@ def log(names: Sequence[str], shared_data: dict) -> str:
         print("Kết thúc log.")
         
     
+
+def get_threshold_for_road(road_name: str) -> RoadThreshold:
+    return TRAFFIC_THRESHOLDS.get(road_name, DEFAULT_THRESHOLD)
 
 def enrich_info_with_thresholds(data: Dict[str, Any], road_name: str) -> Dict[str, Any]:
     """Attach density_status, speed_status and thresholds to a data dict when possible.

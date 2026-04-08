@@ -30,7 +30,7 @@ class ChatMessage(Base):
     message = Column(Text, nullable=False)
     is_user = Column(Boolean, default=True, nullable=False)  # True = user, False = AI
     
-    # Ảnh đính kèm (JSON array of URLs)
+    # Ảnh đính kèm (JSON array of MinIO/presigned URLs)
     images = Column(JSON, nullable=True)
     # Example: ["http://localhost:8000/api/v1/roads/road1/frames/latest", ...]
     

@@ -6,15 +6,14 @@ from types import FrameType
 from fastapi import FastAPI
 from api import v1
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.responses import RedirectResponse
+from fastapi.responses import RedirectResponse
 from db.base import create_tables
-from core.config import settings_network
+from core.config import settings_network, settings_server
 from core.logging_config import get_logger, setup_logging
 
-os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
-os.environ["OPENCV_VIDEOIO_PRIORITY_DSHOW"] = "1"
-
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+os.environ.setdefault("OPENCV_VIDEOIO_PRIORITY_MSMF", settings_server.OPENCV_VIDEOIO_PRIORITY_MSMF)
+os.environ.setdefault("OPENCV_VIDEOIO_PRIORITY_DSHOW", settings_server.OPENCV_VIDEOIO_PRIORITY_DSHOW)
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", settings_server.KMP_DUPLICATE_LIB_OK)
 
 setup_logging()
 logger = get_logger(__name__)
@@ -35,6 +34,11 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         logger.info("Shutting down application resources...")
+        if getattr(v1.state, "agent", None):
+            try:
+                v1.state.agent.close()
+            except Exception:
+                logger.exception("Failed to close chat agent resources")
         if v1.state.traffic_history_worker:
             await v1.state.traffic_history_worker.stop()
         if v1.state.analyzer:
@@ -73,7 +77,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def signal_handler(signum: int, frame: FrameType | None):
+def _signal_handler(signum: int, frame: FrameType | None):
     """Xử lý Ctrl+C"""
     _ = frame
     logger.warning("Received signal %s. Stopping server...", signum)
@@ -81,8 +85,8 @@ def signal_handler(signum: int, frame: FrameType | None):
         v1.state.analyzer.cleanup_processes()
     sys.exit(0)
 
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGINT, _signal_handler)
+signal.signal(signal.SIGTERM, _signal_handler)
 
 @app.get(
     path='/',

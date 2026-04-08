@@ -45,3 +45,13 @@ class ChartPointResponse(BaseModel):
     speed_car: float
     speed_motor: float
     total: int
+
+
+class WebRTCSessionDescriptionRequest(BaseModel):
+    sdp: str
+    type: str
+
+
+class WebRTCSessionDescriptionResponse(BaseModel):
+    sdp: str
+    type: str

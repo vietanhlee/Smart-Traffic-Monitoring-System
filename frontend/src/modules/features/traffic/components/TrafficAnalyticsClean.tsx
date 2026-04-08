@@ -22,7 +22,14 @@ import {
   PieChart as PieChartIcon,
   LineChart as LineChartIcon,
   AlertCircle,
+  ChevronDown,
+  Sparkles,
+  Check,
 } from "lucide-react";
+import { Button } from "@/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover";
+import { Checkbox } from "@/ui/checkbox";
+import { Badge } from "@/ui/badge";
 
 type VehicleData = {
   count_car: number;
@@ -446,7 +453,7 @@ const TrafficAnalytics: React.FC<Props> = ({ trafficData, allowedRoads }) => {
     [allowedRoads, trafficData],
   );
 
-  const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"];
+  const COLORS = ["#0EA5E9", "#06B6D4", "#22C55E", "#F59E0B", "#EF4444"];
 
   const trendWindowData = useMemo(() => {
     if (trendsData.length === 0) return [];
@@ -466,14 +473,20 @@ const TrafficAnalytics: React.FC<Props> = ({ trafficData, allowedRoads }) => {
   );
 
   const hasData = Object.keys(trafficData).length > 0;
+  const selectedRoadsLabel =
+    visibleRoads.length === 0
+      ? "Chưa chọn tuyến"
+      : visibleRoads.length === allowedRoads.length
+        ? `Tất cả tuyến (${allowedRoads.length})`
+        : `${visibleRoads.length} tuyến đã chọn`;
 
   return (
     <div className="space-y-6">
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto">
+        <TabsList className="grid w-full grid-cols-3 max-w-xl mx-auto rounded-2xl bg-white/70 p-1.5 shadow-md backdrop-blur dark:bg-slate-900/70">
           <TabsTrigger
             value="overview"
-            className="flex items-center space-x-2 text-xs sm:text-sm"
+            className="flex items-center space-x-2 rounded-xl text-xs sm:text-sm"
           >
             <BarChart3 className="h-4 w-4" />
             <span className="hidden sm:inline">Tổng quan</span>
@@ -481,7 +494,7 @@ const TrafficAnalytics: React.FC<Props> = ({ trafficData, allowedRoads }) => {
           </TabsTrigger>
           <TabsTrigger
             value="trends"
-            className="flex items-center space-x-2 text-xs sm:text-sm"
+            className="flex items-center space-x-2 rounded-xl text-xs sm:text-sm"
           >
             <LineChartIcon className="h-4 w-4" />
             <span className="hidden sm:inline">Xu hướng</span>
@@ -489,7 +502,7 @@ const TrafficAnalytics: React.FC<Props> = ({ trafficData, allowedRoads }) => {
           </TabsTrigger>
           <TabsTrigger
             value="distribution"
-            className="flex items-center space-x-2 text-xs sm:text-sm"
+            className="flex items-center space-x-2 rounded-xl text-xs sm:text-sm"
           >
             <PieChartIcon className="h-4 w-4" />
             <span className="hidden sm:inline">Phân bố</span>
@@ -610,58 +623,106 @@ const TrafficAnalytics: React.FC<Props> = ({ trafficData, allowedRoads }) => {
         </TabsContent>
 
         <TabsContent value="trends">
-          <Card className="shadow-lg">
+          <Card className="overflow-hidden border-0 bg-gradient-to-br from-cyan-50/90 via-white to-emerald-50/80 shadow-xl dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
             <CardHeader className="pb-4">
               <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <CardTitle className="text-base sm:text-lg">
-                    Xu hướng giao thông theo thời gian
-                  </CardTitle>
-                  <button
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                      <Sparkles className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                      Xu hướng giao thông theo thời gian
+                    </CardTitle>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      Kéo ngang để duyệt lịch sử, cuộn chuột để phóng to hoặc
+                      thu nhỏ khung thời gian.
+                    </p>
+                  </div>
+                  <Button
                     type="button"
+                    variant="outline"
                     onClick={moveToLatest}
-                    className="rounded-md border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                    className="border-cyan-300 bg-white/80 text-cyan-800 hover:bg-cyan-50 dark:border-cyan-800 dark:bg-slate-900/70 dark:text-cyan-300 dark:hover:bg-slate-800"
                   >
                     Về mới nhất
-                  </button>
+                  </Button>
                 </div>
 
-                <div className="rounded-md border border-gray-200 p-3 dark:border-gray-700">
-                  <div className="mb-2 flex items-center gap-2">
-                    <input
-                      id="toggle-all-roads"
-                      type="checkbox"
-                      checked={allRoadsSelected}
-                      onChange={toggleAllRoads}
-                      className="h-4 w-4"
-                    />
-                    <label
-                      htmlFor="toggle-all-roads"
-                      className="text-sm font-medium"
+                <div className="flex flex-wrap items-center gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 min-w-[220px] justify-between rounded-xl border-slate-300 bg-white/90 text-slate-800 hover:bg-white dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100 dark:hover:bg-slate-900"
+                      >
+                        <span className="truncate text-sm font-semibold">
+                          {selectedRoadsLabel}
+                        </span>
+                        <ChevronDown className="h-4 w-4 opacity-70" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="start"
+                      className="w-[300px] rounded-xl border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/95"
                     >
-                      Hiển thị tất cả
-                    </label>
-                  </div>
-                  <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-3">
-                    {allowedRoads.map((road) => {
-                      const id = `toggle-road-${road}`;
-                      return (
-                        <label
-                          key={road}
-                          htmlFor={id}
-                          className="flex items-center gap-2 text-sm"
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-sm font-semibold">
+                          Chọn tuyến đường
+                        </span>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={toggleAllRoads}
+                          className="h-7 px-2 text-xs"
                         >
-                          <input
-                            id={id}
-                            type="checkbox"
-                            checked={visibleRoads.includes(road)}
-                            onChange={() => toggleRoad(road)}
-                            className="h-4 w-4"
-                          />
-                          <span>{road}</span>
-                        </label>
-                      );
-                    })}
+                          {allRoadsSelected ? "Bỏ chọn" : "Chọn tất cả"}
+                        </Button>
+                      </div>
+                      <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
+                        {allowedRoads.map((road, index) => (
+                          <label
+                            key={road}
+                            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
+                          >
+                            <Checkbox
+                              checked={visibleRoads.includes(road)}
+                              onCheckedChange={() => toggleRoad(road)}
+                            />
+                            <span
+                              className="inline-flex h-2.5 w-2.5 rounded-full"
+                              style={{
+                                backgroundColor: COLORS[index % COLORS.length],
+                              }}
+                            />
+                            <span className="flex-1 truncate">{road}</span>
+                            {visibleRoads.includes(road) && (
+                              <Check className="h-3.5 w-3.5 text-cyan-600" />
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+
+                  <div className="flex flex-wrap gap-1">
+                    {visibleRoads.slice(0, 3).map((road) => (
+                      <Badge
+                        key={road}
+                        variant="outline"
+                        className="border-cyan-300 bg-cyan-50 text-cyan-900 dark:border-cyan-800 dark:bg-cyan-950/30 dark:text-cyan-200"
+                      >
+                        {road}
+                      </Badge>
+                    ))}
+                    {visibleRoads.length > 3 && (
+                      <Badge
+                        variant="outline"
+                        className="border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                      >
+                        +{visibleRoads.length - 3} tuyến
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </div>
@@ -674,7 +735,7 @@ const TrafficAnalytics: React.FC<Props> = ({ trafficData, allowedRoads }) => {
               ) : (
                 <div
                   ref={trendChartWrapperRef}
-                  className={`trend-pan-area select-none rounded-md ${
+                  className={`trend-pan-area select-none rounded-xl border border-cyan-100 bg-white/80 p-2 shadow-inner dark:border-slate-700 dark:bg-slate-900/60 ${
                     isDraggingTrend
                       ? "cursor-grabbing [&_*]:cursor-grabbing"
                       : "cursor-grab [&_*]:cursor-grab"
@@ -691,29 +752,65 @@ const TrafficAnalytics: React.FC<Props> = ({ trafficData, allowedRoads }) => {
                     <LineChart
                       data={trendWindowData}
                       onMouseUp={handleTrendMouseUp}
+                      margin={{ top: 12, right: 12, left: 0, bottom: 4 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                      <XAxis dataKey="time" tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} />
+                      <defs>
+                        {visibleRoads.map((road, index) => (
+                          <linearGradient
+                            key={`grad-${road}`}
+                            id={`line-glow-${index}`}
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                          >
+                            <stop
+                              offset="5%"
+                              stopColor={COLORS[index % COLORS.length]}
+                              stopOpacity={0.3}
+                            />
+                            <stop
+                              offset="95%"
+                              stopColor={COLORS[index % COLORS.length]}
+                              stopOpacity={0.02}
+                            />
+                          </linearGradient>
+                        ))}
+                      </defs>
+                      <CartesianGrid strokeDasharray="4 4" opacity={0.25} />
+                      <XAxis
+                        dataKey="time"
+                        tick={{ fontSize: 11 }}
+                        tickMargin={8}
+                      />
+                      <YAxis tick={{ fontSize: 11 }} tickMargin={6} />
                       <Tooltip
+                        formatter={(value: number, name: string) => [
+                          `${Number(value || 0).toFixed(0)} xe`,
+                          name,
+                        ]}
                         contentStyle={{
-                          backgroundColor: "rgba(255,255,255,0.95)",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: 8,
+                          backgroundColor: "rgba(255,255,255,0.98)",
+                          border: "1px solid #bae6fd",
+                          borderRadius: 12,
+                          boxShadow: "0 12px 24px rgba(2, 132, 199, 0.15)",
                         }}
                       />
-                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
                       {visibleRoads.map((road, index) => (
                         <Line
                           key={road}
-                          type="linear"
+                          type="monotone"
                           dataKey={`${road}_total`}
                           stroke={COLORS[index % COLORS.length]}
                           name={road}
                           connectNulls={true}
-                          strokeWidth={2}
+                          strokeWidth={2.6}
                           dot={false}
-                          activeDot={{ r: 5 }}
+                          activeDot={{
+                            r: 5,
+                            fill: COLORS[index % COLORS.length],
+                          }}
                         />
                       ))}
                     </LineChart>

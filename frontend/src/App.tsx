@@ -42,9 +42,9 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { to: "/home", label: "Trang Chu", icon: Home },
-  { to: "/analys", label: "Phan Tich", icon: BarChart3 },
-  { to: "/chat", label: "Tro Ly AI", icon: Bot },
+  { to: "/home", label: "Trang Chủ", icon: Home },
+  { to: "/analys", label: "Phân Tích", icon: BarChart3 },
+  { to: "/chat", label: "Trợ Lý AI", icon: Bot },
 ];
 
 export default function App() {
@@ -139,7 +139,7 @@ function AppContent() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <a href="/home" className="app-brand" title="Trang chu">
+        <a href="/home" className="app-brand" title="Trang chủ">
           <span className="app-logo">
             <Car className="h-6 w-6" />
           </span>
