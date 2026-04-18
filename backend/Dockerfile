@@ -18,12 +18,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements_cpu.txt requirements_gpu.txt ./
 
 RUN pip install --upgrade pip
+RUN pip install uv 
 
 # Cài requirements phù hợp theo DEVICE
 RUN if [ "$DEVICE" = "gpu" ]; then \
-        pip install --no-cache-dir -r requirements_gpu.txt; \
+        uv pip install --no-cache-dir -r requirements_gpu.txt; \
     else \
-        pip install --no-cache-dir -r requirements_cpu.txt; \
+        uv pip install --no-cache-dir -r requirements_cpu.txt; \
     fi
 
 COPY . .
