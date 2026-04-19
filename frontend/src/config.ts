@@ -53,11 +53,11 @@ class AuthConfig {
 // ============================================
 class UserConfig {
   get PROFILE_URL() {
-    return `${apiConfig.API_HTTP_BASE}/users/profile`;
+    return `${apiConfig.API_HTTP_BASE}/user/profile`;
   }
 
   get PASSWORD_URL() {
-    return `${apiConfig.API_HTTP_BASE}/users/password`;
+    return `${apiConfig.API_HTTP_BASE}/user/password`;
   }
 }
 
@@ -66,11 +66,12 @@ class UserConfig {
 // ============================================
 class WebSocketConfig {
   // WebSocket Paths
-  CHAT_PATH = "/ws/chat";
-  FRAMES_PATH = "/ws/frames";
-  INFO_PATH = "/ws/info";
-  CHART_PATH = "/ws/chart";
-  WEBRTC_FRAMES_OFFER_PATH = "/webrtc/offer";
+  CHAT_PATH = "/chatbot/ws/chat";
+  FRAMES_PATH = "/road/ws/frames";
+  INFO_PATH = "/road/ws/info";
+  CHART_PATH = "/road/ws/chart";
+  ADMIN_RESOURCES_PATH = "/admin/ws/resources";
+  WEBRTC_FRAMES_OFFER_PATH = "/road/webrtc/offer";
 
   // Full WebSocket URLs
   get CHAT_WS() {
@@ -96,7 +97,7 @@ class WebSocketConfig {
   }
 
   framesWebRtcOffer(roadName: string) {
-    return `${apiConfig.API_HTTP_BASE}${this.WEBRTC_FRAMES_OFFER_PATH}/${encodeURIComponent(
+    return `${apiConfig.API_HTTP_BASE}/road/webrtc/offer/${encodeURIComponent(
       roadName,
     )}`;
   }
@@ -127,19 +128,39 @@ export const API_HTTP_BASE = apiConfig.API_HTTP_BASE;
 export const API_WS_BASE = apiConfig.API_WS_BASE;
 
 export const endpoints = {
-  roadNames: `${apiConfig.API_HTTP_BASE}/roads_name`,
+  // Road Monitoring
+  roadNames: `${apiConfig.API_HTTP_BASE}/road/roads_name`,
   roadHistory: (roadName: string, count = 60, startTime?: string) => {
     const params = new URLSearchParams({ count: String(count) });
     if (startTime) {
       params.set("start_time", startTime);
     }
-    return `${apiConfig.API_HTTP_BASE}/history/${encodeURIComponent(roadName)}?${params.toString()}`;
+    return `${apiConfig.API_HTTP_BASE}/road/history/${encodeURIComponent(roadName)}?${params.toString()}`;
   },
   framesWs: (roadName: string) => wsConfig.framesWs(roadName),
   framesWebRtcOffer: (roadName: string) => wsConfig.framesWebRtcOffer(roadName),
   infoWs: (roadName: string) => wsConfig.infoWs(roadName),
   chartWs: (roadName: string) => wsConfig.chartWs(roadName),
+  adminResourcesWs: () =>
+    `${apiConfig.API_WS_BASE}${wsConfig.ADMIN_RESOURCES_PATH}`,
   chatWs: wsConfig.CHAT_WS,
+  getRoadInfo: (roadName: string) =>
+    `${apiConfig.API_HTTP_BASE}/road/info/${encodeURIComponent(roadName)}`,
+  getFrameNoAuth: (roadName: string) =>
+    `${apiConfig.API_HTTP_BASE}/road/frames_no_auth/${encodeURIComponent(roadName)}`,
+
+  // Chatbot
+  chatbot: `${apiConfig.API_HTTP_BASE}/chatbot/chat`,
+  chatbotNoAuth: `${apiConfig.API_HTTP_BASE}/chatbot/chat_no_auth`,
+
+  // Chat History
+  chatHistoryMessages: `${apiConfig.API_HTTP_BASE}/chat-history/messages`,
+  chatHistoryMessage: (messageId: number | string) =>
+    `${apiConfig.API_HTTP_BASE}/chat-history/messages/${messageId}`,
+  chatHistoryCount: `${apiConfig.API_HTTP_BASE}/chat-history/messages/count`,
+
+  // Admin
+  adminResources: `${apiConfig.API_HTTP_BASE}/admin/resources`,
   adminTrafficStatus: `${apiConfig.API_HTTP_BASE}/admin/traffic/status`,
   adminStopRoadProcess: (roadName: string) =>
     `${apiConfig.API_HTTP_BASE}/admin/traffic/roads/${encodeURIComponent(roadName)}/stop`,

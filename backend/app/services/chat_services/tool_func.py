@@ -5,7 +5,7 @@ from typing import Annotated
 from api.v1 import state
 from utils.transport_utils import enrich_info_with_thresholds
 from utils.minio_image_store import minio_image_store
-
+from utils.chatbot_utils import append_private_image
 
 logger = logging.getLogger(__name__)
 @tool
@@ -52,7 +52,7 @@ def get_frame_road(
         configurable = runtime.config.get("configurable", {})
         thread_id = str(configurable.get("thread_id", "anonymous"))
         image_url = minio_image_store.upload_road_frame(road_name=road_name, frame_bytes=frame_bytes)
-        state.append_private_image(thread_id, image_url)
+        append_private_image(thread_id, image_url)
         return f"Đã lấy ảnh hiện tại cho tuyến đường '{road_name}' và đính kèm cho người dùng."
     except Exception as e:
         logger.exception("Lỗi khi xử lý ảnh tuyến đường '%s': %s", road_name, e)

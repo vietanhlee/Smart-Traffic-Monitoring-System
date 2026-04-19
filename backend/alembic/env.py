@@ -15,7 +15,7 @@ sys.path.insert(0, app_path)
 # Import models and Base (dùng relative imports như trong main.py)
 from app.db.base import Base
 from app.models.user import User
-from app.models.TokenLLM import TokenLLM
+from models.token_llm import TokenLLM
 from app.models.traffic_history import TrafficHistory
 from app.core.config import settings_server
 

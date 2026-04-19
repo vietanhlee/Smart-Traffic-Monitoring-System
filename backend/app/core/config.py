@@ -75,11 +75,11 @@ class SettingMetricTransport:
     ]
 
     METER_PER_PIXELS = [
-                        0.04,
-                        0.045,
-                        0.025,
-                        0.07,
-                        0.028
+                        0.034,
+                        0.036,
+                        0.018,
+                        0.066,
+                        0.029
                         ]
     MODELS_PATH = r'./ai_models/model N/openvino models/best_int8_openvino_model'
 

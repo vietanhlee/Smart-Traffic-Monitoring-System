@@ -99,18 +99,18 @@ def direct_home():
 
 app.include_router(
     router= v1.api_auth.router, 
-    prefix="/api/v1", 
+    prefix="/api/v1/auth", 
     tags=["Authentication"],
 )
 app.include_router(
     router= v1.api_user.router, 
-    prefix="/api/v1/users", 
+    prefix="/api/v1", 
     tags=["User Management"],
 )
 app.include_router(
-    router= v1.api_vehicles_frames.router, 
+    router= v1.api_road.router, 
     prefix="/api/v1", 
-    tags=["Traffic Monitoring"],
+    tags=["Road Monitoring"],
 )
 app.include_router(
     router= v1.api_chatbot.router, 
@@ -118,8 +118,8 @@ app.include_router(
     tags=["AI Chatbot"],
 )
 app.include_router(
-    router= v1.chat_history.router,
-    prefix="/api/v1/chat",
+    router= v1.api_chat_history.router,
+    prefix="/api/v1",
     tags=["Chat History"],
 )
 app.include_router(

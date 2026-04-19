@@ -6,14 +6,8 @@ from core.security import hash_password, verify_password
 from db.base import get_db
 from models.user import User
 from utils.jwt_handler import get_current_user
-from typing import Optional
-from pydantic import BaseModel
-
-router = APIRouter()
-
-class PasswordUpdateRequest(BaseModel):
-    old_password: str
-    new_password: str
+from schemas.user import PasswordUpdateRequest, ProfileUpdateRequest
+router = APIRouter(prefix="/user")
 
 @router.put(
     "/password",
@@ -59,11 +53,6 @@ async def update_password(
             status_code=500,
             detail="Đã xảy ra lỗi khi cập nhật mật khẩu. Vui lòng thử lại sau."
         )
-
-class ProfileUpdateRequest(BaseModel):
-    username: Optional[str] = None
-    email: Optional[str] = None
-    phone_number: Optional[str] = None
 
 @router.put(
     "/profile",

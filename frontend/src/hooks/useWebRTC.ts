@@ -155,11 +155,20 @@ export const useMultipleWebRTCFrameStreams = (roadNames: string[]) => {
     };
 
     try {
+      console.log(`WebRTC start connectRoad for road=${road}`);
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       await waitForIceGatheringComplete(pc);
 
       const local = pc.localDescription;
+      console.log(`WebRTC local description for road=${road}:`, {
+        signalingState: pc.signalingState,
+        connectionState: pc.connectionState,
+        iceConnectionState: pc.iceConnectionState,
+        hasLocalSdp: Boolean(local?.sdp),
+        localType: local?.type,
+      });
+
       if (!local?.sdp || !local?.type) {
         throw new Error("Cannot create local SDP offer");
       }
@@ -189,6 +198,14 @@ export const useMultipleWebRTCFrameStreams = (roadNames: string[]) => {
       }
 
       const answer = (await response.json()) as AnswerPayload;
+      console.log(`WebRTC got answer for road=${road}:`, answer);
+
+      if (pc.connectionState === "closed" || pc.signalingState === "closed") {
+        throw new Error(
+          `PeerConnection already closed before remote description was applied (connectionState=${pc.connectionState}, signalingState=${pc.signalingState})`,
+        );
+      }
+
       await pc.setRemoteDescription(new RTCSessionDescription(answer));
       setConnections((prev) => ({ ...prev, [road]: true }));
     } catch (error) {

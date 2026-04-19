@@ -3,7 +3,7 @@
  * Đồng bộ lịch sử chat giữa localStorage và server database
  */
 
-import { authConfig, apiConfig } from "../config";
+import { authConfig } from "../config";
 
 export interface Message {
   id: string;
@@ -36,31 +36,38 @@ interface ChatHistoryPageResponse {
 /**
  * Fetch chat history from server
  */
+import { endpoints } from "../config";
+
 export const fetchChatHistory = async (
   page: number = 1,
   pageSize: number = 20,
 ): Promise<Message[]> => {
   try {
     const token = localStorage.getItem(authConfig.TOKEN_KEY);
+    console.log(
+      `fetchChatHistory called page=${page} pageSize=${pageSize} token=${token ? "present" : "missing"}`,
+    );
     if (!token) {
       console.warn("No token found, cannot fetch chat history");
       return [];
     }
 
-    const response = await fetch(
-      `${apiConfig.API_HTTP_BASE}/chat/messages?page=${page}&page_size=${pageSize}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    const url = `${endpoints.chatHistoryMessages}?page=${page}&page_size=${pageSize}`;
+    console.log("fetchChatHistory URL:", url);
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
       },
-    );
+    });
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
     const data: ChatHistoryPageResponse = await response.json();
+    console.log(
+      `fetchChatHistory response items=${data.items?.length ?? 0} total_items=${data.total_items}`,
+    );
 
     // Backend returns items in descending order (newest -> oldest).
     // Reverse to render chat chronologically (oldest -> newest) without relying on Date parsing.
@@ -95,7 +102,7 @@ export const saveMessageToServer = async (
       return false;
     }
 
-    const response = await fetch(`${apiConfig.API_HTTP_BASE}/chat/messages`, {
+    const response = await fetch(endpoints.chatHistoryMessages, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -132,7 +139,7 @@ export const clearServerChatHistory = async (): Promise<boolean> => {
       return false;
     }
 
-    const response = await fetch(`${apiConfig.API_HTTP_BASE}/chat/messages`, {
+    const response = await fetch(endpoints.chatHistoryMessages, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -156,14 +163,11 @@ export const getServerMessageCount = async (): Promise<number> => {
       return 0;
     }
 
-    const response = await fetch(
-      `${apiConfig.API_HTTP_BASE}/chat/messages/count`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    const response = await fetch(endpoints.chatHistoryCount, {
+      headers: {
+        Authorization: `Bearer ${token}`,
       },
-    );
+    });
 
     if (!response.ok) {
       return 0;

@@ -3,14 +3,14 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from models.user import User
-from schemas.user import UserCreate, UserUpdate, UserOut
+from schemas.user import UserCreate, UserOut
 from core.security import hash_password, verify_password
 from db.base import get_db
 from utils.jwt_handler import create_access_token, get_current_user
 from core.config import settings_server
 from sqlalchemy.exc import IntegrityError
 
-router = APIRouter(prefix="/auth")
+router = APIRouter()
 
 @router.post(
     path= "/register",

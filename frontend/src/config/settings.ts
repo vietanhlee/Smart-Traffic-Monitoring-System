@@ -47,7 +47,7 @@ export const IS_STAGING = ENVIRONMENT === "staging";
 export const API = {
   // Base URLs
   HTTP_BASE: trimTrailingSlash(
-    getEnv("VITE_API_HTTP_BASE", "http://localhost:8000")
+    getEnv("VITE_API_HTTP_BASE", "http://localhost:8000"),
   ),
   WS_BASE: trimTrailingSlash(getEnv("VITE_API_WS_BASE", "ws://localhost:8000")),
 
@@ -67,9 +67,10 @@ export const API = {
 
 export const WEBSOCKET = {
   // Paths
-  CHAT_PATH: getEnv("VITE_WS_CHAT_PATH", "/ws/chat"),
-  FRAMES_PATH: getEnv("VITE_WS_FRAMES_PATH", "/ws/frames"),
-  INFO_PATH: getEnv("VITE_WS_INFO_PATH", "/ws/info"),
+  CHAT_PATH: getEnv("VITE_WS_CHAT_PATH", "/chatbot/ws/chat"),
+  FRAMES_PATH: getEnv("VITE_WS_FRAMES_PATH", "/road/ws/frames"),
+  INFO_PATH: getEnv("VITE_WS_INFO_PATH", "/road/ws/info"),
+  CHART_PATH: getEnv("VITE_WS_CHART_PATH", "/road/ws/chart"),
 
   // Connection settings
   RECONNECT_INTERVAL: getNumberEnv("VITE_WS_RECONNECT_INTERVAL", 3000), // 3 seconds
@@ -108,7 +109,7 @@ export const UI = {
   APP_VERSION: getEnv("VITE_APP_VERSION", "1.0.0"),
   APP_DESCRIPTION: getEnv(
     "VITE_APP_DESCRIPTION",
-    "Real-time Traffic Monitoring & AI Assistant"
+    "Real-time Traffic Monitoring & AI Assistant",
   ),
 
   // Theme
@@ -184,12 +185,12 @@ export const FILE_UPLOAD = {
   // Allowed types
   ALLOWED_IMAGE_TYPES: getEnv(
     "VITE_ALLOWED_IMAGE_TYPES",
-    "image/jpeg,image/png,image/webp,image/gif"
+    "image/jpeg,image/png,image/webp,image/gif",
   ).split(","),
 
   ALLOWED_VIDEO_TYPES: getEnv(
     "VITE_ALLOWED_VIDEO_TYPES",
-    "video/mp4,video/avi,video/mov"
+    "video/mp4,video/avi,video/mov",
   ).split(","),
 
   // Upload settings
@@ -235,14 +236,14 @@ export const LOGGING = {
   ENABLE_CONSOLE_LOGS: getBoolEnv("VITE_ENABLE_CONSOLE_LOGS", IS_DEVELOPMENT),
   ENABLE_ERROR_REPORTING: getBoolEnv(
     "VITE_ENABLE_ERROR_REPORTING",
-    IS_PRODUCTION
+    IS_PRODUCTION,
   ),
 
   // Performance
   LOG_API_CALLS: getBoolEnv("VITE_LOG_API_CALLS", IS_DEVELOPMENT),
   LOG_WEBSOCKET_MESSAGES: getBoolEnv(
     "VITE_LOG_WEBSOCKET_MESSAGES",
-    IS_DEVELOPMENT
+    IS_DEVELOPMENT,
   ),
 } as const;
 
@@ -278,7 +279,7 @@ export const FEATURES = {
   ENABLE_PASSWORD_CHANGE: getBoolEnv("VITE_FEATURE_PASSWORD_CHANGE", true),
   ENABLE_THEME_CUSTOMIZATION: getBoolEnv(
     "VITE_FEATURE_THEME_CUSTOMIZATION",
-    true
+    true,
   ),
 
   // Admin features
@@ -369,7 +370,7 @@ export const formatFileSize = (bytes: number): string => {
  */
 export const isFileTypeAllowed = (
   file: File,
-  type: "image" | "video"
+  type: "image" | "video",
 ): boolean => {
   const allowedTypes =
     type === "image"
@@ -383,7 +384,7 @@ export const isFileTypeAllowed = (
  */
 export const isFileSizeAllowed = (
   file: File,
-  type: "image" | "file"
+  type: "image" | "file",
 ): boolean => {
   const maxSize =
     type === "image" ? FILE_UPLOAD.MAX_IMAGE_SIZE : FILE_UPLOAD.MAX_FILE_SIZE;

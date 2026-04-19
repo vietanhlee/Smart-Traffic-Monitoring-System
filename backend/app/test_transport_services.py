@@ -1,4 +1,4 @@
-from services.road_services.AnalyzeOnRoadBase import AnalyzeOnRoadBase
+from services.road_services.analyze_on_road_base import AnalyzeOnRoadBase
 from core.config import settings_metric_transport
 
 if __name__ == "__main__":

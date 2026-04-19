@@ -13,8 +13,8 @@ import {
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { getApiUrl, getWsUrl } from "@/config/settings";
-import { authConfig } from "@/config";
+import { getApiUrl } from "@/config/settings";
+import { authConfig, endpoints } from "@/config";
 
 type Metrics = {
   cpu_percent: number | null;
@@ -135,7 +135,7 @@ export default function AdminResourcesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin]);
 
-  const wsUrl = useMemo(() => getWsUrl("/admin/ws/resources"), []);
+  const wsUrl = useMemo(() => endpoints.adminResourcesWs(), []);
   const { data: wsData, isConnected } = useWebSocket(isAdmin ? wsUrl : null, {
     authToken: token,
     maxReconnectAttempts: 10,

@@ -3,9 +3,9 @@ import sys
 import traceback
 from api.v1 import state
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, status
-from schemas.ChatRequest import ChatRequest 
-from schemas.ChatResponse import ChatResponse
-from services.chat_services.ChatBotAgent import ChatBotAgent
+from schemas.chat import ChatRequest
+from schemas.chat import ChatResponse
+from services.chat_services.chat_bot_agent import ChatBotAgent
 from utils.jwt_handler import get_current_user, get_current_user_ws
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,8 +13,7 @@ from db.base import get_db, AsyncSessionLocal
 from models.chat_message import ChatMessage
 from fastapi.websockets import WebSocketState
 
-
-router = APIRouter()
+router = APIRouter(prefix= "/chatbot")
 logger = logging.getLogger(__name__)
 BUSY_MESSAGE = "Hệ thống đang bận, vui lòng thử lại sau."
 

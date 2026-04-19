@@ -136,7 +136,7 @@ interface Message {
 }
 
 interface ChatInterfaceProps {
-  trafficData: TrafficData;
+  trafficData?: TrafficData;
 }
 
 const createWelcomeMessage = (): Message => ({
@@ -350,11 +350,18 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
 
       void (async () => {
         if (!token) {
+          console.log(
+            "[ChatInterface] Token removed or missing, resetting welcome message",
+          );
           setMessages([createWelcomeMessage()]);
           return;
         }
 
         const history = await fetchChatHistory(1, 100);
+        console.log(
+          "[ChatInterface] Reload token history count:",
+          history.length,
+        );
         if (history.length > 0) {
           setMessages(history);
         } else {
@@ -389,6 +396,12 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
 
   // Initial load from backend history
   useEffect(() => {
+    console.log(
+      "ChatInterface initial history load, token present:",
+      Boolean(token),
+      "token length:",
+      token?.length ?? 0,
+    );
     if (!token) {
       setMessages([createWelcomeMessage()]);
       return;
@@ -396,34 +409,13 @@ const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
 
     void (async () => {
       const history = await fetchChatHistory(1, 100);
+      console.log("ChatInterface initial load history count:", history.length);
       if (history.length > 0) {
         setMessages(history);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Kiểm tra trafficData
-  useEffect(() => {
-    const hasData = trafficData && Object.keys(trafficData).length > 0;
-    console.log("Traffic Data Status:", {
-      hasData,
-      roads: Object.keys(trafficData || {}),
-      data: trafficData,
-    });
-
-    if (!hasData && messages.length === 1) {
-      // Chỉ hiển thị thông báo nếu là tin nhắn chào đầu tiên
-      setMessages([
-        {
-          id: "1",
-          text: "Xin chào! Tôi là trợ lý AI của hệ thống giao thông thông minh. Hiện tại hệ thống đang khởi động và thu thập dữ liệu giao thông. Tôi sẽ thông báo ngay khi có thông tin từ các tuyến đường.",
-          user: false,
-          time: new Date().toLocaleTimeString("vi-VN"),
-        },
-      ]);
-    }
-  }, [trafficData, messages.length]);
 
   // Auto-scroll khi messages thay đổi (gửi tin mới hoặc nhận tin mới)
   useEffect(() => {

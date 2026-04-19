@@ -3,7 +3,6 @@ from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, fil
 import requests
 import logging
 from io import BytesIO
-import base64
 from core.config import settings_network
 from dotenv import load_dotenv
 load_dotenv()
@@ -32,28 +31,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # Gửi các ảnh trả về (nếu có)
         if "image" in data and isinstance(data["image"], list):
-            for img_payload in data["image"]:
+            for img_url in data["image"]:
                 try:
-                    image_bytes = b""
-
-                    # Backward-compatible: vẫn hỗ trợ URL ảnh cũ
-                    if isinstance(img_payload, str) and img_payload.startswith(("http://", "https://")):
-                        img_response = requests.get(img_payload, timeout=10)
+                    if isinstance(img_url, str) and img_url.startswith(("http://", "https://")):
+                        img_response = requests.get(img_url, timeout=10)
                         if img_response.status_code == 200:
-                            image_bytes = img_response.content
+                            img_bytes = BytesIO(img_response.content)
+                            img_bytes.name = 'image.jpg'
+                            await update.message.reply_photo(photo=img_bytes)
+                        else:
+                            await update.message.reply_text("❌ Không thể tải ảnh từ url: " + img_url)
                     else:
-                        encoded = img_payload or ""
-                        if isinstance(encoded, str) and encoded.startswith("data:image") and "," in encoded:
-                            encoded = encoded.split(",", 1)[1]
-                        image_bytes = base64.b64decode(encoded)
-
-                    if image_bytes:
-                        img_bytes = BytesIO(image_bytes)
-                        img_bytes.name = 'image.jpg'
-                        await update.message.reply_photo(photo=img_bytes)
-                    else:
-                        await update.message.reply_text("❌ Không thể xử lý ảnh trả về từ hệ thống")
-                        
+                        await update.message.reply_text("❌ Định dạng ảnh trả về không hợp lệ (chỉ hỗ trợ url)")
                 except Exception as img_err:
                     logger.exception("Loi khi tai anh")
                     await update.message.reply_text(f"❌ Lỗi khi xử lý ảnh: {str(img_err)}")
