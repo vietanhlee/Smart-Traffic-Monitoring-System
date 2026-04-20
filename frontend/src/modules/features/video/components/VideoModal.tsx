@@ -82,11 +82,10 @@ const VideoModal = ({
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.8, opacity: 0 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className={`relative bg-white dark:bg-gray-900 rounded-xl shadow-2xl overflow-hidden ${
-            isFullscreen
+          className={`relative bg-white dark:bg-gray-900 rounded-xl shadow-2xl overflow-hidden ${isFullscreen
               ? "w-screen h-screen rounded-none"
               : "w-[95vw] sm:w-auto h-auto max-w-6xl mx-4"
-          }`}
+            }`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
