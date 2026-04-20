@@ -74,13 +74,39 @@ export const fetchChatHistory = async (
     const orderedItems = [...(data.items || [])].reverse();
 
     // Convert to frontend format
-    return orderedItems.map((msg) => ({
-      id: msg.id,
-      text: msg.text,
-      user: msg.user,
-      time: msg.time,
-      image: msg.image || undefined,
-    }));
+    return orderedItems.map((msg) => {
+      let displayTime = msg.time;
+      try {
+        if (msg.created_at) {
+          // Parse date từ server (giả định là GMT+0)
+          const date = new Date(msg.created_at);
+          if (!isNaN(date.getTime())) {
+            // Tự động tính toán và cộng thêm offset theo múi giờ máy tính của người dùng
+            // getTimezoneOffset() trả về phút (VD: VN là -420), nên ta trừ đi để cộng thêm vào
+            const localDate = new Date(
+              date.getTime() - date.getTimezoneOffset() * 60000,
+            );
+
+            displayTime = localDate.toLocaleTimeString("vi-VN", {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: false,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error adjusting message time:", err);
+      }
+
+      return {
+        id: msg.id,
+        text: msg.text,
+        user: msg.user,
+        time: displayTime,
+        image: msg.image || undefined,
+      };
+    });
   } catch (error) {
     console.error("Error fetching chat history from server:", error);
     return [];
