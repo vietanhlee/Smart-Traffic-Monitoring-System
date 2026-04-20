@@ -16,6 +16,17 @@ import {
   Legend,
 } from "recharts";
 import { endpoints } from "@/config";
+import {
+  Shield,
+  Server,
+  Route,
+  RefreshCw,
+  Cpu,
+  HardDrive,
+  MemoryStick,
+  Play,
+  Square,
+} from "lucide-react";
 
 type Metrics = {
   cpu_percent: number | null;
@@ -298,21 +309,24 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="p-6">
-        <p>Đang tải...</p>
+      <div className="flex items-center justify-center p-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <span className="ml-3 text-muted-foreground">Đang tải...</span>
       </div>
     );
   }
 
   if (!isAdmin) {
     return (
-      <div className="p-6">
-        <Card className="max-w-xl">
+      <div className="flex items-center justify-center p-12">
+        <Card className="max-w-md text-center">
           <CardHeader>
-            <CardTitle>Truy cập bị từ chối</CardTitle>
+            <CardTitle className="text-destructive">
+              Truy cập bị từ chối
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="mb-4">
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
               {error || "Bạn không có quyền truy cập trang admin."}
             </p>
             <Button onClick={() => navigate("/home")}>Về trang chủ</Button>
@@ -323,141 +337,228 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Bảng điều khiển hệ thống</h2>
-        <div className="flex items-center gap-3">
-          <div className="text-sm text-gray-500">
-            WebSocket:{" "}
-            {isConnected ? (
-              <span className="text-green-600">Đã kết nối</span>
-            ) : (
-              <span className="text-red-600">Mất kết nối</span>
-            )}
+    <div className="p-4 sm:p-6 space-y-6">
+      {/* ── Header ────────────────────────────────────────── */}
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-lg">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Shield className="h-6 w-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-foreground sm:text-2xl">
+                Bảng điều khiển hệ thống
+              </h2>
+              <div className="mt-1 flex items-center gap-3 text-sm">
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                    isConnected
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      : "bg-destructive/10 text-destructive"
+                  }`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      isConnected
+                        ? "bg-emerald-500 animate-pulse"
+                        : "bg-destructive"
+                    }`}
+                  />
+                  {isConnected ? "Đã kết nối" : "Mất kết nối"}
+                </span>
+              </div>
+            </div>
           </div>
-          <Button variant="ghost" onClick={() => fetchMetrics()}>
-            Refresh
-          </Button>
-          <Button variant="outline" onClick={() => fetchTrafficStatuses()}>
-            Refresh Subprocess
-          </Button>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchMetrics()}
+              className="gap-2"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Refresh
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchTrafficStatuses()}
+              className="gap-2"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Refresh Subprocess
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-6">
+      {/* ── Body ──────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+        {/* Sidebar */}
         <aside className="lg:sticky lg:top-6 lg:self-start">
-          <Card>
-            <CardHeader>
-              <CardTitle>Điều hướng Admin</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <h3 className="mb-3 px-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              Điều hướng Admin
+            </h3>
+            <nav className="space-y-1.5">
               <button
                 type="button"
                 onClick={() => goToSection("resources")}
-                className={`w-full text-left rounded-md border px-3 py-2 text-sm transition ${
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition-all ${
                   activeSection === "resources"
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 }`}
               >
+                <Server className="h-4 w-4 shrink-0" />
                 Quản lý tài nguyên
               </button>
               <button
                 type="button"
                 onClick={() => goToSection("roads")}
-                className={`w-full text-left rounded-md border px-3 py-2 text-sm transition ${
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition-all ${
                   activeSection === "roads"
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 }`}
               >
+                <Route className="h-4 w-4 shrink-0" />
                 Quản lý tuyến đường
               </button>
-            </CardContent>
-          </Card>
+            </nav>
+          </div>
         </aside>
 
         <div className="space-y-6">
-          <section ref={resourcesSectionRef} className="space-y-6">
-            <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">
+          {/* ── Resources section ─────────────────────────── */}
+          <section ref={resourcesSectionRef} className="space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
               Quản lý tài nguyên
+            </h3>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {/* CPU */}
+              <Card>
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500 text-white shadow-md">
+                      <Cpu className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        CPU
+                      </p>
+                      <p className="text-2xl font-bold tabular-nums text-foreground">
+                        {metrics?.cpu_percent ?? 0}%
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-blue-500 transition-all duration-500"
+                      style={{
+                        width: `${metrics?.cpu_percent ?? 0}%`,
+                      }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* RAM */}
+              <Card>
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-md">
+                      <MemoryStick className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        RAM
+                      </p>
+                      <p className="text-2xl font-bold tabular-nums text-foreground">
+                        {metrics?.memory?.percent ?? 0}%
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                      style={{
+                        width: `${metrics?.memory?.percent ?? 0}%`,
+                      }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Disk */}
+              <Card>
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-md">
+                      <HardDrive className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Disk
+                      </p>
+                      <p className="text-2xl font-bold tabular-nums text-foreground">
+                        {metrics?.disk?.percent ?? 0}%
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-amber-500 transition-all duration-500"
+                      style={{
+                        width: `${metrics?.disk?.percent ?? 0}%`,
+                      }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm text-muted-foreground">CPU</div>
-                    <div className="text-2xl font-bold">
-                      {metrics?.cpu_percent ?? 0}%
-                    </div>
-                  </div>
-                  <div className="w-24 h-6 bg-gray-200 rounded overflow-hidden">
-                    <div
-                      className="h-full bg-blue-500"
-                      style={{ width: `${metrics?.cpu_percent ?? 0}%` }}
-                    />
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm text-muted-foreground">RAM</div>
-                    <div className="text-2xl font-bold">
-                      {metrics?.memory?.percent ?? 0}%
-                    </div>
-                  </div>
-                  <div className="w-24 h-6 bg-gray-200 rounded overflow-hidden">
-                    <div
-                      className="h-full bg-green-500"
-                      style={{ width: `${metrics?.memory?.percent ?? 0}%` }}
-                    />
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm text-muted-foreground">Disk</div>
-                    <div className="text-2xl font-bold">
-                      {metrics?.disk?.percent ?? 0}%
-                    </div>
-                  </div>
-                  <div className="w-24 h-6 bg-gray-200 rounded overflow-hidden">
-                    <div
-                      className="h-full bg-amber-500"
-                      style={{ width: `${metrics?.disk?.percent ?? 0}%` }}
-                    />
-                  </div>
-                </div>
-              </Card>
-            </div>
-
+            {/* Chart */}
             <Card>
               <CardHeader>
                 <CardTitle>Hiệu suất theo thời gian</CardTitle>
-                <div className="text-sm text-gray-500">
-                  {lastUpdate ? `Cập nhật: ${lastUpdate}` : "Chưa có dữ liệu"}
-                </div>
+                <p className="text-sm text-muted-foreground">
+                  {lastUpdate
+                    ? `Cập nhật: ${lastUpdate}`
+                    : "Chưa có dữ liệu"}
+                </p>
               </CardHeader>
               <CardContent className="px-2 sm:px-4">
                 <ResponsiveContainer width="100%" height={380}>
                   <LineChart data={history} margin={{ left: 12, right: 12 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} domain={[0, 100]} unit="%" />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      className="stroke-border"
+                      opacity={0.5}
+                    />
+                    <XAxis
+                      dataKey="time"
+                      tick={{ fontSize: 11 }}
+                      className="fill-muted-foreground"
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11 }}
+                      domain={[0, 100]}
+                      unit="%"
+                      className="fill-muted-foreground"
+                    />
                     <Tooltip
                       formatter={(value) => [
                         `${Number(value).toFixed(1)}%`,
                         "",
                       ]}
                       contentStyle={{
-                        backgroundColor: "rgba(255,255,255,0.95)",
-                        border: "1px solid #e5e7eb",
+                        backgroundColor: "hsl(var(--card))",
+                        borderColor: "hsl(var(--border))",
                         borderRadius: 8,
+                        color: "hsl(var(--card-foreground))",
                       }}
                     />
                     <Legend wrapperStyle={{ fontSize: "12px" }} />
@@ -494,90 +595,119 @@ export default function AdminPage() {
             </Card>
           </section>
 
-          <section ref={roadsSectionRef} className="space-y-6">
-            <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">
+          {/* ── Roads section ────────────────────────────── */}
+          <section ref={roadsSectionRef} className="space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
               Quản lý tuyến đường
-            </div>
+            </h3>
 
             <Card>
               <CardHeader>
-                <CardTitle>Quản lý subprocess tuyến đường</CardTitle>
-                <div className="text-sm text-gray-500">
+                <CardTitle>Subprocess tuyến đường</CardTitle>
+                <p className="text-sm text-muted-foreground">
                   Admin có thể dừng hoặc bật lại từng tuyến road runtime.
-                </div>
+                </p>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 {trafficLoading ? (
-                  <p className="text-sm text-gray-500">
-                    Đang tải trạng thái subprocess...
-                  </p>
+                  <div className="flex items-center justify-center py-8">
+                    <div className="h-6 w-6 animate-spin rounded-full border-[3px] border-primary border-t-transparent" />
+                    <span className="ml-3 text-sm text-muted-foreground">
+                      Đang tải trạng thái subprocess...
+                    </span>
+                  </div>
                 ) : Object.keys(roadStatuses).length === 0 ? (
-                  <p className="text-sm text-gray-500">
-                    Chưa có dữ liệu subprocess.
-                  </p>
+                  <div className="rounded-xl border border-dashed border-border py-10 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Chưa có dữ liệu subprocess.
+                    </p>
+                  </div>
                 ) : (
-                  <div className="space-y-3">
-                    {Object.entries(roadStatuses).map(([roadName, runtime]) => {
-                      const startKey = `start:${roadName}`;
-                      const stopKey = `stop:${roadName}`;
+                  Object.entries(roadStatuses).map(([roadName, runtime]) => {
+                    const startKey = `start:${roadName}`;
+                    const stopKey = `stop:${roadName}`;
 
-                      return (
-                        <div
-                          key={roadName}
-                          className="rounded-lg border border-gray-200 dark:border-gray-700 p-3"
-                        >
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                              <div className="font-semibold">{roadName}</div>
-                              <div className="text-sm text-gray-500">
-                                Trạng thái:{" "}
-                                {runtime.active ? "Đang chạy" : "Đã dừng"}
-                                {runtime.pid ? ` | PID: ${runtime.pid}` : ""}
-                              </div>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2">
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                disabled={
-                                  runtime.active ||
-                                  Boolean(trafficActionLoading[startKey])
-                                }
-                                onClick={() =>
-                                  manageRoadProcess(roadName, "start")
-                                }
-                              >
-                                {trafficActionLoading[startKey]
-                                  ? "Đang bật..."
-                                  : "Bật"}
-                              </Button>
-
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                disabled={
-                                  !runtime.active ||
-                                  Boolean(trafficActionLoading[stopKey])
-                                }
-                                onClick={() =>
-                                  manageRoadProcess(roadName, "stop")
-                                }
-                              >
-                                {trafficActionLoading[stopKey]
-                                  ? "Đang dừng..."
-                                  : "Dừng"}
-                              </Button>
-                            </div>
+                    return (
+                      <div
+                        key={roadName}
+                        className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="min-w-0 space-y-1.5">
+                          <p className="truncate font-semibold text-foreground">
+                            {roadName}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-2 text-sm">
+                            <span
+                              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                                runtime.active
+                                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                  : "bg-destructive/10 text-destructive"
+                              }`}
+                            >
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${
+                                  runtime.active
+                                    ? "bg-emerald-500 animate-pulse"
+                                    : "bg-destructive"
+                                }`}
+                              />
+                              {runtime.active ? "Đang chạy" : "Đã dừng"}
+                            </span>
+                            {runtime.pid ? (
+                              <span className="text-xs text-muted-foreground">
+                                PID:{" "}
+                                <span className="font-mono font-medium text-foreground">
+                                  {runtime.pid}
+                                </span>
+                              </span>
+                            ) : null}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+
+                        <div className="flex shrink-0 gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1.5"
+                            disabled={
+                              runtime.active ||
+                              Boolean(trafficActionLoading[startKey])
+                            }
+                            onClick={() =>
+                              manageRoadProcess(roadName, "start")
+                            }
+                          >
+                            <Play className="h-3.5 w-3.5" />
+                            {trafficActionLoading[startKey]
+                              ? "Đang bật..."
+                              : "Bật"}
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="gap-1.5"
+                            disabled={
+                              !runtime.active ||
+                              Boolean(trafficActionLoading[stopKey])
+                            }
+                            onClick={() =>
+                              manageRoadProcess(roadName, "stop")
+                            }
+                          >
+                            <Square className="h-3.5 w-3.5" />
+                            {trafficActionLoading[stopKey]
+                              ? "Đang dừng..."
+                              : "Dừng"}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })
                 )}
 
                 {trafficError && (
-                  <div className="text-sm text-red-600 dark:text-red-400">
+                  <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                     {trafficError}
                   </div>
                 )}
@@ -585,13 +715,14 @@ export default function AdminPage() {
             </Card>
           </section>
 
+          {/* ── Error warning ────────────────────────────── */}
           {metrics?.error && (
-            <Card className="border-red-300">
+            <Card className="border-destructive/50">
               <CardHeader>
-                <CardTitle className="text-red-600">Cảnh báo</CardTitle>
+                <CardTitle className="text-destructive">Cảnh báo</CardTitle>
               </CardHeader>
               <CardContent>
-                <p>{metrics.error}</p>
+                <p className="text-muted-foreground">{metrics.error}</p>
               </CardContent>
             </Card>
           )}
