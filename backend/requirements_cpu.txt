@@ -43,7 +43,7 @@ email-validator
 minio
 aiortc
 av
-
+psycopg[binary]
 
 # telegram_bot
 python-telegram-bot
