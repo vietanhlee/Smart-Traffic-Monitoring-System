@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   ResponsiveContainer,
   LineChart,
@@ -15,6 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { getApiUrl } from "@/config/settings";
 import { authConfig, endpoints } from "@/config";
+import AdminLayout from "./AdminLayout";
+import { RefreshCw, Cpu, HardDrive, MemoryStick } from "lucide-react";
 
 type Metrics = {
   cpu_percent: number | null;
@@ -34,6 +36,66 @@ type Metrics = {
   gpu: unknown;
   error?: string;
 };
+
+const MAX_HISTORY = 50;
+
+/** Helper to convert bytes to GB */
+const toGB = (bytes: number | undefined) => {
+  if (!bytes) return 0;
+  return bytes / (1024 * 1024 * 1024);
+};
+
+/** Thanh progress dùng cho CPU / RAM / Disk */
+function ResourceBar({
+  label,
+  value,
+  icon: Icon,
+  colorClass,
+  details,
+}: {
+  label: string;
+  value: number;
+  icon: React.ComponentType<{ className?: string }>;
+  colorClass: string;
+  details?: string;
+}) {
+  return (
+    <div className="group relative overflow-hidden rounded-2xl bg-white/60 dark:bg-slate-900/40 border border-border p-5 shadow-sm backdrop-blur-sm transition-all hover:shadow-md">
+      <div className={`absolute top-0 left-0 w-1.5 h-full ${colorClass} opacity-80`} />
+      
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${colorClass} text-white shadow-sm`}>
+            <Icon className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              {label}
+            </p>
+            <h4 className="text-xl font-bold text-foreground tabular-nums">
+              {value.toFixed(1)}%
+            </h4>
+          </div>
+        </div>
+        {details && (
+          <div className="text-right">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-70">Sử dụng</span>
+            <p className="text-xs font-bold text-foreground">{details}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4 space-y-1.5">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+          <div
+            className={`h-full rounded-full ${colorClass} transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(0,0,0,0.1)]`}
+            style={{ width: `${Math.min(value, 100)}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminResourcesPage() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
@@ -155,7 +217,7 @@ export default function AdminResourcesPage() {
         mem: Number(m.memory?.percent || 0),
         disk: Number(m.disk?.percent || 0),
       };
-      setHistory((prev) => [...prev, point].slice(-60));
+      setHistory((prev) => [...prev, point].slice(-MAX_HISTORY));
       setLastUpdate(new Date().toLocaleTimeString("vi-VN"));
     }
   }, [wsData]);
@@ -178,201 +240,210 @@ export default function AdminResourcesPage() {
     });
   }, [metrics]);
 
+  /* ── Loading ───────────────────────────────────────────── */
   if (loading) {
     return (
-      <div className="p-6">
-        <p>Đang tải...</p>
+      <div className="flex h-[40vh] flex-col items-center justify-center space-y-3">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+        <span className="text-sm font-semibold text-slate-500">Đang tải tài nguyên...</span>
       </div>
     );
   }
 
+  /* ── Access denied ─────────────────────────────────────── */
   if (!isAdmin) {
     return (
-      <div className="p-6">
-        <Card className="max-w-xl">
-          <CardHeader>
-            <CardTitle>Truy cập bị từ chối</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-4">
-              {error || "Bạn không có quyền truy cập trang admin."}
-            </p>
-            <Button onClick={() => navigate("/home")}>Về trang chủ</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-4 sm:p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Admin - Quản lý tài nguyên</h2>
-        <div className="flex items-center gap-3">
-          <div className="text-sm text-gray-500">
-            WebSocket:{" "}
-            {isConnected ? (
-              <span className="text-green-600">Đã kết nối</span>
-            ) : (
-              <span className="text-red-600">Mất kết nối</span>
-            )}
+      <div className="flex h-[60vh] items-center justify-center p-8">
+        <div className="max-w-md w-full p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-6 shadow-xl">
+          <div className="mx-auto h-16 w-16 rounded-full bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center">
+            <RefreshCw className="h-8 w-8 text-rose-500" />
           </div>
-          <Button variant="ghost" onClick={fetchMetrics}>
-            Refresh
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Truy cập bị từ chối</h2>
+            <p className="text-slate-500 dark:text-slate-400 font-medium">
+              {error || "Bạn không có quyền truy cập trang quản trị."}
+            </p>
+          </div>
+          <Button
+            onClick={() => navigate("/home")}
+            className="w-full h-11 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-semibold"
+          >
+            Về trang chủ
           </Button>
         </div>
       </div>
+    );
+  }
 
-      <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] gap-6">
-        <aside className="lg:sticky lg:top-6 lg:self-start">
-          <Card>
-            <CardHeader>
-              <CardTitle>Admin</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <NavLink
-                to="/admin/resources"
-                className={({ isActive }) =>
-                  `block rounded-md border px-3 py-2 text-sm font-medium ${
-                    isActive
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
-                  }`
-                }
-              >
-                Quản lý tài nguyên
-              </NavLink>
-              <NavLink
-                to="/admin/roads"
-                className={({ isActive }) =>
-                  `block rounded-md border px-3 py-2 text-sm font-medium ${
-                    isActive
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
-                  }`
-                }
-              >
-                Quản lý tuyến đường
-              </NavLink>
-            </CardContent>
-          </Card>
-        </aside>
-
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-muted-foreground">CPU</div>
-                  <div className="text-2xl font-bold">
-                    {metrics?.cpu_percent ?? 0}%
-                  </div>
-                </div>
-                <div className="w-24 h-6 bg-gray-200 rounded overflow-hidden">
-                  <div
-                    className="h-full bg-blue-500"
-                    style={{ width: `${metrics?.cpu_percent ?? 0}%` }}
-                  />
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-muted-foreground">RAM</div>
-                  <div className="text-2xl font-bold">
-                    {metrics?.memory?.percent ?? 0}%
-                  </div>
-                </div>
-                <div className="w-24 h-6 bg-gray-200 rounded overflow-hidden">
-                  <div
-                    className="h-full bg-green-500"
-                    style={{ width: `${metrics?.memory?.percent ?? 0}%` }}
-                  />
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-muted-foreground">Disk</div>
-                  <div className="text-2xl font-bold">
-                    {metrics?.disk?.percent ?? 0}%
-                  </div>
-                </div>
-                <div className="w-24 h-6 bg-gray-200 rounded overflow-hidden">
-                  <div
-                    className="h-full bg-amber-500"
-                    style={{ width: `${metrics?.disk?.percent ?? 0}%` }}
-                  />
-                </div>
-              </div>
-            </Card>
+  /* ── Main ──────────────────────────────────────────────── */
+  return (
+    <AdminLayout
+      subtitle="Admin — Hệ thống"
+      title="Giám sát tài nguyên"
+      headerActions={
+        <div className="flex items-center gap-3">
+          <div
+            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all ${
+              isConnected
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/30 dark:bg-emerald-900/20 dark:text-emerald-400"
+                : "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800/30 dark:bg-rose-900/20 dark:text-rose-400"
+            }`}
+          >
+            <div
+              className={`h-2 w-2 rounded-full ${
+                isConnected ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
+              }`}
+            />
+            {isConnected ? "Live" : "Offline"}
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Hiệu suất theo thời gian</CardTitle>
-              <div className="text-sm text-gray-500">
-                {lastUpdate ? `Cập nhật: ${lastUpdate}` : "Chưa có dữ liệu"}
-              </div>
-            </CardHeader>
-            <CardContent className="px-2 sm:px-4">
-              <ResponsiveContainer width="100%" height={380}>
-                <LineChart data={history} margin={{ left: 12, right: 12 }}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis dataKey="time" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} domain={[0, 100]} unit="%" />
-                  <Tooltip
-                    formatter={(value) => [`${Number(value).toFixed(1)}%`, ""]}
-                  />
-                  <Legend wrapperStyle={{ fontSize: "12px" }} />
-                  <Line
-                    type="monotone"
-                    dataKey="cpu"
-                    name="CPU %"
-                    stroke="#3B82F6"
-                    strokeWidth={2}
-                    dot={false}
-                    isAnimationActive={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="mem"
-                    name="RAM %"
-                    stroke="#10B981"
-                    strokeWidth={2}
-                    dot={false}
-                    isAnimationActive={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="disk"
-                    name="Disk %"
-                    stroke="#F59E0B"
-                    strokeWidth={2}
-                    dot={false}
-                    isAnimationActive={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {metrics?.error && (
-            <Card className="border-red-300">
-              <CardHeader>
-                <CardTitle className="text-red-600">Cảnh báo</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>{metrics.error}</p>
-              </CardContent>
-            </Card>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchMetrics}
+            className="h-9 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 gap-2 font-semibold transition-all hover:bg-slate-50 dark:hover:bg-indigo-600 dark:hover:text-white dark:hover:border-indigo-600 text-slate-700 dark:text-slate-200 active:bg-indigo-700 active:text-white"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Làm mới
+          </Button>
         </div>
+      }
+    >
+      <div className="space-y-6 pb-10">
+        {/* ── Resource cards ─────────────────────────────── */}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+          <ResourceBar
+            label="CPU"
+            value={metrics?.cpu_percent ?? 0}
+            icon={Cpu}
+            colorClass="bg-blue-600"
+            details="8 Cores"
+          />
+          <ResourceBar
+            label="RAM"
+            value={metrics?.memory?.percent ?? 0}
+            icon={MemoryStick}
+            colorClass="bg-emerald-600"
+            details={`${toGB(metrics?.memory?.used).toFixed(1)} / ${toGB(metrics?.memory?.total).toFixed(0)} GB`}
+          />
+          <ResourceBar
+            label="Ổ đĩa"
+            value={metrics?.disk?.percent ?? 0}
+            icon={HardDrive}
+            colorClass="bg-amber-600"
+            details={`${toGB(metrics?.disk?.used).toFixed(1)} / ${toGB(metrics?.disk?.total).toFixed(0)} GB`}
+          />
+        </div>
+
+        {/* ── Chart ──────────────────────────────────────── */}
+        <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm overflow-hidden">
+          <div className="mb-6 flex items-end justify-between">
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Lịch sử hiệu suất</h3>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                {lastUpdate ? `Cập nhật: ${lastUpdate}` : "Đang chờ..."}
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <div className="flex items-center gap-2">
+                <div className="h-2.5 w-2.5 rounded-full bg-blue-600"></div>
+                <span className="text-[10px] font-bold text-slate-500 uppercase">CPU</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-2.5 w-2.5 rounded-full bg-emerald-600"></div>
+                <span className="text-[10px] font-bold text-slate-500 uppercase">RAM</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-2.5 w-2.5 rounded-full bg-amber-600"></div>
+                <span className="text-[10px] font-bold text-slate-500 uppercase">Disk</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="h-[350px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={history} margin={{ left: -20, right: 10, top: 10, bottom: 0 }}>
+                <CartesianGrid
+                  strokeDasharray="4 4"
+                  vertical={false}
+                  stroke="currentColor"
+                  className="text-slate-100 dark:text-slate-800"
+                />
+                <XAxis
+                  dataKey="time"
+                  tick={{ fontSize: 10, fontWeight: 600 }}
+                  axisLine={false}
+                  tickLine={false}
+                  className="fill-slate-400"
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fontWeight: 600 }}
+                  axisLine={false}
+                  tickLine={false}
+                  unit="%"
+                  domain={[0, 100]}
+                  className="fill-slate-400"
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="rounded-lg bg-slate-900 p-3 shadow-xl border border-slate-800">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 border-b border-slate-800 pb-1">{payload[0].payload.time}</p>
+                          <div className="space-y-1.5">
+                            {payload.map((p: any) => (
+                              <div key={p.name} className="flex items-center justify-between gap-4">
+                                <span className="text-[10px] font-bold text-slate-300 uppercase">{p.name}</span>
+                                <span className="text-xs font-bold text-white">{Number(p.value).toFixed(1)}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="cpu"
+                  name="CPU"
+                  stroke="#2563eb"
+                  strokeWidth={3}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="mem"
+                  name="Memory"
+                  stroke="#059669"
+                  strokeWidth={3}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="disk"
+                  name="Disk"
+                  stroke="#d97706"
+                  strokeWidth={3}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* ── Error card ─────────────────────────────────── */}
+        {metrics?.error && (
+          <div className="rounded-xl border border-rose-200 dark:border-rose-800/50 bg-rose-50 dark:bg-rose-900/10 p-5 flex items-center gap-4 text-rose-600 dark:text-rose-400 shadow-sm">
+            <AlertTriangle className="h-5 w-5 shrink-0" />
+            <p className="text-sm font-semibold">{metrics.error}</p>
+          </div>
+        )}
       </div>
-    </div>
+    </AdminLayout>
   );
 }
