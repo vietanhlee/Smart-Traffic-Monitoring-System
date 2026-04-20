@@ -115,17 +115,6 @@ const generateMessageId = () => {
   return `msg_${timestamp}_${random}`;
 };
 
-interface VehicleData {
-  count_car: number;
-  count_motor: number;
-  speed_car: number;
-  speed_motor: number;
-}
-
-interface TrafficData {
-  [roadName: string]: VehicleData;
-}
-
 interface Message {
   id: string;
   text: string;
@@ -133,10 +122,6 @@ interface Message {
   time: string;
   typing?: boolean;
   image?: string[];
-}
-
-interface ChatInterfaceProps {
-  trafficData?: TrafficData;
 }
 
 const createWelcomeMessage = (): Message => ({
@@ -308,7 +293,7 @@ function processImageUrlsInText(text: string): string {
   return text;
 }
 
-const ChatInterface = ({ trafficData }: ChatInterfaceProps) => {
+const ChatInterface = () => {
   const [messages, setMessages] = useState<Message[]>(() => [
     createWelcomeMessage(),
   ]);

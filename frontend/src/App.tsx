@@ -256,35 +256,39 @@ function AppContent() {
       </header>
 
       <TrafficProvider>
-        <Routes>
-          <Route
-            path="/login"
-            element={
-              <LoginPage
-                onLoginSuccess={handleLoginSuccess}
-                onRegisterSuccess={handleRegisterSuccess}
-                showRegister={showRegister}
-                setShowRegister={setShowRegister}
+        <main className="app-main">
+          <div className="app-page-shell">
+            <Routes>
+              <Route
+                path="/login"
+                element={
+                  <LoginPage
+                    onLoginSuccess={handleLoginSuccess}
+                    onRegisterSuccess={handleRegisterSuccess}
+                    showRegister={showRegister}
+                    setShowRegister={setShowRegister}
+                  />
+                }
               />
-            }
-          />
-          <Route element={<ProtectedRoute />}>
-            <Route path="/home" element={<TrafficDashboard />} />
-            <Route path="/analys" element={<AnalyticsPage />} />
-            <Route path="/chat" element={<ChatPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route
-              path="/admin"
-              element={<Navigate to="/admin/resources" replace />}
-            />
-            <Route path="/admin/resources" element={<AdminResourcesPage />} />
-            <Route path="/admin/roads" element={<AdminRoadsPage />} />
-          </Route>
-          <Route
-            path="*"
-            element={<Navigate to={authed ? "/home" : "/login"} replace />}
-          />
-        </Routes>
+              <Route element={<ProtectedRoute />}>
+                <Route path="/home" element={<TrafficDashboard />} />
+                <Route path="/analys" element={<AnalyticsPage />} />
+                <Route path="/chat" element={<ChatPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route
+                  path="/admin"
+                  element={<Navigate to="/admin/resources" replace />}
+                />
+                <Route path="/admin/resources" element={<AdminResourcesPage />} />
+                <Route path="/admin/roads" element={<AdminRoadsPage />} />
+              </Route>
+              <Route
+                path="*"
+                element={<Navigate to={authed ? "/home" : "/login"} replace />}
+              />
+            </Routes>
+          </div>
+        </main>
       </TrafficProvider>
       <Toaster position="top-right" richColors />
     </div>

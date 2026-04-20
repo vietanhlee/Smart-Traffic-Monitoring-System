@@ -12,32 +12,43 @@ body {
 .app-shell {
   min-height: 100vh;
   background:
-    radial-gradient(
-      circle at 10% 10%,
-      rgba(167, 139, 250, 0.12),
-      transparent 32%
-    ),
-    radial-gradient(
-      circle at 85% 12%,
-      rgba(139, 92, 246, 0.14),
-      transparent 30%
-    ),
-    linear-gradient(160deg, #faf8ff 0%, #f5f3ff 48%, #ede9fe 100%);
+    radial-gradient(circle at 12% 12%, rgba(99, 102, 241, 0.18), transparent 20%),
+    radial-gradient(circle at 88% 18%, rgba(139, 92, 246, 0.14), transparent 24%),
+    linear-gradient(160deg, #f8fafc 0%, #eef2ff 50%, #ececff 100%);
 }
 
 .dark .app-shell {
   background:
-    radial-gradient(
-      circle at 20% 18%,
-      rgba(167, 139, 250, 0.15),
-      transparent 28%
-    ),
-    radial-gradient(
-      circle at 80% 10%,
-      rgba(139, 92, 246, 0.12),
-      transparent 28%
-    ),
-    linear-gradient(160deg, #0f0a1a 0%, #1a1329 55%, #26193d 100%);
+    radial-gradient(circle at 18% 16%, rgba(167, 139, 250, 0.18), transparent 22%),
+    radial-gradient(circle at 82% 14%, rgba(139, 92, 246, 0.16), transparent 24%),
+    linear-gradient(160deg, #0f0a1a 0%, #14101f 52%, #24193a 100%);
+}
+
+.app-main {
+  width: min(1200px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 24px 0 40px;
+}
+
+.app-page-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-top: 10px;
+}
+
+.app-content-card {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 28px;
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(18px);
+  overflow: hidden;
+}
+
+.dark .app-content-card {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(148, 163, 184, 0.16);
 }
 
 .app-header {
@@ -49,10 +60,12 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 18px;
+  padding: 18px 28px;
   border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-  background: rgba(255, 255, 255, 0.78);
-  backdrop-filter: blur(14px);
+  border-radius: 0 0 28px 28px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 35px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(18px);
 }
 
 .dark .app-header {
