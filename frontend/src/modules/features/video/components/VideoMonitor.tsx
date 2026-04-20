@@ -190,11 +190,10 @@ const VideoMonitor = ({
         </CardHeader>
         <CardContent>
           <div
-            className={`grid gap-3 sm:gap-4 ${
-              isFullscreen
+            className={`grid gap-3 sm:gap-4 ${isFullscreen
                 ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                 : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-            }`}
+              }`}
           >
             {allowedRoads.map((road) => (
               <div key={road} className="space-y-2 sm:space-y-3">
@@ -220,11 +219,10 @@ const VideoMonitor = ({
           {/* Connection Status */}
           {allowedRoads.length > 0 && (
             <div
-              className={`flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium ${
-                Object.values(streamConnections).some(Boolean)
+              className={`flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium ${Object.values(streamConnections).some(Boolean)
                   ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
                   : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
-              }`}
+                }`}
             >
               {Object.values(streamConnections).some(Boolean) ? (
                 <>
@@ -247,11 +245,10 @@ const VideoMonitor = ({
       </CardHeader>
       <CardContent className="px-3 sm:px-6 max-h-[calc(100vh-12rem)] overflow-y-auto overscroll-contain">
         <div
-          className={`grid gap-4 sm:gap-6 ${
-            isFullscreen
+          className={`grid gap-4 sm:gap-6 ${isFullscreen
               ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
               : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-          }`}
+            }`}
         >
           <AnimatePresence>
             {allowedRoads.map((roadName) => {
@@ -272,11 +269,10 @@ const VideoMonitor = ({
                   }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   whileHover={{ scale: 1.02 }}
-                  className={`relative overflow-hidden rounded-xl border-2 transition-all duration-300 cursor-pointer inline-block w-full max-w-sm mx-auto ${
-                    isSelected
+                  className={`relative overflow-hidden rounded-xl border-2 transition-all duration-300 cursor-pointer inline-block w-full max-w-sm mx-auto ${isSelected
                       ? "border-blue-500 shadow-lg shadow-blue-500/25"
                       : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                  }`}
+                    }`}
                   onClick={() => {
                     setModalRoadName(roadName);
                     setModalOpen(true);
@@ -327,11 +323,10 @@ const VideoMonitor = ({
                           variant={
                             speedColor === "green" ? "default" : "secondary"
                           }
-                          className={`flex items-center space-x-1 text-xs ${
-                            speedColor === "green"
+                          className={`flex items-center space-x-1 text-xs ${speedColor === "green"
                               ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
                               : "bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300"
-                          }`}
+                            }`}
                         >
                           <Gauge className="h-3 w-3" />
                           <span>{speedText}</span>
