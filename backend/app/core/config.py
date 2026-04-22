@@ -85,18 +85,21 @@ class SettingMetricTransport:
     DEVICE = 'cpu'
 
 class SettingChatBot:
-    from langchain_google_genai import ChatGoogleGenerativeAI
+    # from langchain_google_genai import ChatGoogleGenerativeAI
 
-    LLM = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite-preview",
-                                temperature=0.4, 
-                                max_output_tokens=1024
-                                )
+    # LLM = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite-preview",
+    #                             temperature=0.4, 
+    #                             max_output_tokens=1024
+    #                             )
     # Dùng ollama local api llm
     
-    # from langchain_openai import OpenAI
-    # LLM = OpenAI(model_name="gemma3:4b",
-    #              temperature=0.6,
-    #              max_tokens=1024)
+    from langchain_openai import ChatOpenAI
+    LLM = ChatOpenAI(
+        model="gemma4:e4b",
+        base_url="http://159.48.242.6:21209/v1",
+        api_key="dummy"
+    )   
+
 
 class SettingNetwork:
     BASE_URL_API = "http://localhost:8000"

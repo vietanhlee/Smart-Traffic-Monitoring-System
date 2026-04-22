@@ -17,6 +17,8 @@ from langgraph.store.postgres import PostgresStore
 from langgraph.runtime import Runtime
 from utils.chatbot_utils import clear_private_images, pop_private_images
 from schemas.chat import AgentTextResponse
+from google.genai.errors import ServerError
+from .genai_errors import GenAIUnavailableError
 
 _PROMPT = """Bạn là một trợ lý AI chuyên tư vấn giao thông bằng TIẾNG VIỆT.
 
@@ -300,6 +302,12 @@ class ChatBotAgent:
                 payload,
                 config,
             )
+        except ServerError as exc:
+            # Google GenAI 503 error handling
+            if hasattr(exc, 'status_code') and exc.status_code == 503:
+                _agent_logger.warning("Google GenAI model is overloaded (503). Returning friendly error message.")
+                raise GenAIUnavailableError("AI hiện đang quá tải, vui lòng thử lại sau ít phút.")
+            raise
         except Exception as exc:
             msg = str(exc).lower()
             if _GEMINI_TOOL_CALL_ORDER_ERROR in msg:

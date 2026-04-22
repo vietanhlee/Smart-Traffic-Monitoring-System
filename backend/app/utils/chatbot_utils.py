@@ -2,6 +2,8 @@ from langchain_core.messages.utils import (
     trim_messages,
     count_tokens_approximately
 )
+from models.chat_message import ChatMessage
+from sqlalchemy.ext.asyncio import AsyncSession
 from langchain.agents.middleware import AgentMiddleware
 MAX_PRIVATE_IMAGES_PER_THREAD = 8
 _chat_private_images: dict[str, list[str]] = {}
@@ -28,6 +30,48 @@ def pop_private_images(thread_id: str | int | None) -> list[str]:
     key = _normalize_thread_id(thread_id)
     return _chat_private_images.pop(key, [])
 
+
+async def save_user_message(
+    db: AsyncSession,
+    user_id: int,
+    message: str,
+    channel: str,
+):
+    """Lưu tin nhắn user ngay khi nhận được, TRƯỚC khi gọi AI."""
+    db.add(
+        ChatMessage(
+            user_id=user_id,
+            message=message,
+            is_user=True,
+            images=None,
+            extra_data={"channel": channel},
+        )
+    )
+    await db.commit()
+
+
+async def save_ai_response(
+    db: AsyncSession,
+    user_id: int,
+    message: str,
+    images: list[str] | None,
+    channel: str,
+):
+    """Lưu tin nhắn AI response sau khi AI trả lời xong."""
+    extra_data = {"channel": channel}
+    if images:
+        extra_data["image_source"] = "minio-url"
+
+    db.add(
+        ChatMessage(
+            user_id=user_id,
+            message=message,
+            is_user=False,
+            images=images or None,
+            extra_data=extra_data,
+        )
+    )
+    await db.commit()
 class TrimMessagesMiddleware(AgentMiddleware):
     """Middleware cắt lịch sử hội thoại trước mỗi lượt gọi model."""
 

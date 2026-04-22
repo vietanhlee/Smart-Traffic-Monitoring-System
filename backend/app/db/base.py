@@ -14,7 +14,7 @@ async def create_tables():
     """Tạo tất cả bảng trong database"""
     # Import models để đảm bảo chúng được đăng ký với Base
     from models.user import User
-    from models.token_llm import TokenLLM
+    # from models.token_llm import TokenLLM
     from models.chat_message import ChatMessage
     from models.traffic_history import TrafficHistory
     async with engine.begin() as conn:

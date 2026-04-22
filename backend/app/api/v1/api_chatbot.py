@@ -6,17 +6,18 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, st
 from schemas.chat import ChatRequest
 from schemas.chat import ChatResponse
 from services.chat_services.chat_bot_agent import ChatBotAgent
+from services.chat_services.genai_errors import GenAIUnavailableError
+from utils.chatbot_utils import save_user_message, save_ai_response
 from utils.jwt_handler import get_current_user, get_current_user_ws
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from db.base import get_db, AsyncSessionLocal
-from models.chat_message import ChatMessage
+
 from fastapi.websockets import WebSocketState
 
 router = APIRouter(prefix= "/chatbot")
 logger = logging.getLogger(__name__)
 BUSY_MESSAGE = "Hệ thống đang bận, vui lòng thử lại sau."
-
 
 def _log_exception_everywhere(context: str, exc: Exception) -> None:
     """Log exception to configured logger (file) and stderr (console)."""
@@ -44,38 +45,6 @@ async def _safe_ws_close(websocket: WebSocket, code: int = 1011) -> None:
         _log_exception_everywhere("Failed to close websocket", exc)
 
 
-async def _save_chat_turn(
-    db: AsyncSession,
-    user_id: int,
-    user_message: str,
-    ai_message: str,
-    ai_images: list[str] | None,
-    channel: str,
-):
-    """Save both user and assistant messages for one turn."""
-    ai_extra_data = {"channel": channel}
-    if ai_images:
-        ai_extra_data["image_source"] = "minio-url"
-
-    db.add(
-        ChatMessage(
-            user_id=user_id,
-            message=user_message,
-            is_user=True,
-            images=None,
-            extra_data={"channel": channel},
-        )
-    )
-    db.add(
-        ChatMessage(
-            user_id=user_id,
-            message=ai_message,
-            is_user=False,
-            images=ai_images or None,
-            extra_data=ai_extra_data,
-        )
-    )
-    await db.commit()
 
 @router.on_event("startup")
 def _startup_chat_agent():
@@ -106,13 +75,23 @@ async def chat(
         )
 
     try:
-        data = await state.agent.get_response(request.message, id=current_user.id)
-        await _save_chat_turn(
+        # 1. Lưu tin nhắn user ngay khi nhận được
+        await save_user_message(
             db=db,
             user_id=current_user.id,
-            user_message=request.message,
-            ai_message=data["message"],
-            ai_images=data.get("image"),
+            message=request.message,
+            channel="http",
+        )
+
+        # 2. Gọi AI xử lý
+        data = await state.agent.get_response(request.message, id=current_user.id)
+
+        # 3. Lưu AI response sau khi có kết quả
+        await save_ai_response(
+            db=db,
+            user_id=current_user.id,
+            message=data["message"],
+            images=data.get("image"),
             channel="http",
         )
 
@@ -120,6 +99,8 @@ async def chat(
             message=data["message"],
             image=data["image"]
         )
+    except GenAIUnavailableError as exc:
+        return ChatResponse(message=str(exc), image=[])
     except Exception as exc:
         _log_exception_everywhere("HTTP chat failed", exc)
         return ChatResponse(message=BUSY_MESSAGE, image=[])
@@ -143,6 +124,8 @@ async def chat_no_auth(request: ChatRequest):
             message=data["message"],
             image=data["image"]
         )
+    except GenAIUnavailableError as exc:
+        return ChatResponse(message=str(exc), image=[])
     except Exception as exc:
         _log_exception_everywhere("HTTP chat_no_auth failed", exc)
         return ChatResponse(message=BUSY_MESSAGE, image=[])
@@ -178,21 +161,45 @@ async def websocket_chat(
     
     try:
         while True:
-            data = await websocket.receive_json()
+            try:
+                data = await websocket.receive_json()
+            except WebSocketDisconnect:
+                break
+            except RuntimeError as exc:
+                if websocket.application_state != WebSocketState.CONNECTED:
+                    logger.info("WebSocket chat disconnected before receive user_id=%s", getattr(current_user, "id", None))
+                    break
+                raise
+
             user_message = data.get("message", "")
             if not user_message:
                 await websocket.send_json({"message": "Bạn chưa nhập tin nhắn.", "image": None})
                 continue
 
             try:
-                response = await state.agent.get_response(user_message, id=current_user.id)
+                # 1. Lưu tin nhắn user ngay khi nhận được
                 async with AsyncSessionLocal() as db:
-                    await _save_chat_turn(
+                    await save_user_message(
                         db=db,
                         user_id=current_user.id,
-                        user_message=user_message,
-                        ai_message=response["message"],
-                        ai_images=response.get("image"),
+                        message=user_message,
+                        channel="websocket",
+                    )
+
+                # 2. Gọi AI xử lý
+                try:
+                    response = await state.agent.get_response(user_message, id=current_user.id)
+                except GenAIUnavailableError as exc:
+                    await websocket.send_json({"message": str(exc), "image": []})
+                    continue
+
+                # 3. Lưu AI response sau khi có kết quả
+                async with AsyncSessionLocal() as db:
+                    await save_ai_response(
+                        db=db,
+                        user_id=current_user.id,
+                        message=response["message"],
+                        images=response.get("image"),
                         channel="websocket",
                     )
 
@@ -200,6 +207,15 @@ async def websocket_chat(
                     "message": response["message"],
                     "image": response["image"]
                 })
+            except WebSocketDisconnect:
+                logger.info("WebSocket chat disconnected during send user_id=%s", getattr(current_user, "id", None))
+                break
+            except RuntimeError as exc:
+                if websocket.application_state != WebSocketState.CONNECTED:
+                    logger.info("WebSocket chat disconnected during send user_id=%s", getattr(current_user, "id", None))
+                    break
+                _log_exception_everywhere("WebSocket chat turn failed", exc)
+                await _safe_ws_send_busy(websocket)
             except Exception as exc:
                 _log_exception_everywhere("WebSocket chat turn failed", exc)
                 await _safe_ws_send_busy(websocket)
