@@ -138,9 +138,8 @@ const TrafficDashboard = () => {
       {/* Main Content */}
       <div className="space-y-4 sm:space-y-6">
         <div
-          className={`grid gap-4 sm:gap-6 ${
-            localFullscreen ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-4"
-          }`}
+          className={`grid gap-4 sm:gap-6 ${localFullscreen ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-4"
+            }`}
         >
           {/* Video Monitoring */}
           <div className={localFullscreen ? "col-span-1" : "col-span-3"}>
@@ -236,11 +235,10 @@ const TrafficDashboard = () => {
                               )}
                               <Badge
                                 variant="outline"
-                                className={`flex items-center space-x-1 text-xs px-2 py-0 h-5 leading-none ${
-                                  speedColor === "green"
+                                className={`flex items-center space-x-1 text-xs px-2 py-0 h-5 leading-none ${speedColor === "green"
                                     ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
                                     : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800"
-                                }`}
+                                  }`}
                               >
                                 <Gauge className="h-3 w-3" />
                                 <span className="font-medium">{speedText}</span>
