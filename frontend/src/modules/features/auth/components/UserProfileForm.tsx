@@ -1,18 +1,14 @@
 import { useState, useEffect } from "react";
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import {
-  Eye,
-  EyeOff,
   User,
-  Lock,
   Mail,
   Phone,
-  Car,
-  CheckCircle,
-  KeyRound,
   UserCircle,
+  Eye,
+  EyeOff,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { authConfig, userConfig } from "@/config";
@@ -27,15 +23,13 @@ function UserProfile() {
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showOldPassword, setShowOldPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // UI states
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
   const [activeSection, setActiveSection] = useState("profile");
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   // Fetch current user data
   useEffect(() => {
@@ -67,8 +61,6 @@ function UserProfile() {
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
-    setSuccess(false);
     try {
       const token = localStorage.getItem(authConfig.TOKEN_KEY);
       const res = await fetch(userConfig.PROFILE_URL, {
@@ -85,14 +77,11 @@ function UserProfile() {
       });
       const data = await res.json();
       if (res.ok) {
-        setSuccess(true);
         toast.success("Cập nhật thông tin thành công!");
       } else {
-        setError(data.detail || "Cập nhật thông tin thất bại!");
         toast.error(data.detail || "Cập nhật thông tin thất bại!");
       }
     } catch {
-      setError("Có lỗi xảy ra. Vui lòng thử lại.");
       toast.error("Có lỗi xảy ra. Vui lòng thử lại.");
     } finally {
       setLoading(false);
@@ -102,13 +91,10 @@ function UserProfile() {
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      setError("Mật khẩu mới không khớp!");
       toast.error("Mật khẩu mới không khớp!");
       return;
     }
     setLoading(true);
-    setError("");
-    setSuccess(false);
     try {
       const token = localStorage.getItem(authConfig.TOKEN_KEY);
       const res = await fetch(userConfig.PASSWORD_URL, {
@@ -124,17 +110,14 @@ function UserProfile() {
       });
       const data = await res.json();
       if (res.ok) {
-        setSuccess(true);
         setOldPassword("");
         setNewPassword("");
         setConfirmPassword("");
         toast.success("Cập nhật mật khẩu thành công!");
       } else {
-        setError(data.detail || "Cập nhật mật khẩu thất bại!");
         toast.error(data.detail || "Cập nhật mật khẩu thất bại!");
       }
     } catch {
-      setError("Có lỗi xảy ra. Vui lòng thử lại.");
       toast.error("Có lỗi xảy ra. Vui lòng thử lại.");
     } finally {
       setLoading(false);
@@ -142,262 +125,197 @@ function UserProfile() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-900 dark:to-blue-900 p-4">
-      <div className="flex flex-col lg:flex-row max-w-3xl w-full gap-4">
-        {/* Vertical Navigation - hidden on mobile, shown as horizontal tabs on tablet+ */}
-        <div className="hidden lg:flex flex-col space-y-2 py-8">
-          <button
-            onClick={() => setActiveSection("profile")}
-            className={`group flex items-center gap-3 p-3 rounded-l-lg transition-all ${
-              activeSection === "profile"
-                ? "bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-blue-600 dark:text-blue-400 shadow-lg"
-                : "text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/50 dark:hover:bg-gray-800/50"
-            }`}
-          >
-            <UserCircle className="w-6 h-6" />
-            <span className="font-medium">Thông tin</span>
-          </button>
+    <div className="p-4 sm:p-6 space-y-8">
+      {/* Simple Header */}
+      <div className="flex flex-col gap-2 border-b border-border pb-6">
+        <h2 className="text-2xl font-bold text-foreground">
+          Cài đặt tài khoản
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Quản lý thông tin cá nhân và bảo mật tài khoản của bạn
+        </p>
+      </div>
 
-          <button
-            onClick={() => setActiveSection("password")}
-            className={`group flex items-center gap-3 p-3 rounded-l-lg transition-all ${
-              activeSection === "password"
-                ? "bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-blue-600 dark:text-blue-400 shadow-lg"
-                : "text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/50 dark:hover:bg-gray-800/50"
-            }`}
-          >
-            <KeyRound className="w-6 h-6" />
-            <span className="font-medium">Mật khẩu</span>
-          </button>
-        </div>
-
-        <Card className="flex-1 shadow-2xl border-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
-          <CardHeader className="text-center pb-4">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-3 shadow-lg">
-              <Car className="w-8 h-8 text-white" />
-            </div>
-            <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              {activeSection === "profile"
-                ? "Thông tin cá nhân"
-                : "Đổi mật khẩu"}
-            </CardTitle>
-            <p className="text-gray-600 dark:text-gray-400 mt-1 text-xs sm:text-sm">
-              {activeSection === "profile"
-                ? "Cập nhật thông tin tài khoản"
-                : "Thay đổi mật khẩu đăng nhập"}
-            </p>
-
-            {/* Mobile tabs */}
-            <div className="flex lg:hidden gap-2 mt-4 justify-center">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
+        {/* Navigation Sidebar */}
+        <aside className="lg:col-span-1 space-y-6">
+          <div className="rounded-xl border border-border bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm p-4 shadow-sm">
+            <nav className="flex flex-col gap-1">
               <button
                 onClick={() => setActiveSection("profile")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold transition-all cursor-pointer ${
                   activeSection === "profile"
-                    ? "bg-blue-500 text-white shadow-lg"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-foreground"
                 }`}
               >
-                <UserCircle className="w-5 h-5" />
-                <span className="text-sm font-medium">Thông tin</span>
+                <UserCircle className="h-4 w-4" />
+                Hồ sơ cá nhân
               </button>
               <button
                 onClick={() => setActiveSection("password")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold transition-all cursor-pointer ${
                   activeSection === "password"
-                    ? "bg-blue-500 text-white shadow-lg"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-foreground"
                 }`}
               >
-                <KeyRound className="w-5 h-5" />
-                <span className="text-sm font-medium">Mật khẩu</span>
+                <UserCircle className="h-4 w-4" />
+                Đổi mật khẩu
               </button>
+            </nav>
+          </div>
+
+          <div className="rounded-xl border border-border bg-slate-100/40 dark:bg-slate-800/40 p-5 text-center backdrop-blur-sm">
+            <div className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary mb-3">
+              <UserCircle className="h-8 w-8" />
             </div>
-          </CardHeader>
-          <CardContent className="px-4 sm:px-6 pb-6">
-            {/* Profile Form */}
+            <p className="text-sm font-bold text-foreground truncate">{username || "Người dùng"}</p>
+            <p className="text-xs font-medium text-muted-foreground truncate">{email}</p>
+          </div>
+        </aside>
+
+        {/* Main Content Area */}
+        <div className="lg:col-span-3">
+          <div className="rounded-xl border border-border bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-6 sm:p-8 shadow-sm">
             {activeSection === "profile" && (
-              <form onSubmit={handleUpdateProfile} className="space-y-5">
-                <div className="space-y-3">
-                  {/* Username */}
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
-                    <Input
-                      placeholder="Tên đăng nhập"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      required
-                      className="pl-9 h-10 text-sm border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white"
-                    />
+              <form onSubmit={handleUpdateProfile} className="space-y-6">
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 ml-1">
+                      Tên hiển thị
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        className="pl-10 h-11 rounded-lg border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50"
+                      />
+                    </div>
                   </div>
-                  {/* Email */}
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
-                    <Input
-                      type="email"
-                      placeholder="Email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="pl-9 h-10 text-sm border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white"
-                    />
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 ml-1">
+                      Số điện thoại
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="pl-10 h-11 rounded-lg border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50"
+                      />
+                    </div>
                   </div>
-                  {/* Phone */}
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
-                    <Input
-                      placeholder="Số điện thoại"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      required
-                      className="pl-9 h-10 text-sm border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white"
-                    />
+                  <div className="sm:col-span-2 space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 ml-1">
+                      Địa chỉ Email
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10 h-11 rounded-lg border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Status Messages */}
-                {success && (
-                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 px-3 py-2 rounded-lg text-xs flex items-center">
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Cập nhật thông tin thành công!
-                  </div>
-                )}
-                {error && (
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg text-xs flex items-center">
-                    <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                    {error}
-                  </div>
-                )}
-
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-10 text-sm bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                >
-                  {loading ? (
-                    <div className="flex items-center justify-center">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      Đang cập nhật...
-                    </div>
-                  ) : (
-                    "Cập nhật thông tin"
-                  )}
-                </Button>
+                <div className="flex justify-end pt-4">
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="rounded-lg px-10 h-11 font-bold shadow-md transition-all active:scale-95"
+                  >
+                    {loading ? "Đang lưu..." : "Lưu thay đổi"}
+                  </Button>
+                </div>
               </form>
             )}
 
-            {/* Password Form */}
             {activeSection === "password" && (
-              <form onSubmit={handleUpdatePassword} className="space-y-5">
-                <div className="space-y-3">
-                  {/* Old Password */}
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
-                    <Input
-                      type={showOldPassword ? "text" : "password"}
-                      placeholder="Mật khẩu hiện tại"
-                      value={oldPassword}
-                      onChange={(e) => setOldPassword(e.target.value)}
-                      required
-                      className="pl-9 pr-10 h-10 text-sm border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowOldPassword(!showOldPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
-                    >
-                      {showOldPassword ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </button>
+              <form onSubmit={handleUpdatePassword} className="space-y-6">
+                <div className="space-y-5 max-w-md">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 ml-1">
+                      Mật khẩu hiện tại
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        type={showOld ? "text" : "password"}
+                        value={oldPassword}
+                        onChange={(e) => setOldPassword(e.target.value)}
+                        className="pl-10 pr-10 h-11 rounded-lg border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowOld(!showOld)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                      >
+                        {showOld ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
-
-                  {/* New Password */}
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
-                    <Input
-                      type={showNewPassword ? "text" : "password"}
-                      placeholder="Mật khẩu mới"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      required
-                      className="pl-9 pr-10 h-10 text-sm border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
-                    >
-                      {showNewPassword ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </button>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 ml-1">
+                      Mật khẩu mới
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        type={showNew ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="pl-10 pr-10 h-11 rounded-lg border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNew(!showNew)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                      >
+                        {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
-
-                  {/* Confirm New Password */}
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
-                    <Input
-                      type={showConfirmPassword ? "text" : "password"}
-                      placeholder="Nhập lại mật khẩu mới"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required
-                      className="pl-9 pr-10 h-10 text-sm border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </button>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 ml-1">
+                      Xác nhận mật khẩu mới
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        type={showConfirm ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="pl-10 pr-10 h-11 rounded-lg border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirm(!showConfirm)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                      >
+                        {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                {/* Status Messages */}
-                {success && (
-                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 px-3 py-2 rounded-lg text-xs flex items-center">
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Cập nhật mật khẩu thành công!
-                  </div>
-                )}
-                {error && (
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg text-xs flex items-center">
-                    <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                    {error}
-                  </div>
-                )}
-
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-10 text-sm bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                >
-                  {loading ? (
-                    <div className="flex items-center justify-center">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      Đang cập nhật...
-                    </div>
-                  ) : (
-                    "Cập nhật mật khẩu"
-                  )}
-                </Button>
+                <div className="flex justify-end pt-4">
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="rounded-lg px-10 h-11 font-bold shadow-md transition-all active:scale-95"
+                  >
+                    {loading ? "Đang xử lý..." : "Đổi mật khẩu"}
+                  </Button>
+                </div>
               </form>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

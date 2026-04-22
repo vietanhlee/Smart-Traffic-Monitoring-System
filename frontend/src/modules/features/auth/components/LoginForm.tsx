@@ -2,11 +2,16 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Eye, EyeOff, Mail, Lock, Car } from "lucide-react";
 import { authConfig } from "@/config";
 
-function Login({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
+function Login({
+  onLoginSuccess,
+  onToggleRegister,
+}: {
+  onLoginSuccess?: () => void;
+  onToggleRegister?: () => void;
+}) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,78 +50,102 @@ function Login({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 p-4">
-      <Card className="w-full max-w-md shadow-2xl border border-purple-200/50 dark:border-0 bg-white/95 dark:bg-gray-800/90 backdrop-blur-xl">
-        <CardHeader className="text-center pb-8">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-4 shadow-lg">
-            <Car className="w-8 h-8 text-white" />
+    <div className="min-h-screen flex items-center justify-center bg-transparent px-4 py-10">
+      <div className="w-full max-w-lg space-y-8">
+        <div className="text-center space-y-4">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[2rem] bg-white dark:bg-slate-900 shadow-2xl shadow-indigo-500/20 border border-indigo-100 dark:border-indigo-900/50">
+            <Car className="h-10 w-10 text-indigo-600 dark:text-indigo-400" />
           </div>
-          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Smart Transport
-          </CardTitle>
-          <p className="text-gray-600 dark:text-gray-300 mt-2">
-            Đăng nhập để tiếp tục
-          </p>
-        </CardHeader>
-        <CardContent className="px-8 pb-8">
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-4">
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
-                <Input
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="pl-10 h-12 border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Mật khẩu"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="pl-10 pr-10 h-12 border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-            </div>
-            {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full h-12 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-            >
-              {loading ? (
-                <div className="flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Đang đăng nhập...
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold text-slate-900 dark:text-white">
+              Chào mừng trở lại
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400 font-medium">
+              Đăng nhập để vào hệ thống
+            </p>
+          </div>
+        </div>
+
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-3xl blur opacity-15 group-hover:opacity-25 transition duration-1000 group-hover:duration-200"></div>
+          <div className="relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl rounded-3xl border border-white/20 dark:border-slate-800/50 p-8 shadow-2xl">
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">
+                    Email
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                    <Input
+                      type="email"
+                      placeholder="name@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="w-full h-12 rounded-xl border-slate-200 bg-white/50 px-12 dark:border-slate-700 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 transition-all"
+                    />
+                  </div>
                 </div>
-              ) : (
-                "Đăng nhập"
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">
+                    Mật khẩu
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="w-full h-12 rounded-xl border-slate-200 bg-white/50 px-12 dark:border-slate-700 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-500 transition-colors"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {error && (
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-600 dark:text-red-400 text-center font-medium">
+                  {error}
+                </div>
               )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full h-12 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-base shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+              >
+                {loading ? "Đang xử lý..." : "Đăng nhập ngay"}
+              </Button>
+            </form>
+          </div>
+        </div>
+
+        <div className="text-center">
+          <p className="text-slate-500 dark:text-slate-400 font-medium">
+            Chưa có tài khoản?{" "}
+            <button
+              onClick={() => onToggleRegister?.()}
+              className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline cursor-pointer"
+            >
+              Tạo tài khoản miễn phí
+            </button>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

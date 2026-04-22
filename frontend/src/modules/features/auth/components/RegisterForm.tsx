@@ -1,23 +1,17 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
-import {
-  Eye,
-  EyeOff,
-  User,
-  Lock,
-  Mail,
-  Phone,
-  Car,
-  CheckCircle,
-} from "lucide-react";
+import { Eye, EyeOff, User, Lock, Mail, Phone, Car } from "lucide-react";
 import { authConfig } from "@/config";
 
-function Register({ onRegisterSuccess }: { onRegisterSuccess?: () => void }) {
-  const navigate = useNavigate();
-
+function Register({
+  onRegisterSuccess,
+  onToggleLogin,
+}: {
+  onRegisterSuccess?: () => void;
+  onToggleLogin?: () => void;
+}) {
   // Form states
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -68,10 +62,7 @@ function Register({ onRegisterSuccess }: { onRegisterSuccess?: () => void }) {
       if (res.ok) {
         setSuccess(true);
         onRegisterSuccess?.();
-        // Chuyển hướng đến trang đăng nhập sau 2 giây
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000);
+        onToggleLogin?.();
       } else {
         setError(data.detail || "Đăng ký tài khoản thất bại!");
       }
@@ -83,155 +74,174 @@ function Register({ onRegisterSuccess }: { onRegisterSuccess?: () => void }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-slate-900 dark:to-blue-900 p-4">
-      <Card className="w-full max-w-lg shadow-2xl border border-purple-200/50 dark:border-0 bg-white/95 dark:bg-gray-800/90 backdrop-blur-xl">
-        <CardHeader className="text-center pb-8">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-4 shadow-lg">
-            <Car className="w-8 h-8 text-white" />
+    <div className="min-h-screen flex items-center justify-center bg-transparent px-4 py-10">
+      <div className="w-full max-w-lg space-y-8">
+        <div className="text-center space-y-4">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[2rem] bg-white dark:bg-slate-900 shadow-2xl shadow-indigo-500/20 border border-indigo-100 dark:border-indigo-900/50">
+            <Car className="h-10 w-10 text-indigo-600 dark:text-indigo-400" />
           </div>
-          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Đăng ký tài khoản
-          </CardTitle>
-          <p className="text-gray-600 dark:text-gray-300 mt-2">
-            Tạo tài khoản mới để sử dụng hệ thống
-          </p>
-        </CardHeader>
-        <CardContent className="px-8 pb-8">
-          <form onSubmit={handleRegister} className="space-y-6">
-            <div className="space-y-4">
-              {/* Username field */}
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
-                <Input
-                  placeholder="Tên đăng nhập"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                  className="pl-10 h-12 border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-
-              {/* Email field */}
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
-                <Input
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="pl-10 h-12 border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-
-              {/* Phone field */}
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
-                <Input
-                  type="tel"
-                  placeholder="Số điện thoại"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required
-                  className="pl-10 h-12 border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-
-              {/* Password field */}
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Mật khẩu"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="pl-10 pr-10 h-12 border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white"
-                  minLength={8}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-
-              {/* Confirm Password field */}
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
-                <Input
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Nhập lại mật khẩu"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="pl-10 pr-10 h-12 border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white"
-                  minLength={8}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Status Messages */}
-            {success && (
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 px-4 py-3 rounded-lg text-sm flex items-center">
-                <CheckCircle className="w-5 h-5 mr-2" />
-                Đăng ký tài khoản thành công! Đang chuyển hướng...
-              </div>
-            )}
-            {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm flex items-center">
-                <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
-                {error}
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full h-12 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-            >
-              {loading ? (
-                <div className="flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Đang đăng ký...
-                </div>
-              ) : (
-                "Đăng ký"
-              )}
-            </Button>
-
-            {/* Login Link */}
-            <p className="text-center text-gray-600 dark:text-gray-300">
-              Đã có tài khoản?{" "}
-              <button
-                type="button"
-                onClick={() => navigate("/login")}
-                className="text-purple-600 dark:text-blue-400 hover:underline font-medium"
-              >
-                Đăng nhập ngay
-              </button>
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold text-slate-900 dark:text-white">
+              Tham gia ngay
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400 font-medium">
+              Tạo tài khoản để vào hệ thống
             </p>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+        </div>
+
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-3xl blur opacity-15 group-hover:opacity-25 transition duration-1000 group-hover:duration-200"></div>
+          <div className="relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl rounded-3xl border border-white/20 dark:border-slate-800/50 p-8 shadow-2xl">
+            <form onSubmit={handleRegister} className="space-y-4">
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+                    Họ tên
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                      placeholder="Nguyễn Văn A"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      required
+                      className="w-full h-11 rounded-xl border-slate-200 bg-white/50 px-11 dark:border-slate-700 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+                    Email
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                      type="email"
+                      placeholder="name@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="w-full h-11 rounded-xl border-slate-200 bg-white/50 px-11 dark:border-slate-700 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+                    Số điện thoại
+                  </label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                      type="tel"
+                      placeholder="0987xxxxxx"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      required
+                      className="w-full h-11 rounded-xl border-slate-200 bg-white/50 px-11 dark:border-slate-700 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+                      Mật khẩu
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        minLength={8}
+                        className="w-full h-11 rounded-xl border-slate-200 bg-white/50 px-11 dark:border-slate-700 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 transition-all pr-11"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-500 transition-colors"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+                      Xác nhận
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        minLength={8}
+                        className="w-full h-11 rounded-xl border-slate-200 bg-white/50 px-11 dark:border-slate-700 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 transition-all pr-11"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-500 transition-colors"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {success && (
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-sm text-emerald-600 dark:text-emerald-400 text-center font-medium">
+                  Đăng ký thành công! Đang chuyển hướng...
+                </div>
+              )}
+
+              {error && (
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-600 dark:text-red-400 text-center font-medium">
+                  {error}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full h-12 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-base shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 mt-2"
+              >
+                {loading ? "Đang xử lý..." : "Tạo tài khoản ngay"}
+              </Button>
+            </form>
+          </div>
+        </div>
+
+        <div className="text-center">
+          <p className="text-slate-500 dark:text-slate-400 font-medium">
+            Đã có tài khoản?{" "}
+            <button
+              onClick={() => onToggleLogin?.()}
+              className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline cursor-pointer"
+            >
+              Đăng nhập tại đây
+            </button>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
