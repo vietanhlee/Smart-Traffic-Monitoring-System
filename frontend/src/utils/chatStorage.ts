@@ -23,11 +23,7 @@ export const getChatHistoryKey = (): string => {
     ? `chat_history_${token.substring(0, 10)}`
     : "chat_history_guest";
 
-  // Debug logging - you can remove this in production
-  console.log("[chatStorage] getChatHistoryKey:", {
-    tokenPrefix: token?.substring(0, 10) || "none",
-    key: key,
-  });
+  // Debug logging - bạn có thể bỏ trong production
 
   return key;
 };
@@ -46,23 +42,16 @@ export const getChatDraftKey = (): string => {
 export const loadChatHistory = (): Message[] => {
   try {
     const key = getChatHistoryKey();
-    console.log("[chatStorage] Loading messages from key:", key);
 
     const saved = localStorage.getItem(key);
     if (saved) {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        console.log(
-          "[chatStorage] Successfully loaded",
-          parsed.length,
-          "messages"
-        );
+        // "[chatStorage] Successfully loaded", parsed.length, "messages"
         return parsed;
       }
     }
-    console.log(
-      "[chatStorage] No saved messages found, returning welcome message"
-    );
+    // "[chatStorage] No saved messages found, returning welcome message"
   } catch (error) {
     console.error("Error loading chat history:", error);
   }
@@ -84,12 +73,7 @@ export const loadChatHistory = (): Message[] => {
 export const saveChatHistory = (messages: Message[]): void => {
   try {
     const key = getChatHistoryKey();
-    console.log(
-      "[chatStorage] Saving",
-      messages.length,
-      "messages to key:",
-      key
-    );
+    // "[chatStorage] Saving", messages.length, "messages to key:", key
     localStorage.setItem(key, JSON.stringify(messages));
   } catch (error) {
     console.error("Error saving chat history:", error);
@@ -150,7 +134,6 @@ export const clearChatDraft = (): void => {
  * Useful when user logs out
  */
 export const clearAllChatData = (): void => {
-  console.log("[chatStorage] Clearing all chat data for current user");
   clearChatHistory();
   clearChatDraft();
 };
@@ -161,17 +144,14 @@ export const clearAllChatData = (): void => {
  */
 export const clearAllUsersData = (): void => {
   try {
-    console.log("[chatStorage] Clearing ALL users' chat data");
     const keys = Object.keys(localStorage);
     let count = 0;
     keys.forEach((key) => {
       if (key.startsWith("chat_history_") || key.startsWith("chat_draft_")) {
         localStorage.removeItem(key);
-        console.log("[chatStorage] Removed:", key);
         count++;
       }
     });
-    console.log(`[chatStorage] Cleared ${count} chat keys`);
   } catch (error) {
     console.error("Error clearing all users data:", error);
   }
@@ -182,45 +162,24 @@ export const clearAllUsersData = (): void => {
  * Use in DevTools console: window.debugChatStorage()
  */
 export const debugChatStorage = (): void => {
-  console.log("=== Chat Storage Debug Info ===");
-
-  const token = localStorage.getItem(authConfig.TOKEN_KEY);
-  console.log("Current token:", token?.substring(0, 20) + "...");
-  console.log("Token prefix:", token?.substring(0, 10) || "none");
-
-  const currentKey = getChatHistoryKey();
-  console.log("Current chat key:", currentKey);
-
   const keys = Object.keys(localStorage);
   const chatKeys = keys.filter(
-    (k) => k.startsWith("chat_history_") || k.startsWith("chat_draft_")
+    (k) => k.startsWith("chat_history_") || k.startsWith("chat_draft_"),
   );
 
-  console.log("\nAll chat keys in localStorage:");
   chatKeys.forEach((key) => {
     const value = localStorage.getItem(key);
     if (key.startsWith("chat_history_")) {
       try {
-        const messages = JSON.parse(value || "[]");
-        console.log(`  ${key}: ${messages.length} messages`);
-      } catch {
-        console.log(`  ${key}: invalid JSON`);
-      }
-    } else {
-      console.log(`  ${key}: "${value?.substring(0, 50)}..."`);
+        JSON.parse(value || "[]");
+      } catch {}
     }
   });
 
-  console.log("\nCurrent user's messages:");
-  const currentMessages = loadChatHistory();
-  console.log(`  ${currentMessages.length} messages loaded`);
-  currentMessages.forEach((msg, i) => {
-    console.log(
-      `  [${i}] ${msg.user ? "User" : "Bot"}: ${msg.text.substring(0, 50)}...`
-    );
-  });
-
-  console.log("=== End Debug Info ===");
+  // const currentMessages = loadChatHistory();
+  // currentMessages.forEach((msg, i) => {
+  //   `[${i}] ${msg.user ? "User" : "Bot"}: ${msg.text.substring(0, 50)}...`);
+  // });
 };
 
 // Expose to window for easy debugging

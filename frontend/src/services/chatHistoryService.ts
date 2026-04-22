@@ -44,16 +44,13 @@ export const fetchChatHistory = async (
 ): Promise<Message[]> => {
   try {
     const token = localStorage.getItem(authConfig.TOKEN_KEY);
-    console.log(
-      `fetchChatHistory called page=${page} pageSize=${pageSize} token=${token ? "present" : "missing"}`,
-    );
+      // `fetchChatHistory called page=${page} pageSize=${pageSize} token=${token ? "present" : "missing"}`
     if (!token) {
       console.warn("No token found, cannot fetch chat history");
       return [];
     }
 
     const url = `${endpoints.chatHistoryMessages}?page=${page}&page_size=${pageSize}`;
-    console.log("fetchChatHistory URL:", url);
     const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -65,9 +62,7 @@ export const fetchChatHistory = async (
     }
 
     const data: ChatHistoryPageResponse = await response.json();
-    console.log(
-      `fetchChatHistory response items=${data.items?.length ?? 0} total_items=${data.total_items}`,
-    );
+      // `fetchChatHistory response items=${data.items?.length ?? 0} total_items=${data.total_items}`
 
     // Backend returns items in descending order (newest -> oldest).
     // Reverse to render chat chronologically (oldest -> newest) without relying on Date parsing.

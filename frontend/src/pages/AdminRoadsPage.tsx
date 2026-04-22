@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { getApiUrl } from "@/config/settings";
 import { authConfig, endpoints } from "@/config";
 import AdminLayout from "./AdminLayout";
@@ -182,7 +181,9 @@ export default function AdminRoadsPage() {
     return (
       <div className="flex items-center justify-center p-12">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
-        <span className="ml-3 text-sm font-semibold text-slate-500">Đang tải dữ liệu...</span>
+        <span className="ml-3 text-sm font-semibold text-slate-500">
+          Đang tải dữ liệu...
+        </span>
       </div>
     );
   }
@@ -192,11 +193,18 @@ export default function AdminRoadsPage() {
     return (
       <div className="flex items-center justify-center p-12">
         <div className="max-w-md w-full p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-4 shadow-lg">
-          <h2 className="text-xl font-bold text-rose-600">Truy cập bị từ chối</h2>
+          <h2 className="text-xl font-bold text-rose-600">
+            Truy cập bị từ chối
+          </h2>
           <p className="text-slate-500 dark:text-slate-400 font-medium">
             {error || "Bạn không có quyền truy cập trang admin."}
           </p>
-          <Button onClick={() => navigate("/home")} className="w-full h-11 rounded-lg">Về trang chủ</Button>
+          <Button
+            onClick={() => navigate("/home")}
+            className="w-full h-11 rounded-lg"
+          >
+            Về trang chủ
+          </Button>
         </div>
       </div>
     );
@@ -218,7 +226,9 @@ export default function AdminRoadsPage() {
           onClick={fetchTrafficStatuses}
           className="h-9 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 gap-2 font-semibold transition-all hover:bg-slate-50 dark:hover:bg-indigo-600 dark:hover:text-white dark:hover:border-indigo-600 text-slate-700 dark:text-slate-200 active:bg-indigo-700 active:text-white"
         >
-          <RefreshCw className={`h-4 w-4 ${trafficLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            className={`h-4 w-4 ${trafficLoading ? "animate-spin" : ""}`}
+          />
           Làm mới trạng thái
         </Button>
       }
@@ -226,7 +236,9 @@ export default function AdminRoadsPage() {
       <div className="space-y-6 pb-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Danh sách Tuyến đường</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+              Danh sách Tuyến đường
+            </h3>
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Điều khiển các tiến trình xử lý AI thời gian thực
             </p>
@@ -250,11 +262,15 @@ export default function AdminRoadsPage() {
           {trafficLoading && roadEntries.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
               <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Đang quét hệ thống...</p>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                Đang quét hệ thống...
+              </p>
             </div>
           ) : roadEntries.length === 0 ? (
             <div className="rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 py-16 text-center">
-              <p className="text-sm font-semibold text-slate-400">Không tìm thấy subprocess khả dụng</p>
+              <p className="text-sm font-semibold text-slate-400">
+                Không tìm thấy subprocess khả dụng
+              </p>
             </div>
           ) : (
             roadEntries.map(([roadName, runtime]) => {
@@ -272,24 +288,39 @@ export default function AdminRoadsPage() {
                 >
                   {/* Info */}
                   <div className="flex items-center gap-4 min-w-0">
-                    <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${
-                      runtime.active ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
-                    }`}>
-                      {runtime.active ? <Play className="h-6 w-6 fill-current" /> : <Square className="h-6 w-6 fill-current" />}
+                    <div
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${
+                        runtime.active
+                          ? "bg-emerald-600 text-white shadow-md"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+                      }`}
+                    >
+                      {runtime.active ? (
+                        <Play className="h-6 w-6 fill-current" />
+                      ) : (
+                        <Square className="h-6 w-6 fill-current" />
+                      )}
                     </div>
                     <div className="min-w-0 space-y-0.5">
                       <h4 className="truncate text-lg font-bold text-slate-900 dark:text-white">
                         {roadName}
                       </h4>
                       <div className="flex items-center gap-3">
-                        <span className={`text-[10px] font-bold uppercase tracking-wider ${
-                          runtime.active ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'
-                        }`}>
+                        <span
+                          className={`text-[10px] font-bold uppercase tracking-wider ${
+                            runtime.active
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-slate-400 dark:text-slate-500"
+                          }`}
+                        >
                           {runtime.active ? "Đang chạy" : "Đã dừng"}
                         </span>
                         {runtime.pid && (
                           <span className="text-[10px] font-semibold text-slate-400">
-                            PID: <span className="text-slate-700 dark:text-slate-300 font-mono">{runtime.pid}</span>
+                            PID:{" "}
+                            <span className="text-slate-700 dark:text-slate-300 font-mono">
+                              {runtime.pid}
+                            </span>
                           </span>
                         )}
                       </div>
@@ -305,7 +336,9 @@ export default function AdminRoadsPage() {
                         disabled={Boolean(trafficActionLoading[startKey])}
                         onClick={() => manageRoadProcess(roadName, "start")}
                       >
-                        {trafficActionLoading[startKey] ? "Đang chạy..." : "Kích hoạt"}
+                        {trafficActionLoading[startKey]
+                          ? "Đang chạy..."
+                          : "Kích hoạt"}
                       </Button>
                     ) : (
                       <Button
@@ -315,7 +348,9 @@ export default function AdminRoadsPage() {
                         disabled={Boolean(trafficActionLoading[stopKey])}
                         onClick={() => manageRoadProcess(roadName, "stop")}
                       >
-                        {trafficActionLoading[stopKey] ? "Đang dừng..." : "Dừng tiến trình"}
+                        {trafficActionLoading[stopKey]
+                          ? "Đang dừng..."
+                          : "Dừng tiến trình"}
                       </Button>
                     )}
                   </div>
@@ -329,7 +364,9 @@ export default function AdminRoadsPage() {
         {trafficError && (
           <div className="rounded-xl border border-rose-200 dark:border-rose-800/50 bg-rose-50 dark:bg-rose-900/10 p-4 flex items-center gap-3 text-rose-600 dark:text-rose-400 shadow-sm">
             <RefreshCw className="h-4 w-4 shrink-0" />
-            <p className="text-xs font-bold uppercase tracking-wider">{trafficError}</p>
+            <p className="text-xs font-bold uppercase tracking-wider">
+              {trafficError}
+            </p>
           </div>
         )}
       </div>

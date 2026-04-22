@@ -8,10 +8,8 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  Legend,
 } from "recharts";
 import { Button } from "@/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { getApiUrl } from "@/config/settings";
 import { authConfig, endpoints } from "@/config";
@@ -61,11 +59,15 @@ function ResourceBar({
 }) {
   return (
     <div className="group relative overflow-hidden rounded-2xl bg-white/60 dark:bg-slate-900/40 border border-border p-5 shadow-sm backdrop-blur-sm transition-all hover:shadow-md">
-      <div className={`absolute top-0 left-0 w-1.5 h-full ${colorClass} opacity-80`} />
-      
+      <div
+        className={`absolute top-0 left-0 w-1.5 h-full ${colorClass} opacity-80`}
+      />
+
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${colorClass} text-white shadow-sm`}>
+          <div
+            className={`flex h-10 w-10 items-center justify-center rounded-xl ${colorClass} text-white shadow-sm`}
+          >
             <Icon className="h-5 w-5" />
           </div>
           <div>
@@ -79,7 +81,9 @@ function ResourceBar({
         </div>
         {details && (
           <div className="text-right">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-70">Sử dụng</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-70">
+              Sử dụng
+            </span>
             <p className="text-xs font-bold text-foreground">{details}</p>
           </div>
         )}
@@ -245,7 +249,9 @@ export default function AdminResourcesPage() {
     return (
       <div className="flex h-[40vh] flex-col items-center justify-center space-y-3">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
-        <span className="text-sm font-semibold text-slate-500">Đang tải tài nguyên...</span>
+        <span className="text-sm font-semibold text-slate-500">
+          Đang tải tài nguyên...
+        </span>
       </div>
     );
   }
@@ -259,7 +265,9 @@ export default function AdminResourcesPage() {
             <RefreshCw className="h-8 w-8 text-rose-500" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Truy cập bị từ chối</h2>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+              Truy cập bị từ chối
+            </h2>
             <p className="text-slate-500 dark:text-slate-400 font-medium">
               {error || "Bạn không có quyền truy cập trang quản trị."}
             </p>
@@ -339,7 +347,9 @@ export default function AdminResourcesPage() {
         <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm overflow-hidden">
           <div className="mb-6 flex items-end justify-between">
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Lịch sử hiệu suất</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                Lịch sử hiệu suất
+              </h3>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 {lastUpdate ? `Cập nhật: ${lastUpdate}` : "Đang chờ..."}
               </p>
@@ -347,22 +357,31 @@ export default function AdminResourcesPage() {
             <div className="flex gap-4">
               <div className="flex items-center gap-2">
                 <div className="h-2.5 w-2.5 rounded-full bg-blue-600"></div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase">CPU</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase">
+                  CPU
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="h-2.5 w-2.5 rounded-full bg-emerald-600"></div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase">RAM</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase">
+                  RAM
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="h-2.5 w-2.5 rounded-full bg-amber-600"></div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase">Disk</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase">
+                  Disk
+                </span>
               </div>
             </div>
           </div>
 
           <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={history} margin={{ left: -20, right: 10, top: 10, bottom: 0 }}>
+              <LineChart
+                data={history}
+                margin={{ left: -20, right: 10, top: 10, bottom: 0 }}
+              >
                 <CartesianGrid
                   strokeDasharray="4 4"
                   vertical={false}
@@ -389,12 +408,21 @@ export default function AdminResourcesPage() {
                     if (active && payload && payload.length) {
                       return (
                         <div className="rounded-lg bg-slate-900 p-3 shadow-xl border border-slate-800">
-                          <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 border-b border-slate-800 pb-1">{payload[0].payload.time}</p>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 border-b border-slate-800 pb-1">
+                            {payload[0].payload.time}
+                          </p>
                           <div className="space-y-1.5">
                             {payload.map((p: any) => (
-                              <div key={p.name} className="flex items-center justify-between gap-4">
-                                <span className="text-[10px] font-bold text-slate-300 uppercase">{p.name}</span>
-                                <span className="text-xs font-bold text-white">{Number(p.value).toFixed(1)}%</span>
+                              <div
+                                key={p.name}
+                                className="flex items-center justify-between gap-4"
+                              >
+                                <span className="text-[10px] font-bold text-slate-300 uppercase">
+                                  {p.name}
+                                </span>
+                                <span className="text-xs font-bold text-white">
+                                  {Number(p.value).toFixed(1)}%
+                                </span>
                               </div>
                             ))}
                           </div>
@@ -439,7 +467,7 @@ export default function AdminResourcesPage() {
         {/* ── Error card ─────────────────────────────────── */}
         {metrics?.error && (
           <div className="rounded-xl border border-rose-200 dark:border-rose-800/50 bg-rose-50 dark:bg-rose-900/10 p-5 flex items-center gap-4 text-rose-600 dark:text-rose-400 shadow-sm">
-            <AlertTriangle className="h-5 w-5 shrink-0" />
+            {/* <AlertTriangle className="h-5 w-5 shrink-0" /> */}
             <p className="text-sm font-semibold">{metrics.error}</p>
           </div>
         )}

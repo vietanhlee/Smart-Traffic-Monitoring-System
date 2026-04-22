@@ -1,4 +1,4 @@
-import TrafficAnalytics from "../modules/features/traffic/components/TrafficAnalyticsClean";
+import TrafficAnalytics from "../modules/features/traffic/components/TrafficAnalytics";
 import { useEffect } from "react";
 import { useTrafficStore } from "@/hooks/useTrafficStore";
 
