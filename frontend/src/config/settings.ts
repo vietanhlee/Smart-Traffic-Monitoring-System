@@ -157,17 +157,13 @@ export const CHAT = {
 
 export const TRAFFIC = {
   // Refresh intervals
-  VIDEO_REFRESH_INTERVAL: getNumberEnv("VITE_TRAFFIC_VIDEO_REFRESH", 100), // ms
-  INFO_REFRESH_INTERVAL: getNumberEnv("VITE_TRAFFIC_INFO_REFRESH", 1000), // ms
-
-  // Display settings
   SHOW_DETECTION_BOXES: getBoolEnv("VITE_TRAFFIC_SHOW_BOXES", true),
   SHOW_SPEED_INFO: getBoolEnv("VITE_TRAFFIC_SHOW_SPEED", true),
   SHOW_COUNT_INFO: getBoolEnv("VITE_TRAFFIC_SHOW_COUNT", true),
 
   // Performance
   MAX_FPS: getNumberEnv("VITE_TRAFFIC_MAX_FPS", 30),
-  VIDEO_QUALITY: getEnv("VITE_TRAFFIC_VIDEO_QUALITY", "medium") as
+  VIDEO_QUALITY: getEnv("VITE_TRAFFIC_VIDEO_QUALITY", "high") as
     | "low"
     | "medium"
     | "high",
@@ -398,10 +394,6 @@ export const printSettings = (): void => {
   if (!LOGGING.ENABLE_CONSOLE_LOGS) return;
 
   console.group("📋 Application Settings");
-  console.log("Environment:", ENVIRONMENT);
-  console.log("API Base:", API.HTTP_BASE);
-  console.log("WebSocket Base:", API.WS_BASE);
-  console.log("Features:", FEATURES);
   console.groupEnd();
 };
 
@@ -413,8 +405,6 @@ export type Environment = typeof ENVIRONMENT;
 export type Theme = typeof UI.DEFAULT_THEME;
 export type LogLevel = typeof LOGGING.LEVEL;
 export type NotificationPosition = typeof NOTIFICATION.POSITION;
-export type VideoQuality = typeof TRAFFIC.VIDEO_QUALITY;
-
 // ============================================
 // DEFAULT EXPORT
 // ============================================

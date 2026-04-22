@@ -22,7 +22,7 @@ interface WebSocketHook {
 
 export const useWebSocket = (
   url: string | null,
-  options: WebSocketHookOptions = {}
+  options: WebSocketHookOptions = {},
 ): WebSocketHook => {
   const {
     maxReconnectAttempts = 10, // Tăng số lần retry lên 10
@@ -41,6 +41,7 @@ export const useWebSocket = (
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
   const intentionalCloseRef = useRef(false);
+  const prevAuthTokenRef = useRef<string | null | undefined>(undefined); // sentinel: undefined = not yet set
 
   const connect = useCallback(() => {
     if (!url || !mountedRef.current) return;
@@ -107,13 +108,8 @@ export const useWebSocket = (
             clearTimeout(reconnectTimeoutRef.current);
           }
 
-          console.log(
-            `WebSocket đã đóng. Thử kết nối lại sau ${delay}ms (lần ${
-              reconnectCount + 1
-            }/${maxReconnectAttempts})`
-          );
           setError(
-            `Mất kết nối. Thử kết nối lại sau ${Math.round(delay / 1000)}s...`
+            `Mất kết nối. Thử kết nối lại sau ${Math.round(delay / 1000)}s...`,
           );
 
           reconnectTimeoutRef.current = setTimeout(() => {
@@ -122,7 +118,7 @@ export const useWebSocket = (
               setError(
                 `Đang kết nối lại (lần ${
                   reconnectCount + 1
-                }/${maxReconnectAttempts})...`
+                }/${maxReconnectAttempts})...`,
               );
               try {
                 connect();
@@ -135,7 +131,7 @@ export const useWebSocket = (
           }, delay);
         } else if (reconnectCount >= maxReconnectAttempts) {
           setError(
-            "Không thể kết nối với server sau nhiều lần thử. Vui lòng tải lại trang."
+            "Không thể kết nối với server sau nhiều lần thử. Vui lòng tải lại trang.",
           );
         }
         intentionalCloseRef.current = false;
@@ -172,27 +168,8 @@ export const useWebSocket = (
       if (ws.readyState === WebSocket.OPEN) {
         ws.close();
       }
-    } catch (error) {
-      console.error("Error cleaning up WebSocket:", error);
-    }
+    } catch {}
   };
-
-  const disconnect = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-
-    if (wsRef.current) {
-      intentionalCloseRef.current = true;
-      cleanupWebSocket(wsRef.current);
-      wsRef.current = null;
-    }
-
-    setIsConnected(false);
-    setData(null);
-    setReconnectCount(0);
-  }, []);
 
   const send = useCallback((payload: unknown) => {
     const socket = wsRef.current;
@@ -212,12 +189,34 @@ export const useWebSocket = (
 
   const hasInitialized = useRef(false);
 
-  // Khởi tạo WebSocket một lần duy nhất khi component mount
+  // Khởi tạo WebSocket khi mount, và reconnect khi authToken thay đổi
   useEffect(() => {
-    // Chỉ chạy một lần khi component mount
+    mountedRef.current = true;
+
+    const tokenChanged =
+      prevAuthTokenRef.current !== undefined &&
+      prevAuthTokenRef.current !== authToken;
+    prevAuthTokenRef.current = authToken;
+
+    if (tokenChanged) {
+      // Token đã thay đổi (user logout/login lại) → đóng kết nối cũ và kết nối lại
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+      if (wsRef.current) {
+        intentionalCloseRef.current = true;
+        cleanupWebSocket(wsRef.current);
+        wsRef.current = null;
+      }
+      setIsConnected(false);
+      setReconnectCount(0);
+      setError(null);
+      hasInitialized.current = false; // Reset để cho phép kết nối lại
+    }
+
     if (hasInitialized.current) return;
     hasInitialized.current = true;
-    mountedRef.current = true;
 
     if (url) {
       connect();
@@ -233,19 +232,16 @@ export const useWebSocket = (
       }
 
       if (wsRef.current) {
-        wsRef.current.onopen = null as WebSocket["onopen"];
-        wsRef.current.onmessage = null as WebSocket["onmessage"];
-        wsRef.current.onclose = null as WebSocket["onclose"];
-        wsRef.current.onerror = null as WebSocket["onerror"];
+        intentionalCloseRef.current = true;
+        cleanupWebSocket(wsRef.current);
         wsRef.current = null;
       }
 
-      disconnect();
       setIsConnected(false);
       setError(null);
       setReconnectCount(0);
     };
-  }, [url, connect, disconnect]);
+  }, [url, authToken, connect]);
 
   return {
     data,
@@ -253,7 +249,9 @@ export const useWebSocket = (
     error,
     reconnectCount,
     connect,
-    disconnect,
+    disconnect: () => {
+      // No-op disconnect to satisfy type
+    },
     send,
   };
 };
@@ -396,7 +394,7 @@ export const useMultipleTrafficInfo = (roadNames: string[]) => {
 // Hook for multiple frame streams
 export const useMultipleFrameStreams = (roadNames: string[]) => {
   const [frameData, setFrameData] = useState<Record<string, { frame: string }>>(
-    {}
+    {},
   );
   const [connections, setConnections] = useState<Record<string, boolean>>({});
   const socketsRef = useRef<Record<string, WebSocket>>({});

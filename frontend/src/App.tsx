@@ -5,6 +5,7 @@ import {
   Route,
   Navigate,
   useNavigate,
+  useLocation,
   NavLink,
 } from "react-router-dom";
 import { ThemeProvider, useTheme } from "next-themes";
@@ -49,7 +50,7 @@ const navItems: NavItem[] = [
 
 export default function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <BrowserRouter>
         <AppContent />
       </BrowserRouter>
@@ -71,6 +72,9 @@ function AppContent() {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { theme, setTheme } = useTheme();
+  const location = useLocation();
+  const isLoginPage = location.pathname === "/login";
+  const isChatPage = location.pathname === "/chat";
   const hideDropdownTimeout = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -137,38 +141,42 @@ function AppContent() {
   }, [authed]);
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${isLoginPage ? "app-shell--login" : ""}`}>
       <header className="app-header">
-        <a href="/home" className="app-brand" title="Trang chủ">
-          <span className="app-logo">
-            <Car className="h-6 w-6" />
-          </span>
-          <span className="app-brand-copy">
-            <strong>Smart Traffic System</strong>
-            <small>Realtime monitoring and analysis</small>
-          </span>
-        </a>
+        {!isLoginPage && (
+          <>
+            <a href="/home" className="app-brand" title="Trang chủ">
+              <span className="app-logo">
+                <Car className="h-6 w-6" />
+              </span>
+              <span className="app-brand-copy">
+                <strong>Smart Traffic System</strong>
+                <small>Realtime monitoring and analysis</small>
+              </span>
+            </a>
 
-        <nav className="app-nav" aria-label="Main navigation">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  `app-nav-link ${isActive ? "app-nav-link--active" : ""}`
-                }
-              >
-                <Icon className="h-4 w-4" />
-                <span>{item.label}</span>
-              </NavLink>
-            );
-          })}
-        </nav>
+            <nav className="app-nav" aria-label="Main navigation">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={({ isActive }) =>
+                      `app-nav-link ${isActive ? "app-nav-link--active" : ""}`
+                    }
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{item.label}</span>
+                  </NavLink>
+                );
+              })}
+            </nav>
+          </>
+        )}
 
-        <div className="app-actions" ref={dropdownRef}>
-          {authed && (
+        <div className={`app-actions ${isLoginPage ? 'ml-auto mr-4' : ''}`} ref={dropdownRef}>
+          {authed && !isLoginPage && (
             <>
               <button
                 className="app-account-trigger"
@@ -190,11 +198,10 @@ function AppContent() {
                 <span>Tài khoản</span>
               </button>
               <div
-                className={`app-account-dropdown ${
-                  showUserDropdown
+                className={`app-account-dropdown ${showUserDropdown
                     ? "opacity-100 scale-100 pointer-events-auto"
                     : "opacity-0 scale-95 pointer-events-none"
-                }`}
+                  }`}
                 onMouseEnter={() => {
                   if (hideDropdownTimeout.current)
                     clearTimeout(hideDropdownTimeout.current);
@@ -256,8 +263,8 @@ function AppContent() {
       </header>
 
       <TrafficProvider>
-        <main className="app-main">
-          <div className="app-page-shell">
+        <main className={`app-main ${isLoginPage ? "app-main--login" : ""} ${isChatPage ? "app-main--chat" : ""}`}>
+          <div className={isChatPage ? "h-full" : "app-page-shell"}>
             <Routes>
               <Route
                 path="/login"
@@ -279,7 +286,10 @@ function AppContent() {
                   path="/admin"
                   element={<Navigate to="/admin/resources" replace />}
                 />
-                <Route path="/admin/resources" element={<AdminResourcesPage />} />
+                <Route
+                  path="/admin/resources"
+                  element={<AdminResourcesPage />}
+                />
                 <Route path="/admin/roads" element={<AdminRoadsPage />} />
               </Route>
               <Route
