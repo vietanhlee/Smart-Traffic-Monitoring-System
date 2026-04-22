@@ -1,29 +1,27 @@
-
-# Specify Node and PNPM versions, fallback to latest pnpm if not set
-ARG NODE_VERSION=20.17.0
-
-# --- Build Stage ---
-ARG NODE_VERSION=20.17.0
-FROM node:${NODE_VERSION}-alpine AS build
+FROM node:20-alpine AS build
 
 WORKDIR /frontend
 
-# Install pnpm globally (avoid corepack signature issues)
+# pnpm
 RUN npm install -g pnpm@9.14.4
 
+# copy dependency first (cache tốt)
 COPY package.json pnpm-lock.yaml ./
+
 RUN pnpm install --frozen-lockfile
 
+# copy full source
 COPY . .
-RUN pnpm build
 
-# --- Runtime Stage ---
-FROM nginx:1.27-alpine AS runtime
+# build
+RUN pnpm run build
 
+
+# --- Runtime ---
+FROM nginx:1.27-alpine
+    
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /frontend/dist /usr/share/nginx/html
 COPY --from=build /frontend/dist /usr/share/nginx/html
 
 EXPOSE 80
-
 CMD ["nginx", "-g", "daemon off;"]

@@ -36,7 +36,7 @@ langchain_google_genai
 langgraph
 langgraph-checkpoint-redis
 langgraph-checkpoint-postgres
-
+langchain_openai
 # Utilities
 overrides
 email-validator
