@@ -190,12 +190,12 @@ const MessageBubble = memo(
             </div>
 
             <div
-              className={`w-fit max-w-full text-[15px] leading-7 text-left border ${
+              className={`w-fit max-w-[88%] text-[15px] leading-7 text-left break-words border ${
                 isUser
-                  ? "rounded-[1.4rem] px-4 py-3 bg-gradient-to-br from-violet-500 to-fuchsia-500 border-violet-400/60 text-white shadow-[0_10px_24px_rgba(139,92,246,0.35)]"
+                  ? "rounded-[1.8rem] px-6 py-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 border-violet-400/30 text-white shadow-[0_12px_30px_rgba(139,92,246,0.25)]"
                   : hasImage
-                    ? "rounded-2xl px-3 py-3 bg-white/80 dark:bg-slate-900/55 border-slate-200/70 dark:border-slate-700/70 text-slate-900 dark:text-slate-100 shadow-[0_10px_28px_rgba(15,23,42,0.14)]"
-                    : "rounded-2xl px-4 py-3 bg-white/90 dark:bg-slate-800/70 border-slate-200/80 dark:border-slate-700/70 text-slate-900 dark:text-slate-100 shadow-sm"
+                    ? "rounded-3xl px-5 py-5 bg-white/80 dark:bg-slate-900/55 border-slate-200/70 dark:border-slate-700/70 text-slate-900 dark:text-slate-100 shadow-[0_10px_28px_rgba(15,23,42,0.14)]"
+                    : "rounded-[1.8rem] px-6 py-4 bg-white/90 dark:bg-slate-800/70 border-slate-200/80 dark:border-slate-700/70 text-slate-900 dark:text-slate-100 shadow-sm"
               }`}
             >
               {msg.image && msg.image.length > 0 && (
@@ -326,38 +326,20 @@ const ChatInterface = () => {
     const token = localStorage.getItem(authConfig.TOKEN_KEY);
 
     if (token !== currentToken) {
-      console.log("[ChatInterface] Token changed, reloading messages");
-      console.log("  Old token:", currentToken?.substring(0, 10));
-      console.log("  New token:", token?.substring(0, 10));
-
       setCurrentToken(token);
       setInput(loadChatDraft());
 
-      void (async () => {
+      (async () => {
         if (!token) {
-          console.log(
-            "[ChatInterface] Token removed or missing, resetting welcome message",
-          );
           setMessages([createWelcomeMessage()]);
           return;
         }
-
         const history = await fetchChatHistory(1, 100);
-        console.log(
-          "[ChatInterface] Reload token history count:",
-          history.length,
-        );
         if (history.length > 0) {
           setMessages(history);
         } else {
           setMessages([createWelcomeMessage()]);
         }
-
-        console.log(
-          "[ChatInterface] Loaded",
-          history.length,
-          "messages from API",
-        );
       })();
     }
   }, [currentToken]);
@@ -381,20 +363,21 @@ const ChatInterface = () => {
 
   // Initial load from backend history
   useEffect(() => {
-    console.log(
-      "ChatInterface initial history load, token present:",
-      Boolean(token),
-      "token length:",
-      token?.length ?? 0,
-    );
-    if (!token) {
+    const initialToken = localStorage.getItem(authConfig.TOKEN_KEY);
+    // Debug log for initial token
+    // console.log(
+    //   "ChatInterface initial history load, token present:",
+    //   Boolean(initialToken),
+    //   "token length:",
+    //   initialToken?.length ?? 0,
+    // );
+    if (!initialToken) {
       setMessages([createWelcomeMessage()]);
       return;
     }
 
     void (async () => {
       const history = await fetchChatHistory(1, 100);
-      console.log("ChatInterface initial load history count:", history.length);
       if (history.length > 0) {
         setMessages(history);
       }
@@ -413,15 +396,16 @@ const ChatInterface = () => {
   }, [scrollToBottom]);
 
   // Chat WebSocket with authentication - setup trước để dùng trong handlers
-  const token = localStorage.getItem(authConfig.TOKEN_KEY);
+  // Sử dụng currentToken (reactive state) thay vì đọc trực tiếp từ localStorage
+  // để đảm bảo WebSocket hook nhận được token mới khi user đổi tài khoản
   const chatWsUrl = endpoints.chatWs;
 
   // Show message if no token
   useEffect(() => {
-    if (!token) {
+    if (!currentToken) {
       toast.error("Vui lòng đăng nhập để sử dụng chat AI");
     }
-  }, [token]);
+  }, [currentToken]);
 
   const {
     data: chatData,
@@ -431,7 +415,7 @@ const ChatInterface = () => {
   } = useWebSocket(chatWsUrl, {
     reconnectInterval: 3000,
     maxReconnectAttempts: 5,
-    authToken: token,
+    authToken: currentToken,
   });
 
   useEffect(() => {
@@ -449,10 +433,7 @@ const ChatInterface = () => {
 
   // Monitor connection status
   useEffect(() => {
-    console.log("WebSocket Connection Status:", isWsConnected);
-    if (isWsConnected) {
-      toast.success("Đã kết nối với AI thành công!");
-    }
+    // Đã xoá popup thông báo kết nối thành công với AI
   }, [isWsConnected]);
 
   // Bỏ phần xử lý/biến đổi câu hỏi - gửi thẳng nội dung người dùng nhập
@@ -462,7 +443,6 @@ const ChatInterface = () => {
     if (!input.trim() || isLoading) return;
 
     const userMessage = input.trim();
-    console.log("Sending message:", { message: userMessage }); // Log tin nhắn gửi đi
     setInput("");
     // clear saved draft after sending
     clearChatDraft();
@@ -509,7 +489,6 @@ const ChatInterface = () => {
 
       // Gửi thẳng tin nhắn người dùng tới AI
       const ok = chatSocketSend({ message: userMessage });
-      console.log("Message sent status:", ok);
 
       if (!ok) {
         setMessages((prev) => [
@@ -543,13 +522,12 @@ const ChatInterface = () => {
       setIsLoading(false);
       inputRef.current?.focus();
     }
-  }, [input, isLoading, isWsConnected, chatSocketSend]); // Dependencies for useCallback
+  }, [input, isLoading, isWsConnected, chatSocketSend, scrollToBottom]); // Dependencies for useCallback
 
   useEffect(() => {
     if (!chatData) return;
     try {
       // Log toàn bộ dữ liệu nhận được từ WebSocket
-      console.log("WebSocket Raw Response:", chatData);
       const payload = chatData as
         | { message?: string; image?: string[] }
         | undefined;
@@ -557,8 +535,6 @@ const ChatInterface = () => {
       const responseImage = payload?.image;
 
       // Log chi tiết từng phần của response
-      console.log("Response Text:", responseText);
-      console.log("Response Images:", responseImage);
 
       // Chỉ bỏ qua nếu cả text và image đều không có hoặc undefined
       // Chấp nhận empty string vì AI có thể gửi text rỗng kèm ảnh
@@ -566,7 +542,6 @@ const ChatInterface = () => {
       const hasImages = responseImage && responseImage.length > 0;
 
       if (!hasText && !hasImages) {
-        console.log("No text or images in response, skipping");
         setMessages((prev) => prev.filter((msg) => msg.id !== "typing"));
         setIsLoading(false);
         inputRef.current?.focus();
@@ -579,14 +554,6 @@ const ChatInterface = () => {
 
       // Process text to add authentication token to any image URLs in text
       const processedText = processImageUrlsInText(responseText ?? "");
-
-      console.log("Processed Response:", {
-        text: processedText,
-        images: imageUrls,
-        hasText: !!processedText,
-        hasImages: imageUrls.length > 0,
-      });
-
       setMessages((prev) => {
         // Remove typing indicator
         const filtered = prev.filter((msg) => msg.id !== "typing");
@@ -602,15 +569,14 @@ const ChatInterface = () => {
           },
         ];
       });
-
       // Bỏ toast success notification
       // toast.success("Đã nhận được phản hồi từ AI");
+      setIsLoading(false);
+      inputRef.current?.focus();
+      // eslint-disable-next-line no-empty
     } catch (error) {
-      console.error("Error processing WebSocket response:", error);
       toast.error("Lỗi khi xử lý phản hồi");
     }
-    setIsLoading(false);
-    inputRef.current?.focus();
   }, [chatData]);
 
   const handleKeyDown = useCallback(
@@ -651,26 +617,28 @@ const ChatInterface = () => {
 
   // --- COMPONENT RETURN ---
   return (
-    <div className="relative h-screen flex flex-col bg-slate-50 dark:bg-[#0b1020]">
+    <div className="relative h-full flex flex-col overflow-hidden bg-slate-50 dark:bg-[#0b1020]">
+      {/* Background gradient */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_12%,rgba(167,139,250,0.18),transparent_34%),radial-gradient(circle_at_84%_86%,rgba(59,130,246,0.12),transparent_30%)] dark:bg-[radial-gradient(circle_at_15%_12%,rgba(139,92,246,0.24),transparent_34%),radial-gradient(circle_at_84%_86%,rgba(56,189,248,0.12),transparent_30%)]" />
 
-      <div className="relative z-10 border-b border-slate-200/60 dark:border-slate-700/60 bg-white/85 dark:bg-[#0f172a]/85 backdrop-blur-xl">
-        <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 py-3 flex items-center justify-between gap-3">
+      {/* ── Chat header ──────────────────────────────────── */}
+      <div className="relative z-10 shrink-0 border-b border-slate-200/60 dark:border-slate-700/60 bg-white/85 dark:bg-[#0f172a]/85 backdrop-blur-xl">
+        <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white grid place-items-center shadow-sm">
-              <Bot className="w-4.5 h-4.5" />
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white grid place-items-center shadow-sm shrink-0">
+              <Bot className="w-4 h-4" />
             </div>
             <div>
-              <h1 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100">
+              <h1 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100 leading-tight">
                 Trợ lý AI giao thông
               </h1>
-              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
                 Trả lời nhanh, có kèm ảnh realtime khi có dữ liệu
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <Badge
               className={
                 isWsConnected
@@ -698,9 +666,10 @@ const ChatInterface = () => {
         </div>
       </div>
 
-      <div className="relative z-10 flex-1 overflow-hidden bg-gradient-to-b from-slate-50 to-slate-100 dark:from-[#0b1020] dark:to-[#0a1124]">
-        <ScrollArea className="h-full w-full pr-2 sm:pr-4" ref={scrollAreaRef}>
-          <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 py-6 sm:py-8 flex flex-col gap-5">
+      {/* ── Messages area ─────────────────────────────────── */}
+      <div className="relative z-10 flex-1 min-h-0 overflow-hidden">
+        <ScrollArea className="h-full w-full" ref={scrollAreaRef}>
+          <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 py-6 flex flex-col gap-4">
             <AnimatePresence initial={false}>
               {messages.map((msg) => (
                 <MessageBubble
@@ -712,34 +681,32 @@ const ChatInterface = () => {
                 />
               ))}
             </AnimatePresence>
-            {/* Invisible element để scroll xuống */}
+            {/* Anchor để scroll xuống */}
             <div ref={messagesEndRef} className="h-1" />
           </div>
         </ScrollArea>
       </div>
 
-      <div className="relative z-10 border-t border-slate-200/60 dark:border-slate-700/60 bg-white/85 dark:bg-[#0f172a]/85 backdrop-blur-xl sticky bottom-0">
+      {/* ── Input area ────────────────────────────────────── */}
+      <div className="relative z-10 shrink-0 border-t border-slate-200/60 dark:border-slate-700/60 bg-white/85 dark:bg-[#0f172a]/85 backdrop-blur-xl">
         <form
-          className="mx-auto w-full max-w-6xl px-3 sm:px-4 py-3.5 sm:py-4"
+          className="mx-auto w-full max-w-5xl px-4 sm:px-6 py-3 sm:py-4"
           onSubmit={(e) => {
             e.preventDefault();
             handleSendMessage();
           }}
         >
-          <div className="rounded-2xl border border-slate-300/80 dark:border-slate-700/80 bg-white/90 dark:bg-slate-900/75 shadow-[0_10px_30px_rgba(15,23,42,0.12)] px-2 py-2 flex items-end gap-2 sm:gap-3">
-            <div className="flex-1">
+          <div className="rounded-2xl border border-slate-300/80 dark:border-slate-700/80 bg-white/90 dark:bg-slate-900/75 shadow-[0_4px_20px_rgba(15,23,42,0.08)] px-3 py-2 flex items-center gap-2 sm:gap-3">
+            <div className="flex-1 min-w-0">
               <Input
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Nhập câu hỏi về giao thông..."
-                className="h-10 sm:h-11 bg-transparent border-0 shadow-none focus-visible:ring-0 placeholder:text-slate-500 dark:placeholder:text-slate-400"
+                className="h-10 bg-transparent border-0 shadow-none focus-visible:ring-0 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm"
                 disabled={isLoading}
               />
-              <p className="pl-3 pb-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                Nhấn Enter để gửi nhanh
-              </p>
             </div>
             <Button
               type="submit"
@@ -747,14 +714,26 @@ const ChatInterface = () => {
               size="icon"
               disabled={isLoading || !input.trim()}
               title="Gửi"
-              className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-gradient-to-br from-violet-500 to-fuchsia-500 hover:from-violet-400 hover:to-fuchsia-400 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all rounded-xl shadow-[0_8px_20px_rgba(139,92,246,0.38)]"
+              className="h-10 w-10 shrink-0 bg-gradient-to-br from-violet-500 to-fuchsia-500 hover:from-violet-400 hover:to-fuchsia-400 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all rounded-xl shadow-[0_4px_12px_rgba(139,92,246,0.35)]"
             >
-              <Send className="w-4 h-4" />
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
             </Button>
           </div>
+          <p className="mt-1.5 text-center text-[11px] text-slate-400 dark:text-slate-500">
+            Nhấn{" "}
+            <kbd className="px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-mono">
+              Enter
+            </kbd>{" "}
+            để gửi nhanh
+          </p>
         </form>
       </div>
-      {/* Simple image preview modal */}
+
+      {/* ── Image preview modal ───────────────────────────── */}
       {previewImage && (
         <motion.div
           initial={{ opacity: 0 }}
