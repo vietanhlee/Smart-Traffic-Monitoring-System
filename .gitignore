@@ -28,8 +28,8 @@ project_overview.md
 *.sw?
 .pdf
 .pptx
-
-
+.venv
+prune.py
 # app
 video_test
 __pycache__
@@ -47,3 +47,6 @@ Test
 todo.md
 Agent
 .cph
+model.pt
+readme_torch_prunning.md
+model_1M8_v11.yaml
