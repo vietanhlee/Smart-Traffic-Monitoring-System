@@ -24,44 +24,30 @@ def format_telegram_message(raw_text: str) -> str:
         return ""
 
     lines = raw_text.splitlines()
-    html_lines = []
-    in_list = False
-
-    def close_list():
-        nonlocal in_list
-        if in_list:
-            html_lines.append("</ul>")
-            in_list = False
-
-    def format_line(line: str) -> str:
-        text = html.escape(line.strip())
-        if text.startswith("*") and text.endswith("*") and len(text) > 1:
-            return f"<b>{html.escape(text[1:-1])}</b>"
-        return text
+    output_lines = []
 
     for line in lines:
         stripped = line.strip()
         if not stripped:
-            close_list()
-            html_lines.append("<br>")
+            output_lines.append("")
             continue
 
         if stripped.startswith("- "):
-            if not in_list:
-                html_lines.append("<ul style=\"padding-left:18px;margin:8px 0;\">")
-                in_list = True
             item_text = html.escape(stripped[2:].strip())
-            html_lines.append(f"<li>{item_text}</li>")
-        else:
-            close_list()
-            if stripped.startswith("*") and stripped.endswith("*"):
-                inner = stripped[1:-1].strip()
-                html_lines.append(f"<b>{html.escape(inner)}</b>")
-            else:
-                html_lines.append(html.escape(stripped))
+            output_lines.append(f"• {item_text}")
+            continue
 
-    close_list()
-    return "<br>".join(html_lines)
+        if stripped.startswith("*") and stripped.endswith("*") and len(stripped) > 1:
+            output_lines.append(f"<b>{html.escape(stripped[1:-1].strip())}</b>")
+            continue
+
+        if len(stripped) > 0 and stripped[0].isdigit() and ")" in stripped[:4]:
+            output_lines.append(f"<b>{html.escape(stripped)}</b>")
+            continue
+
+        output_lines.append(html.escape(stripped))
+
+    return "\n".join(output_lines)
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
