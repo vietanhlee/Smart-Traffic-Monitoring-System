@@ -1,0 +1,23 @@
+description: Ultralytics YOLO11n model trained on /kaggle/input/datasets/huecute/vehicle-detection/car_motor_detection/data.yaml
+author: Ultralytics
+date: '2026-04-26T10:28:24.158964'
+version: 8.3.160
+license: AGPL-3.0 License (https://ultralytics.com/license)
+docs: https://docs.ultralytics.com
+stride: 32
+task: detect
+batch: 1
+imgsz:
+- 640
+- 640
+names:
+  0: car
+  1: motorbike
+args:
+  batch: 1
+  fraction: 1.0
+  half: false
+  int8: true
+  dynamic: false
+  nms: false
+channels: 3

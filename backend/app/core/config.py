@@ -80,25 +80,25 @@ class SettingMetricTransport:
                         0.066,
                         0.029
                         ]
-    MODELS_PATH = r'./ai_models/model N/openvino models/best_int8_openvino_model'
+    MODELS_PATH = r'ai_models\model N\openvino models\prune_40%_int8_openvino_model'
 
     DEVICE = 'cpu'
 
 class SettingChatBot:
-    # from langchain_google_genai import ChatGoogleGenerativeAI
+    from langchain_google_genai import ChatGoogleGenerativeAI
 
-    # LLM = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite-preview",
-    #                             temperature=0.4, 
-    #                             max_output_tokens=1024
-    #                             )
+    LLM = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite-preview",
+                                temperature=0.4, 
+                                max_output_tokens=1024
+                                )
     # Dùng ollama local api llm
     
-    from langchain_openai import ChatOpenAI
-    LLM = ChatOpenAI(
-        model="gemma4:e4b",
-        base_url="http://159.48.242.6:21209/v1",
-        api_key="dummy"
-    )   
+    # from langchain_openai import ChatOpenAI
+    # LLM = ChatOpenAI(
+    #     model="gemma4:e4b",
+    #     base_url="http://159.48.242.6:21209/v1",
+    #     api_key="dummy"
+    # )   
 
 
 class SettingNetwork:
