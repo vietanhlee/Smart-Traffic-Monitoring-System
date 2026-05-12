@@ -8,7 +8,7 @@ An intelligent traffic monitoring system that uses AI to detect and track vehicl
 
 ## Short Demo
 
-https://github.com/user-attachments/assets/b4a4dabd-2454-4123-ad9d-bd820a96a100
+https://github.com/user-attachments/assets/143d2063-2be7-40d9-a1ea-3e07eed10ddb
 
 ## Features
 
